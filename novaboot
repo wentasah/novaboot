@@ -37,7 +37,7 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 ## Configuration file handling
 
 # Default configuration
-$CFG::hypervisor = "bin/apps/hypervisor";
+$CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::server = "erwin.inf.tu-dresden.de:boot/novaboot/\$NAME";
 $CFG::server_grub_prefix = "(nd)/tftpboot/sojka/novaboot/\$NAME";
@@ -487,14 +487,16 @@ foreach my $script (@scripts) {
     if (exists $variables->{KERNEL}) {
 	$kernel = $variables->{KERNEL};
     } else {
-	$kernel = $CFG::hypervisor . " ";
-	if (exists $variables->{HYPERVISOR_PARAMS}) {
-	    $kernel .= $variables->{HYPERVISOR_PARAMS};
-	} else {
-	    $kernel .= $CFG::hypervisor_params;
+	if ($CFG::hypervisor) {
+	    $kernel = $CFG::hypervisor . " ";
+	    if (exists $variables->{HYPERVISOR_PARAMS}) {
+		$kernel .= $variables->{HYPERVISOR_PARAMS};
+	    } else {
+		$kernel .= $CFG::hypervisor_params;
+	    }
 	}
     }
-    @$modules = ($kernel, @$modules);
+    @$modules = ($kernel, @$modules) if $kernel;
     @$modules = (@CFG::chainloaders, @$modules);
     @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
 

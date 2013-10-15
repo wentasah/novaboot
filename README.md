@@ -330,17 +330,20 @@ The following variables are interpreted in the novaboot script:
 
 # CONFIGURATION FILE
 
-novaboot can read its configuration from ~/.novaboot file (or another
-file specified with __\-c__ parameter or NOVABOOT\_CONFIG environment
-variable). It is a file with perl syntax, which sets values of certain
-variables. The current configuration can be dumped with
-__\--dump-config__ switch. Use
+Novaboot can read its configuration from a file. Configuration file
+was necessary in early days of novaboot. Nowadays, the attempt is made
+to not use the configuration file because it makes certain novaboot
+scripts unusable on systems without (or with different) configuration
+file. The only recommended use of the configuration file is to specify
+custom\_options (see bellow).
 
-    novaboot --dump-config > ~/.novaboot
-
-to create a default configuration file and modify it to your needs.
-Some configuration variables can be overriden by environment variables
-(see below) or by command line switches.
+If you decide to use the configuration file, its default location is
+~/.novaboot, other location can be specified __\-c__ parameter or with
+NOVABOOT\_CONFIG environment variable. The configuration has perl
+syntax and sets values of certain variables. The current configuration
+can be dumped with __\--dump-config__ switch. Some configuration
+variables can be overriden by environment variables (see below) or by
+command line switches.
 
 Documentation of some configuration variables follows:
 

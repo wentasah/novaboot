@@ -1,6 +1,6 @@
 # NAME
 
-novaboot - NOVA boot script interpreter
+novaboot - A tool for booting various operating systems on various hardware or in qemu
 
 # SYNOPSIS
 
@@ -28,13 +28,13 @@ local program - the novaboot script.
 
 With `novaboot` you can:
 
-1. Run NOVA in Qemu. This is the default action when no other action is
+1. Run an OS in Qemu. This is the default action when no other action is
 specified by command line switches. Thus running `novaboot ./script`
-(or `./script` as described above) will run Qemu with configuration
-specified in the _script_.
+(or `./script` as described above) will run Qemu and make it boot the
+configuration specified in the _script_.
 2. Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all files
-needed for booting another, perhaps remote, location.
+bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all other
+files needed for booting to another, perhaps remote, location.
 
         ./script --server --iprelay
 

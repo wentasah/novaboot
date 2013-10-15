@@ -683,7 +683,7 @@ if (defined $dhcp_tftp) {
 
 =head1 NAME
 
-novaboot - NOVA boot script interpreter
+novaboot - A tool for booting various operating systems on various hardware or in qemu
 
 =head1 SYNOPSIS
 
@@ -715,16 +715,16 @@ With C<novaboot> you can:
 
 =item 1.
 
-Run NOVA in Qemu. This is the default action when no other action is
+Run an OS in Qemu. This is the default action when no other action is
 specified by command line switches. Thus running C<novaboot ./script>
-(or C<./script> as described above) will run Qemu with configuration
-specified in the I<script>.
+(or C<./script> as described above) will run Qemu and make it boot the
+configuration specified in the I<script>.
 
 =item 2.
 
 Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all files
-needed for booting another, perhaps remote, location.
+bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all other
+files needed for booting to another, perhaps remote, location.
 
  ./script --server --iprelay
 

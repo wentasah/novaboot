@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# git pre-commit hook
+
+set -e
+
+# Make README.md be always in sync with novaboot - work with objects
+# in the index (what is being committed), not with what is in the
+# working tree.
+hash=$(git show :novaboot | pod2markdown | git hash-object -w --stdin)
+git update-index --cacheinfo 100644 $hash README.md

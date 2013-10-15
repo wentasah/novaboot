@@ -630,10 +630,13 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
 
 	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
 	$kcmd = '' if !defined $kcmd;
+	my $dtb;
+	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
 	my $initrd = join ",", @$modules;
 
 	push(@qemu_flags, ('-kernel', $kbin, '-append', $kcmd));
 	push(@qemu_flags, ('-initrd', $initrd)) if $initrd;
+	push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
     }
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     exec_verbose(($CFG::qemu,  '-name', $config_name, @qemu_flags));

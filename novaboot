@@ -171,7 +171,7 @@ if (defined $grub2_config) {
 if ($on_opt) { $iprelay="on"; }
 if ($off_opt) { $iprelay="off"; }
 
-## Parse the config(s)
+## Parse the novaboot script(s)
 my @scripts;
 my $file;
 my $line;
@@ -609,6 +609,11 @@ sub trim($) {
 
 if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $server || defined $iso_image)) {
     # Qemu
+    if (!$qemu && $variables->{QEMU}) {
+	@qemu_flags = split(" ", $variables->{QEMU});
+	$CFG::qemu = shift(@qemu_flags);
+    }
+
     @qemu_flags = split(/ +/, trim($variables->{QEMU_FLAGS})) if exists $variables->{QEMU_FLAGS};
     @qemu_flags = split(/ +/, trim($qemu_flags_cmd)) if $qemu_flags_cmd;
     push(@qemu_flags, split(/ +/, trim($qemu_append)));
@@ -1055,9 +1060,16 @@ in the test output within the time specified here, the test fails. It
 is necessary to specify this for long running tests that produce no
 intermediate output.
 
+=item QEMU
+
+Use a specific qemu binary (can be overriden with B<-Q>) and flags
+when booting this script under qemu. If QEMU_FLAGS variable is also
+specified flags specified in QEMU variable are replaced by those in
+QEMU_FLAGS.
+
 =item QEMU_FLAGS
 
-Use specific qemu flags (can be overriden by B<-q>).
+Use specific qemu flags (can be overriden with B<-q>).
 
 =item HYPERVISOR_PARAMS
 

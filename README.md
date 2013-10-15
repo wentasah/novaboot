@@ -312,9 +312,16 @@ The following variables are interpreted in the novaboot script:
     is necessary to specify this for long running tests that produce no
     intermediate output.
 
+- QEMU
+
+    Use a specific qemu binary (can be overriden with __\-Q__) and flags
+    when booting this script under qemu. If QEMU\_FLAGS variable is also
+    specified flags specified in QEMU variable are replaced by those in
+    QEMU\_FLAGS.
+
 - QEMU\_FLAGS
 
-    Use specific qemu flags (can be overriden by __\-q__).
+    Use specific qemu flags (can be overriden with __\-q__).
 
 - HYPERVISOR\_PARAMS
 

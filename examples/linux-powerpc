@@ -1,0 +1,14 @@
+#!/usr/bin/env novaboot
+# -*-sh-*-
+
+# Before this example can be run, you need to build the images refered
+# to below. Simply run:
+#
+#   git submodule update --init
+#   make -C build/buildroot-powerpc.
+
+QEMU=qemu-system-ppc -M virtex-ml507 -m 256 -nographic
+build/buildroot-powerpc/images/vmlinux console=ttyS0
+build/buildroot-powerpc/images/rootfs.cpio
+# Qemu for PowerPC requires a fixed name for device trees
+ppc.dtb < cat build/buildroot-powerpc/images/virtex440-ml507.dtb

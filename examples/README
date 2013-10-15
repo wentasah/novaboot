@@ -1,0 +1,5 @@
+The examples in this directory expect that novaboot is in your PATH.
+If it is not, simply run:
+
+    cd ..  # go to the top-level directory
+    export PATH=$PATH:$PWD

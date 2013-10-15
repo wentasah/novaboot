@@ -1,0 +1,11 @@
+#!/usr/bin/env novaboot
+# -*-sh-*-
+
+# Before this example can be run, you need to build the images refered
+# to below. Simply run:
+#
+#   git submodule update --init
+#   make -C build/buildroot.
+
+KERNEL=build/buildroot/images/bzImage console=ttyS0,115200
+build/buildroot/images/rootfs.cpio.gz

@@ -34,6 +34,8 @@ my $invocation_dir = getcwd();
 
 chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 
+## Configuration file handling
+
 # Default configuration
 $CFG::hypervisor = "bin/apps/hypervisor";
 $CFG::hypervisor_params = "serial";
@@ -75,7 +77,8 @@ Getopt::Long::Configure(qw/no_ignore_case pass_through/);
 GetOptions ("config|c=s" => \$cfg);
 if (-s $cfg) { read_config($cfg); }
 
-# Command line
+## Command line handling
+
 my ($append, $bender, $builddir, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
 
 $rsync_flags = '';
@@ -118,6 +121,8 @@ GetOptions %opt_spec or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
+### Sanitize configuration
+
 $CFG::iprelay_addr = $ENV{'NOVABOOT_IPRELAY'} if $ENV{'NOVABOOT_IPRELAY'};
 if ($iprelay && $iprelay ne "on" && $iprelay ne "off") { $CFG::iprelay_addr = $iprelay; }
 
@@ -134,6 +139,8 @@ if ($pulsar) {
 if ($scons) { $CFG::scons = $scons; }
 if (!@scriptmod && $CFG::script_modifier) { @scriptmod = ( $CFG::script_modifier ); }
 if (defined $grub_prefix) { $CFG::server_grub_prefix = $grub_prefix; }
+
+### Dump sanitized configuration (if requested)
 
 if ($dump_config) {
     use Data::Dumper;
@@ -164,7 +171,7 @@ if (defined $grub2_config) {
 if ($on_opt) { $iprelay="on"; }
 if ($off_opt) { $iprelay="off"; }
 
-# Parse the config(s)
+## Parse the config(s)
 my @scripts;
 my $file;
 my $line;
@@ -231,6 +238,8 @@ while (<>) {
 #print Dumper(\@scripts);
 
 exit if $dump_opt;
+
+## Helper functions
 
 sub generate_configs($$$) {
     my ($base, $generated, $filename) = @_;
@@ -342,11 +351,15 @@ sub system_verbose($)
     if ($ret) { die("Command failure $ret"); }
 }
 
+## WvTest handline
+
 if (exists $variables->{WVDESC}) {
     print "Testing \"$variables->{WVDESC}\" in $last_fn:\n";
 } elsif ($last_fn =~ /\.wv$/) {
     print "Testing \"all\" in $last_fn:\n";
 }
+
+## Handle reset and power on/off
 
 my $IPRELAY;
 if (defined $iprelay) {
@@ -439,6 +452,7 @@ if ($iprelay && ($iprelay eq "on" || $iprelay eq "off")) {
     exit;
 }
 
+## Figure out the location of builddir and chdir() there
 if ($builddir) {
     $CFG::builddir = $builddir;
 } else {
@@ -453,6 +467,7 @@ if ($builddir) {
 chdir($CFG::builddir) or die "Can't change directory to $CFG::builddir: $!";
 print "novaboot: Entering directory `$CFG::builddir'\n";
 
+## Process novaboot scripts
 my (%files_iso, $menu_iso, $config_name, $filename);
 
 foreach my $script (@scripts) {
@@ -483,6 +498,7 @@ foreach my $script (@scripts) {
     @$modules = (@CFG::chainloaders, @$modules);
     @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
 
+### Generate bootloader configuration files
     if (defined $grub_config) {
 	generate_configs("", $generated, $filename);
 	generate_grub_config($grub_config, $config_name, "", $modules);
@@ -508,6 +524,7 @@ foreach my $script (@scripts) {
 	}
     }
 
+### Run scons
     if (defined $scons) {
 	my @files = map({ ($file) = m/([^ ]*)/; $file; } @$modules);
 	# Filter-out generated files
@@ -515,6 +532,7 @@ foreach my $script (@scripts) {
 	system_verbose($CFG::scons." ".join(" ", @to_build));
     }
 
+### Copy files (using rsync)
     if (defined $server) {
 	($server_grub_prefix = $CFG::server_grub_prefix) =~ s/\$NAME/$config_name/;
 	($server = $CFG::server)			 =~ s/\$NAME/$config_name/;
@@ -548,6 +566,7 @@ foreach my $script (@scripts) {
 	if ($combined_menu_lst) { system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd); }
     }
 
+### Prepare ISO image generation
     if (defined $iso_image) {
 	generate_configs("(cd)", $generated, $filename);
 	my $menu;
@@ -557,6 +576,7 @@ foreach my $script (@scripts) {
     }
 }
 
+## Generate ISO image
 if (defined $iso_image) {
     open(my $fh, ">menu-iso.lst");
     print $fh "timeout 5\n\n$menu_iso";
@@ -567,9 +587,7 @@ if (defined $iso_image) {
     print("ISO image created: $CFG::builddir/$iso_image\n");
 }
 
-######################################################################
-# Boot NOVA using various methods and send serial output to stdout
-######################################################################
+## Boot the system using various methods and send serial output to stdout
 
 if (scalar(@scripts) > 1 && ( defined $dhcp_tftp || defined $serial || defined $iprelay)) {
     die "You cannot do this with multiple scripts simultaneously";
@@ -584,6 +602,8 @@ sub trim($) {
     $str =~ s/^\s+|\s+$//g;
     return $str
 }
+
+### Qemu
 
 if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $server || defined $iso_image)) {
     # Qemu
@@ -611,6 +631,8 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     exec_verbose(($CFG::qemu,  '-name', $config_name, @qemu_flags));
 }
+
+### Local DHCPD and TFTPD
 
 my ($dhcpd_pid, $tftpd_pid);
 
@@ -647,6 +669,8 @@ host server {
     }
     $SIG{TERM} = sub { print "CHILDS KILLED\n"; kill 15, $dhcpd_pid, $tftpd_pid; };
 }
+
+### Serial line or IP relay
 
 if ($serial || defined $iprelay) {
     my $CONN;
@@ -686,6 +710,7 @@ if ($serial || defined $iprelay) {
     exit;
 }
 
+### Wait for dhcpc or tftpd
 if (defined $dhcp_tftp) {
     my $pid = wait();
     if ($pid == $dhcpd_pid) { print "dhcpd exited!\n"; }
@@ -693,6 +718,8 @@ if (defined $dhcp_tftp) {
     else { print "wait returned: $pid\n"; }
     kill(15, 0); # Kill current process group i.e. all remaining children
 }
+
+## Documentation
 
 =head1 NAME
 

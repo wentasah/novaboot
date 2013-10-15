@@ -1,0 +1,1091 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptionsFromString);
+use Pod::Usage;
+use File::Basename;
+use File::Spec;
+use IO::Handle;
+use Time::HiRes("usleep");
+use Socket;
+use FileHandle;
+use IPC::Open2;
+use POSIX qw(:errno_h);
+use Cwd;
+
+# always flush
+$| = 1;
+
+my $invocation_dir = getcwd();
+
+chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
+
+# Default configuration
+$CFG::hypervisor = "bin/apps/hypervisor";
+$CFG::hypervisor_params = "serial";
+$CFG::server = "erwin.inf.tu-dresden.de:boot/novaboot/\$NAME";
+$CFG::server_grub_prefix = "(nd)/tftpboot/sojka/novaboot/\$NAME";
+$CFG::grub_keys = ''; #"/novaboot\n\n/\$NAME\n\n";
+$CFG::grub2_prolog = "  set root='(hd0,msdos1)'";
+$CFG::genisoimage = "genisoimage";
+$CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
+$CFG::qemu = 'qemu';
+$CFG::script_modifier = ''; # Depricated, use --scriptmod commandline option or custom_options.
+@CFG::chainloaders = (); #('bin/boot/bender promisc');
+$CFG::pulsar_root = '';
+$CFG::pulsar_mac = '52-54-00-12-34-56';
+%CFG::custom_options = ('I' => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub-prefix=(nd)/tftpboot/sojka/novaboot --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
+		        'J' => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324');
+$CFG::scons = "scons -j2";
+
+my @qemu_flags = qw(-cpu coreduo -smp 2);
+sub read_config($) {
+    my ($cfg) = @_;
+    {
+	package CFG; # Put config data into a separate namespace
+	my $rc = do($cfg);
+
+	# Check for errors
+	if ($@) {
+	    die("ERROR: Failure compiling '$cfg' - $@");
+	} elsif (! defined($rc)) {
+	    die("ERROR: Failure reading '$cfg' - $!");
+	} elsif (! $rc) {
+	    die("ERROR: Failure processing '$cfg'");
+	}
+    }
+}
+
+my $cfg = $ENV{'NOVABOOT_CONFIG'} || $ENV{'HOME'}."/.novaboot";
+Getopt::Long::Configure(qw/no_ignore_case pass_through/);
+GetOptions ("config|c=s" => \$cfg);
+if (-s $cfg) { read_config($cfg); }
+
+# Command line
+my ($append, $bender, $builddir, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+
+$rsync_flags = '';
+$rom_prefix = 'rom://';
+
+Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
+my %opt_spec = (
+    "append|a=s"     => \$append,
+    "bender|b"       => \$bender,
+    "build-dir=s"    => \$builddir,
+    "dhcp-tftp|d"    => \$dhcp_tftp,
+    "dump"	     => \$dump_opt,
+    "dump-config"    => \$dump_config,
+    "grub|g:s" 	     => \$grub_config,
+    "grub-prefix=s"  => \$grub_prefix,
+    "grub2:s" 	     => \$grub2_config,
+    "iprelay:s"	     => \$iprelay,
+    "iso|i:s" 	     => \$iso_image,
+    "name=s"	     => \$config_name_opt,
+    "no-file-gen"    => \$no_file_gen,
+    "off"	     => \$off_opt,
+    "on"	     => \$on_opt,
+    "pulsar|p:s"     => \$pulsar,
+    "qemu|Q=s" 	     => \$qemu,
+    "qemu-append:s"  => \$qemu_append,
+    "qemu-flags|q=s" => \$qemu_flags_cmd,
+    "rsync-flags=s"  => \$rsync_flags,
+    "scons:s"	     => \$scons,
+    "scriptmod=s"    => \@scriptmod,
+    "serial|s:s"     => \$serial,
+    "server:s" 	     => \$server,
+    "strip-rom"	     => sub { $rom_prefix = ''; },
+    "h" 	     => \$help,
+    "help" 	     => \$man,
+    );
+foreach my $opt(keys(%CFG::custom_options)) {
+    $opt_spec{$opt} = sub { GetOptionsFromString($CFG::custom_options{$opt}, %opt_spec); };
+}
+GetOptions %opt_spec or pod2usage(2);
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+$CFG::iprelay_addr = $ENV{'NOVABOOT_IPRELAY'} if $ENV{'NOVABOOT_IPRELAY'};
+if ($iprelay && $iprelay ne "on" && $iprelay ne "off") { $CFG::iprelay_addr = $iprelay; }
+
+if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
+
+if ($server) { $CFG::server = $server; }
+if ($qemu) { $CFG::qemu = $qemu; }
+$qemu_append ||= '';
+
+if ($pulsar) {
+    $CFG::pulsar_mac = $pulsar;
+}
+
+if ($scons) { $CFG::scons = $scons; }
+if (!@scriptmod && $CFG::script_modifier) { @scriptmod = ( $CFG::script_modifier ); }
+if (defined $grub_prefix) { $CFG::server_grub_prefix = $grub_prefix; }
+
+if ($dump_config) {
+    use Data::Dumper;
+    $Data::Dumper::Indent=0;
+    print "# This file is in perl syntax.\n";
+    foreach my $key(sort(keys(%CFG::))) { # See "Symbol Tables" in perlmod(1)
+	if (defined ${$CFG::{$key}}) { print Data::Dumper->Dump([${$CFG::{$key}}], ["*$key"]); }
+	if (defined @{$CFG::{$key}}) { print Data::Dumper->Dump([\@{$CFG::{$key}}], ["*$key"]); }
+	if (        %{$CFG::{$key}}) { print Data::Dumper->Dump([\%{$CFG::{$key}}], ["*$key"]); }
+	print "\n";
+    }
+    print "1;\n";
+    exit;
+}
+
+if (defined $serial) {
+    $serial ||= "/dev/ttyUSB0";
+}
+
+if (defined $grub_config) {
+    $grub_config ||= "menu.lst";
+}
+
+if (defined $grub2_config) {
+    $grub2_config ||= "grub.cfg";
+}
+
+if ($on_opt) { $iprelay="on"; }
+if ($off_opt) { $iprelay="off"; }
+
+# Parse the config(s)
+my @scripts;
+my $file;
+my $line;
+my $EOF;
+my $last_fn = '';
+my ($modules, $variables, $generated, $continuation);
+while (<>) {
+    if ($ARGV ne $last_fn) { # New script
+	die "Missing EOF in $last_fn" if $file;
+	die "Unfinished line in $last_fn" if $line;
+	$last_fn = $ARGV;
+	push @scripts, { 'filename' => $ARGV,
+			 'modules' => $modules = [],
+			 'variables' => $variables = {},
+			 'generated' => $generated = []};
+
+    }
+    chomp();
+    next if /^#/ || /^\s*$/;	# Skip comments and empty lines
+
+    foreach my $mod(@scriptmod) { eval $mod; }
+
+    print "$_\n" if $dump_opt;
+
+    if (/^([A-Z_]+)=(.*)$/) {	# Internal variable
+	$$variables{$1} = $2;
+	next;
+    }
+    if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
+	push @$modules, "$1$2";
+	$file = [];
+	push @$generated, {filename => $1, content => $file};
+	$EOF = $3;
+	next;
+    }
+    if ($file && $_ eq $EOF) {	# Heredoc end
+	undef $file;
+	next;
+    }
+    if ($file) {		# Heredoc content
+	push @{$file}, "$_\n";
+	next;
+    }
+    $_ =~ s/^[[:space:]]*// if ($continuation);
+    if (/\\$/) {		# Line continuation
+	$line .= substr($_, 0, length($_)-1);
+	$continuation = 1;
+	next;
+    }
+    $continuation = 0;
+    $line .= $_;
+    $line .= " $append" if ($append && scalar(@$modules) == 0);
+
+    if ($line =~ /^([^ ]*)(.*?)[[:space:]]*< ?(.*)$/) { # Command substitution
+	push @$modules, "$1$2";
+	push @$generated, {filename => $1, command => $3};
+	$line = '';
+	next;
+    }
+    push @$modules, $line;
+    $line = '';
+}
+#use Data::Dumper;
+#print Dumper(\@scripts);
+
+exit if $dump_opt;
+
+sub generate_configs($$$) {
+    my ($base, $generated, $filename) = @_;
+    if ($base) { $base = "$base/"; };
+    foreach my $g(@$generated) {
+      if (exists $$g{content}) {
+	my $config = $$g{content};
+	my $fn = $$g{filename};
+	open(my $f, '>', $fn) || die("$fn: $!");
+	map { s|\brom://([^ ]*)|$rom_prefix$base$1|g; print $f "$_"; } @{$config};
+	close($f);
+	print "novaboot: Created $fn\n";
+      } elsif (exists $$g{command} && ! $no_file_gen) {
+	$ENV{SRCDIR} = dirname(File::Spec->rel2abs( $filename, $invocation_dir ));
+	system_verbose("( $$g{command} ) > $$g{filename}");
+      }
+    }
+}
+
+sub generate_grub_config($$$$;$)
+{
+    my ($filename, $title, $base, $modules_ref, $prepend) = @_;
+    if ($base) { $base = "$base/"; };
+    open(my $fg, '>', $filename) or die "$filename: $!";
+    print $fg "$prepend\n" if $prepend;
+    my $endmark = ($serial || defined $iprelay) ? ';' : '';
+    print $fg "title $title$endmark\n" if $title;
+    #print $fg "root $base\n"; # root doesn't really work for (nd)
+    my $first = 1;
+    foreach (@$modules_ref) {
+	if ($first) {
+	    $first = 0;
+	    my ($kbin, $kcmd) = split(' ', $_, 2);
+	    $kcmd = '' if !defined $kcmd;
+	    print $fg "kernel ${base}$kbin $kcmd\n";
+	} else {
+	    s|\brom://([^ ]*)|$rom_prefix$base$1|g; # Translate rom:// files - needed for vdisk parameter of sigma0
+	    print $fg "module $base$_\n";
+	}
+    }
+    close($fg);
+}
+
+sub generate_grub2_config($$$$;$)
+{
+    my ($filename, $title, $base, $modules_ref, $prepend) = @_;
+    if ($base && substr($base,-1,1) ne '/') { $base = "$base/"; };
+    open(my $fg, '>', $filename) or die "$filename: $!";
+    print $fg "$prepend\n" if $prepend;
+    my $endmark = ($serial || defined $iprelay) ? ';' : '';
+    $title ||= 'novaboot';
+    print $fg "menuentry $title$endmark {\n";
+    print $fg "$CFG::grub2_prolog\n";
+    my $first = 1;
+    foreach (@$modules_ref) {
+	if ($first) {
+	    $first = 0;
+	    my ($kbin, $kcmd) = split(' ', $_, 2);
+	    $kcmd = '' if !defined $kcmd;
+	    print $fg "  multiboot ${base}$kbin $kcmd\n";
+	} else {
+	    my @args = split;
+	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
+	    $_ = join(' ', ($args[0], @args));
+	    s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
+	    print $fg "  module $base$_\n";
+	}
+    }
+    print $fg "}\n";
+    close($fg);
+}
+
+sub generate_pulsar_config($$)
+{
+    my ($filename, $modules_ref) = @_;
+    open(my $fg, '>', $filename) or die "$filename: $!";
+    print $fg "root $CFG::pulsar_root\n" if $CFG::pulsar_root;
+    my $first = 1;
+    my ($kbin, $kcmd);
+    foreach (@$modules_ref) {
+	if ($first) {
+	    $first = 0;
+	    ($kbin, $kcmd) = split(' ', $_, 2);
+	    $kcmd = '' if !defined $kcmd;
+	} else {
+	    my @args = split;
+	    s|\brom://|$rom_prefix|g;
+	    print $fg "load $_\n";
+	}
+    }
+    # Put kernel as last - this is needed for booting Linux and has no influence on non-Linux OSes
+    print $fg "exec $kbin $kcmd\n";
+    close($fg);
+}
+
+sub exec_verbose(@)
+{
+    print "novaboot: Running: ".join(' ', map("'$_'", @_))."\n";
+    exec(@_);
+}
+
+sub system_verbose($)
+{
+    my $cmd = shift;
+    print "novaboot: Running: $cmd\n";
+    my $ret = system($cmd);
+    if ($ret & 0x007f) { die("Command terminated by a signal"); }
+    if ($ret & 0xff00) {die("Command exit with non-zero exit code"); }
+    if ($ret) { die("Command failure $ret"); }
+}
+
+if (exists $variables->{WVDESC}) {
+    print "Testing \"$variables->{WVDESC}\" in $last_fn:\n";
+} elsif ($last_fn =~ /\.wv$/) {
+    print "Testing \"all\" in $last_fn:\n";
+}
+
+my $IPRELAY;
+if (defined $iprelay) {
+    $CFG::iprelay_addr =~ /([.0-9]+)(:([0-9]+))?/;
+    my $addr = $1;
+    my $port = $3 || 23;
+    my $paddr   = sockaddr_in($port, inet_aton($addr));
+    my $proto   = getprotobyname('tcp');
+    socket($IPRELAY, PF_INET, SOCK_STREAM, $proto)  || die "socket: $!";
+    print "novaboot: Connecting to IP relay... ";
+    connect($IPRELAY, $paddr)    || die "connect: $!";
+    print "done\n";
+    $IPRELAY->autoflush(1);
+
+    while (1) {
+	print $IPRELAY "\xFF\xF6";
+	alarm(20);
+	local $SIG{ALRM} = sub { die "Relay AYT timeout"; };
+	my $ayt_reponse = "";
+	my $read = sysread($IPRELAY, $ayt_reponse, 100);
+	alarm(0);
+
+	chomp($ayt_reponse);
+	print "$ayt_reponse\n";
+	if ($ayt_reponse =~ /<iprelayd: not connected/) {
+	    sleep(10);
+	    next;
+	}
+	last;
+    }
+
+    sub relaycmd($$) {
+	my ($relay, $onoff) = @_;
+	die unless ($relay == 1 || $relay == 2);
+
+	my $cmd = ($relay == 1 ? 0x5 : 0x6) | ($onoff ? 0x20 : 0x10);
+	return "\xFF\xFA\x2C\x32".chr($cmd)."\xFF\xF0";
+    }
+
+    sub relayconf($$) {
+	my ($relay, $onoff) = @_;
+	die unless ($relay == 1 || $relay == 2);
+	my $cmd = ($relay == 1 ? 0xdf : 0xbf) | ($onoff ? 0x00 : 0xff);
+	return "\xFF\xFA\x2C\x97".chr($cmd)."\xFF\xF0";
+    }
+
+    sub relay($$;$) {
+	my ($relay, $onoff, $can_giveup) = @_;
+	my $confirmation = '';
+	print $IPRELAY relaycmd($relay, $onoff);
+
+	# We use non-blocking I/O and polling here because for some
+	# reason read() on blocking FD returns only after all
+	# requested data is available. If we get during the first
+	# read() only a part of confirmation, we may get the rest
+	# after the system boots and print someting, which may be too
+	# long.
+	$IPRELAY->blocking(0);
+
+	alarm(20); # Timeout in seconds
+	my $giveup = 0;
+        local $SIG{ALRM} = sub {
+	    if ($can_giveup) { print("Relay confirmation timeout - ignoring\n"); $giveup = 1;}
+	    else {die "Relay confirmation timeout";}
+	};
+	my $index;
+	while (($index=index($confirmation, relayconf($relay, $onoff))) < 0 && !$giveup) {
+	    my $read = read($IPRELAY, $confirmation, 70, length($confirmation));
+	    if (!defined($read)) {
+		die("IP relay: $!") unless $! == EAGAIN;
+		usleep(10000);
+		next;
+	    }
+	    #use MIME::QuotedPrint;
+	    #print "confirmation = ".encode_qp($confirmation)."\n";
+	}
+	alarm(0);
+	$IPRELAY->blocking(1);
+    }
+}
+
+if ($iprelay && ($iprelay eq "on" || $iprelay eq "off")) {
+     relay(1, 1); # Press power button
+    if ($iprelay eq "on") {
+	usleep(100000);		# Short press
+    } else {
+	usleep(6000000);	# Long press to switch off
+    }
+    print $IPRELAY relay(1, 0);
+    exit;
+}
+
+if ($builddir) {
+    $CFG::builddir = $builddir;
+} else {
+    if (! defined $CFG::builddir) {
+	$CFG::builddir = ( $gittop || $ENV{'HOME'}."/nul" ) . "/build";
+	if (! -d $CFG::builddir) {
+	    $CFG::builddir = $ENV{SRCDIR} = dirname(File::Spec->rel2abs( ${$scripts[0]}{filename}, $invocation_dir ));
+	}
+    }
+}
+
+chdir($CFG::builddir) or die "Can't change directory to $CFG::builddir: $!";
+print "novaboot: Entering directory `$CFG::builddir'\n";
+
+my (%files_iso, $menu_iso, $config_name, $filename);
+
+foreach my $script (@scripts) {
+    $filename = $$script{filename};
+    $modules = $$script{modules};
+    $generated = $$script{generated};
+    $variables = $$script{variables};
+    my ($server_grub_prefix);
+
+    if (defined $config_name_opt) {
+	$config_name = $config_name_opt;
+    } else {
+	($config_name = $filename) =~ s#.*/##;
+    }
+
+    my $kernel;
+    if (exists $variables->{KERNEL}) {
+	$kernel = $variables->{KERNEL};
+    } else {
+	$kernel = $CFG::hypervisor . " ";
+	if (exists $variables->{HYPERVISOR_PARAMS}) {
+	    $kernel .= $variables->{HYPERVISOR_PARAMS};
+	} else {
+	    $kernel .= $CFG::hypervisor_params;
+	}
+    }
+    @$modules = ($kernel, @$modules);
+    @$modules = (@CFG::chainloaders, @$modules);
+    @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
+
+    if (defined $grub_config) {
+	generate_configs("", $generated, $filename);
+	generate_grub_config($grub_config, $config_name, "", $modules);
+	print("GRUB menu created: $CFG::builddir/$grub_config\n");
+	exit;
+    }
+
+    if (defined $grub2_config && !defined $server) {
+	generate_configs('', $generated, $filename);
+	generate_grub2_config($grub2_config, $config_name, $CFG::builddir, $modules);
+	print("GRUB2 configuration created: $CFG::builddir/$grub2_config\n");
+	exit;
+    }
+
+    my $pulsar_config;
+    if (defined $pulsar) {
+	$pulsar_config = "config-$CFG::pulsar_mac";
+	generate_configs('', $generated, $filename);
+	generate_pulsar_config($pulsar_config, $modules);
+	if (!defined $server) {
+	    print("Pulsar configuration created: $CFG::builddir/$pulsar_config\n");
+	    exit;
+	}
+    }
+
+    if (defined $scons) {
+	my @files = map({ ($file) = m/([^ ]*)/; $file; } @$modules);
+	# Filter-out generated files
+	my @to_build = grep({ my $file = $_; !scalar(grep($file eq $$_{filename}, @$generated)) } @files);
+	system_verbose($CFG::scons." ".join(" ", @to_build));
+    }
+
+    if (defined $server) {
+	($server_grub_prefix = $CFG::server_grub_prefix) =~ s/\$NAME/$config_name/;
+	($server = $CFG::server)			 =~ s/\$NAME/$config_name/;
+	my $bootloader_config;
+	if ($grub2_config) {
+	    generate_configs('', $generated, $filename);
+	    $bootloader_config ||= "grub.cfg";
+	    generate_grub2_config($grub2_config, $config_name, $server_grub_prefix, $modules);
+	} elsif (defined $pulsar) {
+	    $bootloader_config = $pulsar_config;
+	} else {
+	    generate_configs($server_grub_prefix, $generated, $filename);
+	    $bootloader_config ||= "menu.lst";
+	    if (!grep { $_ eq $bootloader_config } @$modules) {
+		generate_grub_config($bootloader_config, $config_name, $server_grub_prefix, $modules,
+				     $server_grub_prefix eq $CFG::server_grub_prefix ? "timeout 0" : undef);
+	    }
+	}
+	my ($hostname, $path) = split(":", $server, 2);
+	if (! defined $path) {
+	    $path = $hostname;
+	    $hostname = "";
+	}
+	my $files = "$bootloader_config " . join(" ", map({ ($file) = m/([^ ]*)/; $file; } @$modules));
+	my $combined_menu_lst = ($CFG::server =~ m|/\$NAME$|);
+	map({ my $file = (split)[0]; die "$file: $!" if ! -f $file; } @$modules);
+	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
+	my $progress = $istty ? "--progress" : "";
+	system_verbose("rsync $progress -RLp $rsync_flags $files $server");
+	my $cmd = "cd $path/.. && cat */menu.lst > menu.lst";
+	if ($combined_menu_lst) { system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd); }
+    }
+
+    if (defined $iso_image) {
+	generate_configs("(cd)", $generated, $filename);
+	my $menu;
+	generate_grub_config(\$menu, $config_name, "(cd)", $modules);
+	$menu_iso .= "$menu\n";
+	map { ($file,undef) = split; $files_iso{$file} = 1; } @$modules;
+    }
+}
+
+if (defined $iso_image) {
+    open(my $fh, ">menu-iso.lst");
+    print $fh "timeout 5\n\n$menu_iso";
+    close($fh);
+    my $files = "boot/grub/menu.lst=menu-iso.lst " . join(" ", map("$_=$_", keys(%files_iso)));
+    $iso_image ||= "$config_name.iso";
+    system_verbose("$CFG::genisoimage -R -b stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -J -joliet-long -o $iso_image -graft-points bin/boot/grub/ $files");
+    print("ISO image created: $CFG::builddir/$iso_image\n");
+}
+
+######################################################################
+# Boot NOVA using various methods and send serial output to stdout
+######################################################################
+
+if (scalar(@scripts) > 1 && ( defined $dhcp_tftp || defined $serial || defined $iprelay)) {
+    die "You cannot do this with multiple scripts simultaneously";
+}
+
+if ($variables->{WVTEST_TIMEOUT}) {
+    print "wvtest: timeout ", $variables->{WVTEST_TIMEOUT}, "\n";
+}
+
+sub trim($) {
+    my ($str) = @_;
+    $str =~ s/^\s+|\s+$//g;
+    return $str
+}
+
+if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $server || defined $iso_image)) {
+    # Qemu
+    @qemu_flags = split(/ +/, trim($variables->{QEMU_FLAGS})) if exists $variables->{QEMU_FLAGS};
+    @qemu_flags = split(/ +/, trim($qemu_flags_cmd)) if $qemu_flags_cmd;
+    push(@qemu_flags, split(/ +/, trim($qemu_append)));
+
+    if (defined $iso_image) {
+	# Boot NOVA with grub (and test the iso image)
+	push(@qemu_flags, ('-cdrom', "$config_name.iso"));
+    } else {
+	# Boot NOVA without GRUB
+
+	# Non-patched qemu doesn't like commas, but NUL can live with pluses instead of commans
+	foreach (@$modules) {s/,/+/g;}
+	generate_configs("", $generated, $filename);
+
+	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
+	$kcmd = '' if !defined $kcmd;
+	my $initrd = join ",", @$modules;
+
+	push(@qemu_flags, ('-kernel', $kbin, '-append', $kcmd));
+	push(@qemu_flags, ('-initrd', $initrd)) if $initrd;
+    }
+    push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
+    exec_verbose(($CFG::qemu,  '-name', $config_name, @qemu_flags));
+}
+
+my ($dhcpd_pid, $tftpd_pid);
+
+if (defined $dhcp_tftp)
+{
+    generate_configs("(nd)", $generated, $filename);
+    system_verbose('mkdir -p tftpboot');
+    generate_grub_config("tftpboot/os-menu.lst", $config_name, "(nd)", \@$modules, "timeout 0");
+    open(my $fh, '>', 'dhcpd.conf');
+    my $mac = `cat /sys/class/net/eth0/address`;
+    chomp $mac;
+    print $fh "subnet 10.23.23.0 netmask 255.255.255.0 {
+		      range 10.23.23.10 10.23.23.100;
+		      filename \"bin/boot/grub/pxegrub.pxe\";
+		      next-server 10.23.23.1;
+}
+host server {
+	hardware ethernet $mac;
+	fixed-address 10.23.23.1;
+}";
+    close($fh);
+    system_verbose("sudo ip a add 10.23.23.1/24 dev eth0;
+	    sudo ip l set dev eth0 up;
+	    sudo touch dhcpd.leases");
+
+    $dhcpd_pid = fork();
+    if ($dhcpd_pid == 0) {
+	# This way, the spawned server are killed when this script is killed.
+	exec_verbose("sudo dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid");
+    }
+    $tftpd_pid = fork();
+    if ($tftpd_pid == 0) {
+	exec_verbose("sudo in.tftpd --foreground --secure -v -v -v $CFG::builddir");
+    }
+    $SIG{TERM} = sub { print "CHILDS KILLED\n"; kill 15, $dhcpd_pid, $tftpd_pid; };
+}
+
+if ($serial || defined $iprelay) {
+    my $CONN;
+    if (defined $iprelay) {
+	print "novaboot: Reseting the test box... ";
+	relay(2, 1, 1); # Reset the machine
+	usleep(100000);
+	relay(2, 0);
+	print "done\n";
+
+	$CONN = $IPRELAY;
+    } elsif ($serial) {
+	system("stty -F $serial raw -crtscts -onlcr 115200");
+	open($CONN, "+<", $serial) || die "open $serial: $!";
+	$CONN->autoflush(1);
+    }
+    if (!defined $dhcp_tftp && $CFG::grub_keys) {
+	# Control grub via serial line
+	print "Waiting for GRUB's serial output... ";
+	while (<$CONN>) {
+	    if (/Press any key to continue/) { print $CONN "\n"; last; }
+	}
+	$CFG::grub_keys =~ s/\$NAME/$config_name;/;
+	my @characters = split(//, $CFG::grub_keys);
+	foreach (@characters) {
+	    print $CONN $_;
+	    usleep($_ eq "\n" ? 100000 : 10000);
+	}
+	print $CONN "\n";
+	print "done\n";
+    }
+    # Pass the NOVA output to stdout.
+    while (<$CONN>) {
+	print;
+    }
+    kill 15, $dhcpd_pid, $tftpd_pid if ($dhcp_tftp);
+    exit;
+}
+
+if (defined $dhcp_tftp) {
+    my $pid = wait();
+    if ($pid == $dhcpd_pid) { print "dhcpd exited!\n"; }
+    elsif ($pid == $tftpd_pid) { print "tftpd exited!\n"; }
+    else { print "wait returned: $pid\n"; }
+    kill(15, 0); # Kill current process group i.e. all remaining children
+}
+
+=head1 NAME
+
+novaboot - NOVA boot script interpreter
+
+=head1 SYNOPSIS
+
+B<novaboot> [ options ] [--] script...
+
+B<./script> [ options ]
+
+B<novaboot> --help
+
+=head1 DESCRIPTION
+
+This program makes it easier to boot NOVA or other operating system
+(OS) in different environments. It reads a so called novaboot script
+and uses it either to boot the OS in an emulator (e.g. in qemu) or to
+generate the configuration for a specific bootloader and optionally to
+copy the necessary binaries and other needed files to proper
+locations, perhaps on a remote server. In case the system is actually
+booted, its serial output is redirected to standard output if that is
+possible.
+
+A typical way of using novaboot is to make the novaboot script
+executable and set its first line to I<#!/usr/bin/env novaboot>. Then,
+booting a particular OS configuration becomes the same as executing a
+local program - the novaboot script.
+
+With C<novaboot> you can:
+
+=over 3
+
+=item 1.
+
+Run NOVA in Qemu. This is the default action when no other action is
+specified by command line switches. Thus running C<novaboot ./script>
+(or C<./script> as described above) will run Qemu with configuration
+specified in the I<script>.
+
+=item 2.
+
+Create a bootloader configuration file (currently supported
+bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all files
+needed for booting another, perhaps remote, location.
+
+ ./script --server --iprelay
+
+This command copies files to a TFTP server specified in the
+configuration file and uses TCP/IP-controlled relay to reset the test
+box and receive its serial output.
+
+=item 3.
+
+Run DHCP and TFTP server on developer's machine to PXE-boot NOVA from
+it. E.g.
+
+ ./script --dhcp-tftp
+
+When a PXE-bootable machine is connected via Ethernet to developer's
+machine, it will boot the configuration described in I<script>.
+
+=item 4.
+
+Create bootable ISO images. E.g.
+
+ novaboot --iso -- script1 script2
+
+The created ISO image will have GRUB bootloader installed on it and
+the boot menu will allow selecting between I<script1> and I<script2>
+configurations.
+
+=back
+
+=head1 OPTIONS
+
+=over 8
+
+=item -a, --append=<parameters>
+
+Appends a string to the root task's command line.
+
+=item -b, --bender
+
+Boot bender tool before the kernel to find PCI serial ports.
+
+=item --build-dir=<directory>
+
+Overrides the default build directory location.
+
+The default build directory location is determined as follows:
+
+If there is a configuration file, the value specified in I<$builddir>
+variable is used. Otherwise, if the current working directory is
+inside git work tree and there is F<build> directory at the top of
+that tree, it is used. Otherwise, if directory F<~/nul/build> exists,
+it is used. Otherwise, it is the directory that contains the first
+processed novaboot script.
+
+=item -c, --config=<filename>
+
+Use a different configuration file than the default one (i.e.
+F<~/.novaboot>).
+
+=item -d, --dhcp-tftp
+
+Turns your workstation into a DHCP and TFTP server so that NOVA
+can be booted via PXE BIOS on a test machine directly connected by
+a plain Ethernet cable to your workstation.
+
+The DHCP and TFTP servers require root privileges and C<novaboot>
+uses C<sudo> command to obtain those. You can put the following to
+I</etc/sudoers> to allow running the necessary commands without
+asking for password.
+
+ Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v *, /usr/bin/touch dhcpd.leases
+ your_login ALL=NOPASSWD: NOVABOOT
+
+=item --dump
+
+Prints the content of the novaboot script after removing comments and
+evaluating all I<--scriptmod> expressions.
+
+=item --dump-config
+
+Dumps current configuration to stdout end exits. Useful as an initial
+template for a configuration file.
+
+=item -g, --grub[=I<filename>]
+
+Generates grub menu file. If the I<filename> is not specified,
+F<menu.lst> is used. The I<filename> is relative to NUL build
+directory.
+
+=item --grub-prefix=I<prefix>
+
+Specifies I<prefix> that is put before every file in GRUB's menu.lst.
+This overrides the value of I<$server_grub_prefix> from the
+configuration file.
+
+=item --grub2[=I<filename>]
+
+Generate GRUB2 menuentry in I<filename>. If I<filename> is not
+specified grub.cfg is used. The content of the menuentry can be
+customized by I<$grub2_prolog> and I<$server_grub_prefix>
+configuration variables.
+
+In order to use the the generated menuentry on your development
+machine that uses GRUB2, append the following snippet to
+F</etc/grub.d/40_custom> file and regenerate your grub configuration,
+i.e. run update-grub on Debian/Ubuntu.
+
+  if [ -f /path/to/nul/build/grub.cfg ]; then
+    source /path/to/nul/build/grub.cfg
+  fi
+
+
+=item -h, --help
+
+Print short (B<-h>) or long (B<--help>) help.
+
+=item --iprelay[=addr or cmd]
+
+If no I<cmd> is given, use IP relay to reset the machine and to get
+the serial output. The IP address of the relay is given by I<addr>
+parameter if specified or by $iprelay_addr variable in the
+configuration file.
+
+If I<cmd> is one of "on" or "off", the IP relay is used to press power
+button for a short (in case of "on") or long (in case of "off") time.
+Then, novaboot exits.
+
+Note: This option is expected to work with HWG-ER02a IP relays.
+
+=item -i, --iso[=filename]
+
+Generates the ISO image that boots NOVA system via GRUB. If no filename
+is given, the image is stored under I<NAME>.iso, where I<NAME> is the name
+of novaboot script (see also B<--name>).
+
+=item -I
+
+This is an alias (see C<%custom_options> below) defined in the default
+configuration. When used, it causes novaboot to use Michal's remotely
+controllable test bed.
+
+=item -J
+
+This is an alias (see C<%custom_options> below) defined in the default
+configuration. When used, it causes novaboot to use another remotely
+controllable test bed.
+
+=item --on, --off
+
+Synonym for --iprelay=on/off.
+
+=item --name=I<string>
+
+Use the name I<string> instead of the name of the novaboot script.
+This name is used for things like a title of grub menu or for the
+server directory where the boot files are copied to.
+
+=item --no-file-gen
+
+Do not generate files on the fly (i.e. "<" syntax) except for the
+files generated via "<<WORD" syntax.
+
+=item -p, --pulsar[=mac]
+
+Generates pulsar bootloader configuration file whose name is based on
+the MAC address specified either on the command line or taken from
+I<.novaboot> configuration file.
+
+=item -Q, --qemu=I<qemu-binary>
+
+Use specific version of qemu binary. The default is 'qemu'.
+
+=item --qemu-append=I<flags>
+
+Append I<flags> to the default qemu flags (QEMU_FLAGS variable or
+C<-cpu coreduo -smp 2>).
+
+=item -q, --qemu-flags=I<flags>
+
+Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
+-smp 2>) with I<flags> specified here.
+
+=item --rsync-flags=I<flags>
+
+Specifies which I<flags> are appended to F<rsync> command line when
+copying files as a result of I<--server> option.
+
+=item --scons[=scons command]
+
+Runs I<scons> to build files that are not generated by novaboot
+itself.
+
+=item --scriptmod=I<perl expression>
+
+When novaboot script is read, I<perl expression> is executed for every
+line (in $_ variable). For example, C<novaboot
+--scriptmod=s/sigma0/omega6/g> replaces every occurrence of I<sigma0>
+in the script with I<omega6>.
+
+When this option is present, it overrides I<$script_modifier> variable
+from the configuration file, which has the same effect. If this option
+is given multiple times all expressions are evaluated in the command
+line order.
+
+=item --server[=[[user@]server:]path]
+
+Copy all files needed for booting to a server (implies B<-g> unless
+B<--grub2> is given). The files will be copied to the directory
+I<path>. If the I<path> contains string $NAME, it will be replaced
+with the name of the novaboot script (see also B<--name>).
+
+Additionally, if $NAME is the last component of the I<path>, a file
+named I<path>/menu.lst (with $NAME removed from the I<path>) will be
+created on the server by concatenating all I<path>/*/menu.lst (with
+$NAME removed from the I<path>) files found on the server.
+
+=item -s, --serial[=device]
+
+Use serial line to control GRUB bootloader and to get the serial
+output of the machine. The default value is /dev/ttyUSB0.
+
+=item --strip-rom
+
+Strip I<rom://> prefix from command lines and generated config files.
+This is needed for NRE.
+
+=back
+
+=head1 NOVABOOT SCRIPT SYNTAX
+
+The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.
+
+Lines starting with "#" are ignored.
+
+Lines that end with "\" are concatenated with the following line after
+removal of the final "\" and leading whitespace of the following line.
+
+Lines in the form I<VARIABLE=...> (i.e. matching '^[A-Z_]+=' regular
+expression) assign values to internal variables. See VARIABLES
+section.
+
+Otherwise, the first word on the line represents the filename
+(relative to the build directory (see I<--build-dir>) of the module to
+load and the remaining words are passed as the command line
+parameters.
+
+When the line ends with "<<WORD" then the subsequent lines until the
+line containing only WORD are copied literally to the file named on
+that line.
+
+When the line ends with "< CMD" the command CMD is executed with
+C</bin/sh> and its standard output is stored in the file named on that
+line. The SRCDIR variable in CMD's environment is set to the absolute
+path of the directory containing the interpreted novaboot script.
+
+Example:
+  #!/usr/bin/env novaboot
+  WVDESC=Example program
+  bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
+    verbose hostkeyb:0,0x60,1,12,2
+  bin/apps/hello.nul
+  hello.nulconfig <<EOF
+  sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
+  rom://bin/apps/hello.nul
+  EOF
+
+This example will load three modules: sigma0.nul, hello.nul and
+hello.nulconfig. sigma0 gets some command line parameters and
+hello.nulconfig file is generated on the fly from the lines between
+<<EOF and EOF.
+
+=head2 VARIABLES
+
+The following variables are interpreted in the novaboot script:
+
+=over 8
+
+=item WVDESC
+
+Description of the wvtest-compliant program.
+
+=item WVTEST_TIMEOUT
+
+The timeout in seconds for WvTest harness. If no complete line appears
+in the test output within the time specified here, the test fails. It
+is necessary to specify this for long running tests that produce no
+intermediate output.
+
+=item QEMU_FLAGS
+
+Use specific qemu flags (can be overriden by B<-q>).
+
+=item HYPERVISOR_PARAMS
+
+Parameters passed to hypervisor. The default value is "serial", unless
+overriden in configuration file.
+
+=item KERNEL
+
+The kernel to use instead of NOVA hypervisor specified in the
+configuration file. The value should contain the name of the kernel
+image as well as its command line parameters. If this variable is
+defined and non-empty, the variable HYPERVISOR_PARAMS is not used.
+
+=back
+
+=head1 CONFIGURATION FILE
+
+novaboot can read its configuration from ~/.novaboot file (or another
+file specified with B<-c> parameter or NOVABOOT_CONFIG environment
+variable). It is a file with perl syntax, which sets values of certain
+variables. The current configuration can be dumped with
+B<--dump-config> switch. Use
+
+    novaboot --dump-config > ~/.novaboot
+
+to create a default configuration file and modify it to your needs.
+Some configuration variables can be overriden by environment variables
+(see below) or by command line switches.
+
+Documentation of some configuration variables follows:
+
+=over 8
+
+=item @chainloaders
+
+Custom chainloaders to load before hypervisor and files specified in
+novaboot script. E.g. ('bin/boot/bender promisc', 'bin/boot/zapp').
+
+=item %custom_options
+
+Defines custom command line options that can serve as aliases for
+other options. E.g. 'S' => '--server=boot:/tftproot
+--serial=/dev/ttyUSB0'.
+
+=back
+
+=head1 ENVIRONMENT VARIABLES
+
+Some options can be specified not only via config file or command line
+but also through environment variables. Environment variables override
+the values from configuration file and command line parameters
+override the environment variables.
+
+=over 8
+
+=item NOVABOOT_CONFIG
+
+A name of default novaboot configuration file.
+
+=item NOVABOOT_BENDER
+
+Defining this variable has the same meaning as B<--bender> option.
+
+=item NOVABOOT_IPRELAY
+
+The IP address (and optionally the port) of the IP relay. This
+overrides $iprelay_addr variable from the configuration file.
+
+=back
+
+=head1 AUTHORS
+
+Michal Sojka <sojka@os.inf.tu-dresden.de>

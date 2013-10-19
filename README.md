@@ -155,18 +155,26 @@ scripts. Finally, binaries can be generated in this phases by running
     specified, `menu.lst` is used. The _filename_ is relative to the
     build directory (see __\--build-dir__).
 
+- \--grub-preamble=_prefix_
+
+    Specifies the _preable_ that is at the beginning of the generated
+    GRUB or GRUB2 config files. This is useful for specifying GRUB's
+    timeout.
+
 - \--grub-prefix=_prefix_
 
-    Specifies _prefix_ that is put before every file in GRUB's `menu.lst`.
-    This overrides the value of _$server\_grub\_prefix_ from the
-    configuration file.
+    Specifies _prefix_ that is put in front of every file name in GRUB's
+    `menu.lst`. The default value is the absolute path to the build directory.
+
+    If the _prefix_ contains string $NAME, it will be replaced with the
+    name of the novaboot script (see also __\--name__).
 
 - \--grub2\[=_filename_\]
 
     Generate GRUB2 menuentry in _filename_. If _filename_ is not
     specified `grub.cfg` is used. The content of the menuentry can be
-    customized by _$grub2\_prolog_ and _$server\_grub\_prefix_
-    configuration variables.
+    customized with __\--grub-preable__, __\--grub2-prolog__ or
+    __\--grub\_prefix__ options.
 
     In order to use the the generated menuentry on your development
     machine that uses GRUB2, append the following snippet to
@@ -176,6 +184,11 @@ scripts. Finally, binaries can be generated in this phases by running
         if [ -f /path/to/nul/build/grub.cfg ]; then
           source /path/to/nul/build/grub.cfg
         fi
+
+- \--grub2-prolog=_prolog_
+
+    Specifies text _preable_ that is put at the begiging of the entry
+    GRUB2 entry.
 
 - \--name=_string_
 
@@ -228,10 +241,14 @@ to a particular location, e.g. to a TFTP boot server or to the
     it will be replaced with the name of the novaboot script (see also
     __\--name__).
 
-    Additionally, if $NAME is the last component of the _path_, a file
-    named _path_/menu.lst (with $NAME removed from the _path_) will be
-    created on the server by concatenating all _path_/\*/menu.lst (with
-    $NAME removed from the _path_) files found on the server.
+- \--concat
+
+    If __\--server__ is used and its value ends with $NAME, then after
+    copying the files, a new bootloader configuration file (e.g. menu.lst)
+    is created at _path-wo-name_, i.e. the path specified by __\--server__
+    with $NAME part removed. The content of the file is created by
+    concatenating all files of the same name from all subdirectories of
+    _path-wo-name_ found on the "server".
 
 - \--rsync-flags=_flags_
 

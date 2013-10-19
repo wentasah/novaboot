@@ -40,20 +40,17 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::server = "erwin.inf.tu-dresden.de:boot/novaboot/\$NAME";
-$CFG::server_grub_prefix = "(nd)/tftpboot/sojka/novaboot/\$NAME";
 $CFG::grub_keys = ''; #"/novaboot\n\n/\$NAME\n\n";
-$CFG::grub2_prolog = "  set root='(hd0,msdos1)'";
 $CFG::genisoimage = "genisoimage";
 $CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
 $CFG::qemu = 'qemu';
-$CFG::script_modifier = ''; # Depricated, use --scriptmod commandline option or targets.
 @CFG::chainloaders = (); #('bin/boot/bender promisc');
 $CFG::pulsar_root = '';
 $CFG::pulsar_mac = '52-54-00-12-34-56';
 %CFG::targets = (
-    "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
+    "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324',
-    "localhost" => '--scriptmod=s/console=tty[A-Z0-0,]// --grub2  --server=/boot/novaboot/$NAME',
+    "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     );
 $CFG::scons = "scons -j2";
 
@@ -82,7 +79,7 @@ if (-s $cfg) { read_config($cfg); }
 
 ## Command line handling
 
-my ($append, $bender, $builddir, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+my ($append, $bender, $builddir, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -93,12 +90,15 @@ my %opt_spec;
     "append|a=s"     => \$append,
     "bender|b"       => \$bender,
     "build-dir=s"    => \$builddir,
+    "concat"	     => \$concat,
     "dhcp-tftp|d"    => \$dhcp_tftp,
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
     "grub|g:s" 	     => \$grub_config,
+    "grub-preamble=s"=> \$grub_preamble,
     "grub-prefix=s"  => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
+    "grub2-prolog=s" => \$grub2_prolog,
     "iprelay:s"	     => \$iprelay,
     "iso|i:s" 	     => \$iso_image,
     "name=s"	     => \$config_name_opt,
@@ -141,8 +141,6 @@ if ($pulsar) {
 }
 
 if ($scons) { $CFG::scons = $scons; }
-if (!@scriptmod && $CFG::script_modifier) { @scriptmod = ( $CFG::script_modifier ); }
-if (defined $grub_prefix) { $CFG::server_grub_prefix = $grub_prefix; }
 
 ### Dump sanitized configuration (if requested)
 
@@ -265,10 +263,10 @@ sub generate_configs($$$) {
 
 sub generate_grub_config($$$$;$)
 {
-    my ($filename, $title, $base, $modules_ref, $prepend) = @_;
+    my ($filename, $title, $base, $modules_ref, $preamble) = @_;
     if ($base) { $base = "$base/"; };
     open(my $fg, '>', $filename) or die "$filename: $!";
-    print $fg "$prepend\n" if $prepend;
+    print $fg "$preamble\n" if $preamble;
     my $endmark = ($serial || defined $iprelay) ? ';' : '';
     print $fg "title $title$endmark\n" if $title;
     #print $fg "root $base\n"; # root doesn't really work for (nd)
@@ -285,18 +283,20 @@ sub generate_grub_config($$$$;$)
 	}
     }
     close($fg);
+    print("novaboot: Created $CFG::builddir/$filename\n");
+    return $filename;
 }
 
-sub generate_grub2_config($$$$;$)
+sub generate_grub2_config($$$$;$$)
 {
-    my ($filename, $title, $base, $modules_ref, $prepend) = @_;
+    my ($filename, $title, $base, $modules_ref, $preamble, $prolog) = @_;
     if ($base && substr($base,-1,1) ne '/') { $base = "$base/"; };
     open(my $fg, '>', $filename) or die "$filename: $!";
-    print $fg "$prepend\n" if $prepend;
+    print $fg "$preamble\n" if $preamble;
     my $endmark = ($serial || defined $iprelay) ? ';' : '';
     $title ||= 'novaboot';
     print $fg "menuentry $title$endmark {\n";
-    print $fg "$CFG::grub2_prolog\n";
+    print $fg "$prolog\n" if $prolog;
     my $first = 1;
     foreach (@$modules_ref) {
 	if ($first) {
@@ -314,6 +314,8 @@ sub generate_grub2_config($$$$;$)
     }
     print $fg "}\n";
     close($fg);
+    print("novaboot: Created $CFG::builddir/$filename\n");
+    return $filename;
 }
 
 sub generate_pulsar_config($$)
@@ -337,6 +339,8 @@ sub generate_pulsar_config($$)
     # Put kernel as last - this is needed for booting Linux and has no influence on non-Linux OSes
     print $fg "exec $kbin $kcmd\n";
     close($fg);
+    print("novaboot: Created $CFG::builddir/$filename\n");
+    return $filename;
 }
 
 sub exec_verbose(@)
@@ -479,7 +483,6 @@ foreach my $script (@scripts) {
     $modules = $$script{modules};
     $generated = $$script{generated};
     $variables = $$script{variables};
-    my ($server_grub_prefix);
 
     ($config_name = $filename) =~ s#.*/##;
     $config_name = $config_name_opt if (defined $config_name_opt);
@@ -501,31 +504,18 @@ foreach my $script (@scripts) {
     @$modules = (@CFG::chainloaders, @$modules);
     @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
 
+    my $prefix;
+    ($prefix = $grub_prefix) =~ s/\$NAME/$config_name/ if defined $grub_prefix;
+    $prefix ||= $CFG::builddir;
+    # TODO: use $grub_prefix as first parameter if some switch is given
+    generate_configs('', $generated, $filename);
+
 ### Generate bootloader configuration files
-    if (defined $grub_config) {
-	generate_configs("", $generated, $filename);
-	generate_grub_config($grub_config, $config_name, "", $modules);
-	print("GRUB menu created: $CFG::builddir/$grub_config\n");
-	exit;
-    }
-
-    if (defined $grub2_config && !defined $server) {
-	generate_configs('', $generated, $filename);
-	generate_grub2_config($grub2_config, $config_name, $CFG::builddir, $modules);
-	print("GRUB2 configuration created: $CFG::builddir/$grub2_config\n");
-	exit;
-    }
-
     my $pulsar_config;
-    if (defined $pulsar) {
-	$pulsar_config = "config-$CFG::pulsar_mac";
-	generate_configs('', $generated, $filename);
-	generate_pulsar_config($pulsar_config, $modules);
-	if (!defined $server) {
-	    print("Pulsar configuration created: $CFG::builddir/$pulsar_config\n");
-	    exit;
-	}
-    }
+    my @bootloader_configs;
+    push @bootloader_configs, generate_grub_config($grub_config, $config_name, $prefix, $modules, $grub_preamble) if (defined $grub_config);
+    push @bootloader_configs, generate_grub2_config($grub2_config, $config_name, $prefix, $modules, $grub_preamble, $grub2_prolog) if (defined $grub2_config);
+    push @bootloader_configs, generate_pulsar_config($pulsar_config = "config-$CFG::pulsar_mac", $modules) if (defined $pulsar);
 
 ### Run scons
     if (defined $scons) {
@@ -537,36 +527,22 @@ foreach my $script (@scripts) {
 
 ### Copy files (using rsync)
     if (defined $server) {
-	($server_grub_prefix = $CFG::server_grub_prefix) =~ s/\$NAME/$config_name/;
-	($server = $CFG::server)			 =~ s/\$NAME/$config_name/;
-	my $bootloader_config;
-	if ($grub2_config) {
-	    generate_configs('', $generated, $filename);
-	    $bootloader_config ||= "grub.cfg";
-	    generate_grub2_config($grub2_config, $config_name, $server_grub_prefix, $modules);
-	} elsif (defined $pulsar) {
-	    $bootloader_config = $pulsar_config;
-	} else {
-	    generate_configs($server_grub_prefix, $generated, $filename);
-	    $bootloader_config ||= "menu.lst";
-	    if (!grep { $_ eq $bootloader_config } @$modules) {
-		generate_grub_config($bootloader_config, $config_name, $server_grub_prefix, $modules,
-				     $server_grub_prefix eq $CFG::server_grub_prefix ? "timeout 0" : undef);
-	    }
-	}
+	($server = $CFG::server) =~ s/\$NAME/$config_name/;
+
 	my ($hostname, $path) = split(":", $server, 2);
 	if (! defined $path) {
 	    $path = $hostname;
 	    $hostname = "";
 	}
-	my $files = "$bootloader_config " . join(" ", map({ ($file) = m/([^ ]*)/; $file; } @$modules));
-	my $combined_menu_lst = ($CFG::server =~ m|/\$NAME$|);
+	my $files = join(" ", map({ ($file) = m/([^ ]*)/; $file; } ( @$modules, @bootloader_configs)));
 	map({ my $file = (split)[0]; die "$file: $!" if ! -f $file; } @$modules);
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
 	system_verbose("rsync $progress -RLp $rsync_flags $files $server");
-	my $cmd = "cd $path/.. && cat */menu.lst > menu.lst";
-	if ($combined_menu_lst) { system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd); }
+	if ($CFG::server =~ m|/\$NAME$| && $concat) {
+	    my $cmd = join("; ", map { "( cd $path/.. && cat */$_ > $_ )" } @bootloader_configs);
+	    system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd);
+	}
     }
 
 ### Prepare ISO image generation
@@ -912,18 +888,26 @@ Generates grub bootloader menu file. If the I<filename> is not
 specified, F<menu.lst> is used. The I<filename> is relative to the
 build directory (see B<--build-dir>).
 
+=item --grub-preamble=I<prefix>
+
+Specifies the I<preable> that is at the beginning of the generated
+GRUB or GRUB2 config files. This is useful for specifying GRUB's
+timeout.
+
 =item --grub-prefix=I<prefix>
 
-Specifies I<prefix> that is put before every file in GRUB's F<menu.lst>.
-This overrides the value of I<$server_grub_prefix> from the
-configuration file.
+Specifies I<prefix> that is put in front of every file name in GRUB's
+F<menu.lst>. The default value is the absolute path to the build directory.
+
+If the I<prefix> contains string $NAME, it will be replaced with the
+name of the novaboot script (see also B<--name>).
 
 =item --grub2[=I<filename>]
 
 Generate GRUB2 menuentry in I<filename>. If I<filename> is not
 specified F<grub.cfg> is used. The content of the menuentry can be
-customized by I<$grub2_prolog> and I<$server_grub_prefix>
-configuration variables.
+customized with B<--grub-preable>, B<--grub2-prolog> or
+B<--grub_prefix> options.
 
 In order to use the the generated menuentry on your development
 machine that uses GRUB2, append the following snippet to
@@ -933,6 +917,11 @@ i.e. run update-grub on Debian/Ubuntu.
   if [ -f /path/to/nul/build/grub.cfg ]; then
     source /path/to/nul/build/grub.cfg
   fi
+
+=item --grub2-prolog=I<prolog>
+
+Specifies text I<preable> that is put at the begiging of the entry
+GRUB2 entry.
 
 =item --name=I<string>
 
@@ -989,10 +978,14 @@ tool) to the directory I<path>. If the I<path> contains string $NAME,
 it will be replaced with the name of the novaboot script (see also
 B<--name>).
 
-Additionally, if $NAME is the last component of the I<path>, a file
-named I<path>/menu.lst (with $NAME removed from the I<path>) will be
-created on the server by concatenating all I<path>/*/menu.lst (with
-$NAME removed from the I<path>) files found on the server.
+=item --concat
+
+If B<--server> is used and its value ends with $NAME, then after
+copying the files, a new bootloader configuration file (e.g. menu.lst)
+is created at I<path-wo-name>, i.e. the path specified by B<--server>
+with $NAME part removed. The content of the file is created by
+concatenating all files of the same name from all subdirectories of
+I<path-wo-name> found on the "server".
 
 =item --rsync-flags=I<flags>
 

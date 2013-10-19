@@ -80,17 +80,12 @@ of phases with the corresponding options follows.
 
     Print short (__\-h__) or long (__\--help__) help.
 
-- \-I
+- \-t, --target=<target>
 
-    This is an alias (see `%custom_options` below) defined in the default
-    configuration. When used, it causes novaboot to use Michal's remotely
-    controllable test bed.
-
-- \-J
-
-    This is an alias (see `%custom_options` below) defined in the default
-    configuration. When used, it causes novaboot to use another remotely
-    controllable test bed.
+    This option serves as a user configurable shortcut for other novaboot
+    options. The effect of this option is the same as the options stored
+    in the `%targets` configuration variable under key _target_. See
+    also ["CONFIGURATION FILE"](#CONFIGURATION FILE).
 
 ## Script preprocessing phase
 
@@ -403,11 +398,17 @@ Documentation of some configuration variables follows:
     Custom chainloaders to load before hypervisor and files specified in
     novaboot script. E.g. ('bin/boot/bender promisc', 'bin/boot/zapp').
 
-- %custom\_options
+- %targets
 
-    Defines custom command line options that can serve as aliases for
-    other options. E.g. 'S' => '--server=boot:/tftproot
-    \--serial=/dev/ttyUSB0'.
+    Hash of shortcuts to be used with the __\--target__ option. If the hash
+    contains, for instance, the following pair of values
+
+        'mybox' => '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+
+    then the following two commands are equivalent:
+
+        ./script --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
+        ./script -t mybox
 
 # ENVIRONMENT VARIABLES
 

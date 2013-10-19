@@ -46,12 +46,15 @@ $CFG::grub2_prolog = "  set root='(hd0,msdos1)'";
 $CFG::genisoimage = "genisoimage";
 $CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
 $CFG::qemu = 'qemu';
-$CFG::script_modifier = ''; # Depricated, use --scriptmod commandline option or custom_options.
+$CFG::script_modifier = ''; # Depricated, use --scriptmod commandline option or targets.
 @CFG::chainloaders = (); #('bin/boot/bender promisc');
 $CFG::pulsar_root = '';
 $CFG::pulsar_mac = '52-54-00-12-34-56';
-%CFG::custom_options = ('I' => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub-prefix=(nd)/tftpboot/sojka/novaboot --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
-		        'J' => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324');
+%CFG::targets = (
+    "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
+    "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324',
+    "localhost" => '--scriptmod=s/console=tty[A-Z0-0,]// --grub2  --server=/boot/novaboot/$NAME',
+    );
 $CFG::scons = "scons -j2";
 
 my @qemu_flags = qw(-cpu coreduo -smp 2);
@@ -85,7 +88,8 @@ $rsync_flags = '';
 $rom_prefix = 'rom://';
 
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
-my %opt_spec = (
+my %opt_spec;
+%opt_spec = (
     "append|a=s"     => \$append,
     "bender|b"       => \$bender,
     "build-dir=s"    => \$builddir,
@@ -111,12 +115,12 @@ my %opt_spec = (
     "serial|s:s"     => \$serial,
     "server:s" 	     => \$server,
     "strip-rom"	     => sub { $rom_prefix = ''; },
+    "target|t=s"     => sub { my ($opt_name, $opt_value) = @_;
+			      exists $CFG::targets{$opt_value} or die("Unknown target '$opt_value' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
+			      GetOptionsFromString($CFG::targets{$opt_value}, %opt_spec); },
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
-foreach my $opt(keys(%CFG::custom_options)) {
-    $opt_spec{$opt} = sub { GetOptionsFromString($CFG::custom_options{$opt}, %opt_spec); };
-}
 GetOptions %opt_spec or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
@@ -825,17 +829,12 @@ template for a configuration file.
 
 Print short (B<-h>) or long (B<--help>) help.
 
-=item -I
+=item -t, --target=<target>
 
-This is an alias (see C<%custom_options> below) defined in the default
-configuration. When used, it causes novaboot to use Michal's remotely
-controllable test bed.
-
-=item -J
-
-This is an alias (see C<%custom_options> below) defined in the default
-configuration. When used, it causes novaboot to use another remotely
-controllable test bed.
+This option serves as a user configurable shortcut for other novaboot
+options. The effect of this option is the same as the options stored
+in the C<%targets> configuration variable under key I<target>. See
+also L</"CONFIGURATION FILE">.
 
 =back
 
@@ -1176,11 +1175,17 @@ Documentation of some configuration variables follows:
 Custom chainloaders to load before hypervisor and files specified in
 novaboot script. E.g. ('bin/boot/bender promisc', 'bin/boot/zapp').
 
-=item %custom_options
+=item %targets
 
-Defines custom command line options that can serve as aliases for
-other options. E.g. 'S' => '--server=boot:/tftproot
---serial=/dev/ttyUSB0'.
+Hash of shortcuts to be used with the B<--target> option. If the hash
+contains, for instance, the following pair of values
+
+ 'mybox' => '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+
+then the following two commands are equivalent:
+
+ ./script --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
+ ./script -t mybox
 
 =back
 

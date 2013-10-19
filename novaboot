@@ -1048,12 +1048,18 @@ Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
 
 See B<--serial>. There will be new options soon.
 
-=head2 Reception of target's output (e.g. console) on the host system
+=head2 Target's output reception phase
+
+=over 8
 
 =item -s, --serial[=device]
 
 Use serial line to control GRUB bootloader and to see the output
 serial output of the machine. The default value is F</dev/ttyUSB0>.
+
+=back
+
+See also B<--iprelay>.
 
 =head2 Termination phase
 

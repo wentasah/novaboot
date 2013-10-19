@@ -285,12 +285,14 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 See __\--serial__. There will be new options soon.
 
-## Reception of target's output (e.g. console) on the host system
+## Target's output reception phase
 
 - \-s, --serial\[=device\]
 
-Use serial line to control GRUB bootloader and to see the output
-serial output of the machine. The default value is `/dev/ttyUSB0`.
+    Use serial line to control GRUB bootloader and to see the output
+    serial output of the machine. The default value is `/dev/ttyUSB0`.
+
+See also __\--iprelay__.
 
 ## Termination phase
 

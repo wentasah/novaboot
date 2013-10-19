@@ -148,7 +148,7 @@ if ($dump_config) {
     print "# This file is in perl syntax.\n";
     foreach my $key(sort(keys(%CFG::))) { # See "Symbol Tables" in perlmod(1)
 	if (defined ${$CFG::{$key}}) { print Data::Dumper->Dump([${$CFG::{$key}}], ["*$key"]); }
-	if (defined @{$CFG::{$key}}) { print Data::Dumper->Dump([\@{$CFG::{$key}}], ["*$key"]); }
+	if (        @{$CFG::{$key}}) { print Data::Dumper->Dump([\@{$CFG::{$key}}], ["*$key"]); }
 	if (        %{$CFG::{$key}}) { print Data::Dumper->Dump([\%{$CFG::{$key}}], ["*$key"]); }
 	print "\n";
     }

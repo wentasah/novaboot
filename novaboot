@@ -477,11 +477,8 @@ foreach my $script (@scripts) {
     $variables = $$script{variables};
     my ($server_grub_prefix);
 
-    if (defined $config_name_opt) {
-	$config_name = $config_name_opt;
-    } else {
-	($config_name = $filename) =~ s#.*/##;
-    }
+    ($config_name = $filename) =~ s#.*/##;
+    $config_name = $config_name_opt if (defined $config_name_opt);
 
     my $kernel;
     if (exists $variables->{KERNEL}) {

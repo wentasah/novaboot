@@ -43,7 +43,6 @@ $CFG::genisoimage = "genisoimage";
 $CFG::qemu = 'qemu';
 @CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
 $CFG::pulsar_root = '';	 # TODO: convert to option
-$CFG::pulsar_mac = '52-54-00-12-34-56';
 %CFG::targets = (
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324',
@@ -141,10 +140,6 @@ if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name 
 
 if ($qemu) { $CFG::qemu = $qemu; }
 $qemu_append ||= '';
-
-if ($pulsar) {
-    $CFG::pulsar_mac = $pulsar;
-}
 
 if ($scons) { $CFG::scons = $scons; }
 
@@ -519,7 +514,7 @@ foreach my $script (@scripts) {
     my @bootloader_configs;
     push @bootloader_configs, generate_grub_config($grub_config, $config_name, $prefix, $modules, $grub_preamble) if (defined $grub_config);
     push @bootloader_configs, generate_grub2_config($grub2_config, $config_name, $prefix, $modules, $grub_preamble, $grub2_prolog) if (defined $grub2_config);
-    push @bootloader_configs, generate_pulsar_config($pulsar_config = "config-$CFG::pulsar_mac", $modules) if (defined $pulsar);
+    push @bootloader_configs, generate_pulsar_config($pulsar_config = "config-$pulsar", $modules) if (defined $pulsar);
 
 ### Run scons
     if (defined $scons) {

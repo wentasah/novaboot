@@ -39,13 +39,12 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 # Default configuration
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
-$CFG::server = "erwin.inf.tu-dresden.de:boot/novaboot/\$NAME";
 $CFG::grub_keys = ''; #"/novaboot\n\n/\$NAME\n\n";
 $CFG::genisoimage = "genisoimage";
 $CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
 $CFG::qemu = 'qemu';
-@CFG::chainloaders = (); #('bin/boot/bender promisc');
-$CFG::pulsar_root = '';
+@CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
+$CFG::pulsar_root = '';	 # TODO: convert to option
 $CFG::pulsar_mac = '52-54-00-12-34-56';
 %CFG::targets = (
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
@@ -145,7 +144,6 @@ if ($iprelay && $iprelay ne "on" && $iprelay ne "off") { $CFG::iprelay_addr = $i
 
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
 
-if ($server) { $CFG::server = $server; }
 if ($qemu) { $CFG::qemu = $qemu; }
 $qemu_append ||= '';
 
@@ -540,9 +538,9 @@ foreach my $script (@scripts) {
 
 ### Copy files (using rsync)
     if (defined $server) {
-	($server = $CFG::server) =~ s/\$NAME/$config_name/;
+	(my $real_server = $server) =~ s/\$NAME/$config_name/;
 
-	my ($hostname, $path) = split(":", $server, 2);
+	my ($hostname, $path) = split(":", $real_server, 2);
 	if (! defined $path) {
 	    $path = $hostname;
 	    $hostname = "";
@@ -551,8 +549,8 @@ foreach my $script (@scripts) {
 	map({ my $file = (split)[0]; die "$file: $!" if ! -f $file; } @$modules);
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
-	system_verbose("rsync $progress -RLp $rsync_flags $files $server");
-	if ($CFG::server =~ m|/\$NAME$| && $concat) {
+	system_verbose("rsync $progress -RLp $rsync_flags $files $real_server");
+	if ($server =~ m|/\$NAME$| && $concat) {
 	    my $cmd = join("; ", map { "( cd $path/.. && cat */$_ > $_ )" } @bootloader_configs);
 	    system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd);
 	}

@@ -64,17 +64,32 @@ Novaboot perform its work in several phases. Each phase can be
 influenced by several options, certain phases can be skipped. The list
 of phases with the corresponding options follows.
 
-## Command line processing phase
+## Configuration reading phase
+
+After starting, novaboot reads configuration files. By default, it
+searches for files named `.novaboot` starting from the directory of
+the novaboot script (or working directory, see bellow) and continuing
+upwards up to the root directory. The configuration files are read in
+order from the root directory downwards with latter files overriding
+settings from the former ones.
+
+In certain cases, the location of the novaboot script cannot be
+determined in this early phase. This happens either when the script is
+read from the standard input or when novaboot is invoked explicitly
+and options precede the script name, as in the example ["4."](#4.) above.
+In this case the current working directory is used as a starting point
+for configuration file search.
 
 - \-c, --config=<filename>
 
-    Use a different configuration file than the default one (i.e.
-    `~/.novaboot`).
+    Use the specified configuration file instead of the default one(s).
+
+## Command line processing phase
 
 - \--dump-config
 
-    Dumps current configuration to stdout end exits. Useful as an initial
-    template for a configuration file.
+    Dump the current configuration to stdout end exits. Useful as an
+    initial template for a configuration file.
 
 - \-h, --help
 
@@ -400,13 +415,13 @@ scripts unusable on systems without (or with different) configuration
 file. The only recommended use of the configuration file is to specify
 custom\_options (see bellow).
 
-If you decide to use the configuration file, its default location is
-~/.novaboot, other location can be specified with the __\-c__ switch or
-with the NOVABOOT\_CONFIG environment variable. The configuration file
-has perl syntax and should set values of certain Perl variables. The
-current configuration can be dumped with the __\--dump-config__ switch.
-Some configuration variables can be overriden by environment variables
-(see below) or by command line switches.
+If you decide to use the configuration file, it is looked up, by
+default, in files named `.novaboot` as described in ["Configuration reading phase"](#Configuration reading phase). Alternatively, its location can be specified with the
+__\-c__ switch or with the NOVABOOT\_CONFIG environment variable. The
+configuration file has perl syntax and should set values of certain
+Perl variables. The current configuration can be dumped with the
+__\--dump-config__ switch. Some configuration variables can be overriden
+by environment variables (see below) or by command line switches.
 
 Documentation of some configuration variables follows:
 
@@ -436,7 +451,8 @@ override the environment variables.
 
 - NOVABOOT\_CONFIG
 
-    A name of default novaboot configuration file.
+    Name of the novaboot configuration file to use instead of the default
+    one(s).
 
 - NOVABOOT\_BENDER
 

@@ -25,7 +25,7 @@ use Socket;
 use FileHandle;
 use IPC::Open2;
 use POSIX qw(:errno_h);
-use Cwd;
+use Cwd qw(getcwd abs_path);
 
 # always flush
 $| = 1;
@@ -70,12 +70,25 @@ sub read_config($) {
 	    die("ERROR: Failure processing '$cfg'");
 	}
     }
+    print "novaboot: Read $cfg\n";
 }
 
-my $cfg = $ENV{'NOVABOOT_CONFIG'} || $ENV{'HOME'}."/.novaboot";
+my @cfgs;
+{
+    # We don't use $0 here, because it points to the novaboot itself and
+    # not to the novaboot script. The problem with this approach is that
+    # when a script is run as "novaboot <options> <script>" then $ARGV[0]
+    # contains the first option. Hence the -f check.
+    my $dir = abs_path($invocation_dir . ((-f $ARGV[0]) ? '/'.dirname($ARGV[0]) : ''));
+    while (-d $dir && $dir ne "/") {
+	push @cfgs, "$dir/.novaboot" if -r "$dir/.novaboot";
+	$dir = abs_path($dir."/..");
+    }
+}
+my $cfg = $ENV{'NOVABOOT_CONFIG'};
 Getopt::Long::Configure(qw/no_ignore_case pass_through/);
 GetOptions ("config|c=s" => \$cfg);
-if (-s $cfg) { read_config($cfg); }
+read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
@@ -787,19 +800,38 @@ Novaboot perform its work in several phases. Each phase can be
 influenced by several options, certain phases can be skipped. The list
 of phases with the corresponding options follows.
 
-=head2 Command line processing phase
+=head2 Configuration reading phase
+
+After starting, novaboot reads configuration files. By default, it
+searches for files named F<.novaboot> starting from the directory of
+the novaboot script (or working directory, see bellow) and continuing
+upwards up to the root directory. The configuration files are read in
+order from the root directory downwards with latter files overriding
+settings from the former ones.
+
+In certain cases, the location of the novaboot script cannot be
+determined in this early phase. This happens either when the script is
+read from the standard input or when novaboot is invoked explicitly
+and options precede the script name, as in the example L</"4."> above.
+In this case the current working directory is used as a starting point
+for configuration file search.
 
 =over 8
 
 =item -c, --config=<filename>
 
-Use a different configuration file than the default one (i.e.
-F<~/.novaboot>).
+Use the specified configuration file instead of the default one(s).
+
+=back
+
+=head2 Command line processing phase
+
+=over 8
 
 =item --dump-config
 
-Dumps current configuration to stdout end exits. Useful as an initial
-template for a configuration file.
+Dump the current configuration to stdout end exits. Useful as an
+initial template for a configuration file.
 
 =item -h, --help
 
@@ -1151,13 +1183,14 @@ scripts unusable on systems without (or with different) configuration
 file. The only recommended use of the configuration file is to specify
 custom_options (see bellow).
 
-If you decide to use the configuration file, its default location is
-~/.novaboot, other location can be specified with the B<-c> switch or
-with the NOVABOOT_CONFIG environment variable. The configuration file
-has perl syntax and should set values of certain Perl variables. The
-current configuration can be dumped with the B<--dump-config> switch.
-Some configuration variables can be overriden by environment variables
-(see below) or by command line switches.
+If you decide to use the configuration file, it is looked up, by
+default, in files named F<.novaboot> as described in L</Configuration
+reading phase>. Alternatively, its location can be specified with the
+B<-c> switch or with the NOVABOOT_CONFIG environment variable. The
+configuration file has perl syntax and should set values of certain
+Perl variables. The current configuration can be dumped with the
+B<--dump-config> switch. Some configuration variables can be overriden
+by environment variables (see below) or by command line switches.
 
 Documentation of some configuration variables follows:
 
@@ -1193,7 +1226,8 @@ override the environment variables.
 
 =item NOVABOOT_CONFIG
 
-A name of default novaboot configuration file.
+Name of the novaboot configuration file to use instead of the default
+one(s).
 
 =item NOVABOOT_BENDER
 

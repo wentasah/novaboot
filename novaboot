@@ -40,7 +40,6 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
-$CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
 $CFG::qemu = 'qemu';
 @CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
 $CFG::pulsar_root = '';	 # TODO: convert to option
@@ -110,7 +109,7 @@ my %opt_spec;
     "grub-prefix=s"  => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
-    "iprelay:s"	     => \$iprelay,
+    "iprelay=s"	     => \$iprelay,
     "iso|i:s" 	     => \$iso_image,
     "name=s"	     => \$config_name_opt,
     "no-file-gen"    => \$no_file_gen,
@@ -137,9 +136,6 @@ pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 ### Sanitize configuration
-
-$CFG::iprelay_addr = $ENV{'NOVABOOT_IPRELAY'} if $ENV{'NOVABOOT_IPRELAY'};
-if ($iprelay && $iprelay ne "on" && $iprelay ne "off") { $CFG::iprelay_addr = $iprelay; }
 
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
 
@@ -179,9 +175,6 @@ if (defined $grub_config) {
 if (defined $grub2_config) {
     $grub2_config ||= "grub.cfg";
 }
-
-if ($on_opt) { $iprelay="on"; }
-if ($off_opt) { $iprelay="off"; }
 
 ## Parse the novaboot script(s)
 my @scripts;
@@ -381,7 +374,7 @@ if (exists $variables->{WVDESC}) {
 
 my $IPRELAY;
 if (defined $iprelay) {
-    $CFG::iprelay_addr =~ /([.0-9]+)(:([0-9]+))?/;
+    $iprelay =~ /([.0-9]+)(:([0-9]+))?/;
     my $addr = $1;
     my $port = $3 || 23;
     my $paddr   = sockaddr_in($port, inet_aton($addr));
@@ -459,11 +452,12 @@ if (defined $iprelay) {
     }
 }
 
-if ($iprelay && ($iprelay eq "on" || $iprelay eq "off")) {
+if ($iprelay && (defined $on_opt || defined $off_opt)) {
      relay(1, 1); # Press power button
-    if ($iprelay eq "on") {
+    if (defined $on_opt) {
 	usleep(100000);		# Short press
     } else {
+	print "novaboot: Switching the target off...\n";
 	usleep(6000000);	# Long press to switch off
     }
     print $IPRELAY relay(1, 0);
@@ -749,7 +743,7 @@ Create a bootloader configuration file (currently supported
 bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all other
 files needed for booting to another, perhaps remote, location.
 
- ./script --server --iprelay
+ ./script --server --iprelay=192.168.1.2
 
 This command copies files to a TFTP server specified in the
 configuration file and uses TCP/IP-controlled relay to reset the test
@@ -1018,22 +1012,17 @@ itself.
 
 =over 8
 
-=item --iprelay[=addr or cmd]
+=item --iprelay=I<addr[:port]>
 
-If no I<cmd> is given, use IP relay to reset the machine and to get
-the serial output. The IP address of the relay is given by I<addr>
-parameter if specified or by $iprelay_addr variable in the
-configuration file.
-
-If I<cmd> is one of "on" or "off", the IP relay is used to press power
-button for a short (in case of "on") or long (in case of "off") time.
-Then, novaboot exits.
+Use IP relay to reset the machine and to get the serial output. The IP
+address of the relay is given by I<addr> parameter.
 
 Note: This option is expected to work with HWG-ER02a IP relays.
 
 =item --on, --off
 
-Synonym for --iprelay=on/off.
+Switch on/off the target machine. Currently works only with
+B<--iprelay>.
 
 =item -Q, --qemu=I<qemu-binary>
 
@@ -1215,11 +1204,6 @@ one(s).
 =item NOVABOOT_BENDER
 
 Defining this variable has the same meaning as B<--bender> option.
-
-=item NOVABOOT_IPRELAY
-
-The IP address (and optionally the port) of the IP relay. This
-overrides $iprelay_addr variable from the configuration file.
 
 =back
 

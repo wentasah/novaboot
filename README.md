@@ -36,7 +36,7 @@ configuration specified in the _script_.
 bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all other
 files needed for booting to another, perhaps remote, location.
 
-        ./script --server --iprelay
+        ./script --server --iprelay=192.168.1.2
 
     This command copies files to a TFTP server specified in the
     configuration file and uses TCP/IP-controlled relay to reset the test
@@ -277,22 +277,17 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 ## Target power-on and reset phase
 
-- \--iprelay\[=addr or cmd\]
+- \--iprelay=_addr\[:port\]_
 
-    If no _cmd_ is given, use IP relay to reset the machine and to get
-    the serial output. The IP address of the relay is given by _addr_
-    parameter if specified or by $iprelay\_addr variable in the
-    configuration file.
-
-    If _cmd_ is one of "on" or "off", the IP relay is used to press power
-    button for a short (in case of "on") or long (in case of "off") time.
-    Then, novaboot exits.
+    Use IP relay to reset the machine and to get the serial output. The IP
+    address of the relay is given by _addr_ parameter.
 
     Note: This option is expected to work with HWG-ER02a IP relays.
 
 - \--on, --off
 
-    Synonym for --iprelay=on/off.
+    Switch on/off the target machine. Currently works only with
+    __\--iprelay__.
 
 - \-Q, --qemu=_qemu-binary_
 
@@ -457,11 +452,6 @@ override the environment variables.
 - NOVABOOT\_BENDER
 
     Defining this variable has the same meaning as __\--bender__ option.
-
-- NOVABOOT\_IPRELAY
-
-    The IP address (and optionally the port) of the IP relay. This
-    overrides $iprelay\_addr variable from the configuration file.
 
 # AUTHORS
 

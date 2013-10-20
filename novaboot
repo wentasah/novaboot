@@ -39,7 +39,6 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 # Default configuration
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
-$CFG::grub_keys = ''; #"/novaboot\n\n/\$NAME\n\n";
 $CFG::genisoimage = "genisoimage";
 $CFG::iprelay_addr = '141.76.48.80:2324'; #'141.76.48.252';
 $CFG::qemu = 'qemu';
@@ -685,21 +684,7 @@ if ($serial || defined $iprelay) {
 	open($CONN, "+<", $serial) || die "open $serial: $!";
 	$CONN->autoflush(1);
     }
-    if (!defined $dhcp_tftp && $CFG::grub_keys) {
-	# Control grub via serial line
-	print "Waiting for GRUB's serial output... ";
-	while (<$CONN>) {
-	    if (/Press any key to continue/) { print $CONN "\n"; last; }
-	}
-	$CFG::grub_keys =~ s/\$NAME/$config_name;/;
-	my @characters = split(//, $CFG::grub_keys);
-	foreach (@characters) {
-	    print $CONN $_;
-	    usleep($_ eq "\n" ? 100000 : 10000);
-	}
-	print $CONN "\n";
-	print "done\n";
-    }
+
     # Pass the NOVA output to stdout.
     while (<$CONN>) {
 	print;

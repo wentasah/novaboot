@@ -501,11 +501,10 @@ foreach my $script (@scripts) {
     generate_configs('', $generated, $filename);
 
 ### Generate bootloader configuration files
-    my $pulsar_config;
     my @bootloader_configs;
     push @bootloader_configs, generate_grub_config($grub_config, $config_name, $prefix, $modules, $grub_preamble) if (defined $grub_config);
     push @bootloader_configs, generate_grub2_config($grub2_config, $config_name, $prefix, $modules, $grub_preamble, $grub2_prolog) if (defined $grub2_config);
-    push @bootloader_configs, generate_pulsar_config($pulsar_config = "config-$pulsar", $modules) if (defined $pulsar);
+    push @bootloader_configs, generate_pulsar_config('config-'.($pulsar||'novaboot'), $modules) if (defined $pulsar);
 
 ### Run scons
     if (defined $scons) {
@@ -930,9 +929,9 @@ files generated via "<<WORD" syntax.
 
 =item -p, --pulsar[=mac]
 
-Generates pulsar bootloader configuration file whose name is based on
-the MAC address specified either on the command line or taken from
-I<.novaboot> configuration file.
+Generates pulsar bootloader configuration file named F<config-I<mac>>
+The I<mac> string is typically a MAC address and defaults to
+I<novaboot>.
 
 =back
 

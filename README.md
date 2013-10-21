@@ -218,9 +218,9 @@ scripts. Finally, binaries can be generated in this phases by running
 
 - \-p, --pulsar\[=mac\]
 
-    Generates pulsar bootloader configuration file whose name is based on
-    the MAC address specified either on the command line or taken from
-    _.novaboot_ configuration file.
+    Generates pulsar bootloader configuration file named `config-_mac_`
+    The _mac_ string is typically a MAC address and defaults to
+    _novaboot_.
 
 ## Target connection check
 

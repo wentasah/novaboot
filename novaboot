@@ -40,7 +40,7 @@ chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
-$CFG::qemu = 'qemu';
+$CFG::qemu = 'qemu -cpu coreduo -smp 2';
 @CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
 $CFG::pulsar_root = '';	 # TODO: convert to option
 %CFG::targets = (
@@ -50,7 +50,6 @@ $CFG::pulsar_root = '';	 # TODO: convert to option
     );
 $CFG::scons = "scons -j2";
 
-my @qemu_flags = qw(-cpu coreduo -smp 2);
 sub read_config($) {
     my ($cfg) = @_;
     {
@@ -116,7 +115,7 @@ my %opt_spec;
     "on"	     => \$on_opt,
     "pulsar|p:s"     => \$pulsar,
     "qemu|Q=s" 	     => \$qemu,
-    "qemu-append:s"  => \$qemu_append,
+    "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
     "rsync-flags=s"  => \$rsync_flags,
     "scons:s"	     => \$scons,
@@ -137,9 +136,6 @@ pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 ### Sanitize configuration
 
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
-
-if ($qemu) { $CFG::qemu = $qemu; }
-$qemu_append ||= '';
 
 ### Dump sanitized configuration (if requested)
 
@@ -583,14 +579,13 @@ sub trim($) {
 
 if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $server || defined $iso_image)) {
     # Qemu
-    if (!$qemu && $variables->{QEMU}) {
-	@qemu_flags = split(" ", $variables->{QEMU});
-	$CFG::qemu = shift(@qemu_flags);
-    }
+    $qemu ||= $variables->{QEMU} || $CFG::qemu;
+    my @qemu_flags = split(" ", $qemu);
+    $qemu = shift(@qemu_flags);
 
     @qemu_flags = split(/ +/, trim($variables->{QEMU_FLAGS})) if exists $variables->{QEMU_FLAGS};
     @qemu_flags = split(/ +/, trim($qemu_flags_cmd)) if $qemu_flags_cmd;
-    push(@qemu_flags, split(/ +/, trim($qemu_append)));
+    push(@qemu_flags, split(/ +/, trim($qemu_append || '')));
 
     if (defined $iso_image) {
 	# Boot NOVA with grub (and test the iso image)
@@ -613,7 +608,7 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
 	push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
     }
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
-    exec_verbose(($CFG::qemu,  '-name', $config_name, @qemu_flags));
+    exec_verbose(($qemu,  '-name', $config_name, @qemu_flags));
 }
 
 ### Local DHCPD and TFTPD

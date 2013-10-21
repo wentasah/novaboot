@@ -134,10 +134,6 @@ GetOptions %opt_spec or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
-### Sanitize configuration
-
-if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
-
 ### Dump sanitized configuration (if requested)
 
 if ($dump_config) {
@@ -153,17 +149,14 @@ if ($dump_config) {
     exit;
 }
 
-if (defined $serial) {
-    $serial ||= "/dev/ttyUSB0";
-}
+### Sanitize configuration
 
-if (defined $grub_config) {
-    $grub_config ||= "menu.lst";
-}
+if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
 
-if (defined $grub2_config) {
-    $grub2_config ||= "grub.cfg";
-}
+# Default options
+if (defined $serial) { $serial ||= "/dev/ttyUSB0"; }
+if (defined $grub_config) { $grub_config ||= "menu.lst"; }
+if (defined $grub2_config) { $grub2_config ||= "grub.cfg"; }
 
 ## Parse the novaboot script(s)
 my @scripts;

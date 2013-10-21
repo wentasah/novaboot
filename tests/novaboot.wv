@@ -42,7 +42,7 @@ echo '1;' > .novaboot
 WVPASS sh -c "./script --gen-only 2> log"
 WVPASS grep "novaboot: Read $PWD/.novaboot" log
 
-WVSTART Builddir configuration
+WVSTART Builddir configuration variable
 WVPASS mkdir -p build
 cat > .novaboot <<'EOF'
 $builddir="build";
@@ -56,7 +56,18 @@ EOF
 WVPASS ./script --gen-only
 WVPASS test -f build/file
 
-WVSTART hypervisor configuration variable
+WVSTART BUILDDIR variable
+WVPASS mkdir -p build
+create_script <<'EOF'
+BUILDDIR=build
+file <<XXX
+Hello
+XXX
+EOF
+WVPASS ./script --gen-only
+WVPASS test -f build/file
+
+WVSTART Hypervisor configuration variable
 create_dummy
 echo '$hypervisor="HYP";' > .novaboot
 WVPASS ./script --gen-only --pulsar

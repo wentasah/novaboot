@@ -378,6 +378,12 @@ hello.nulconfig file is generated on the fly from the lines between
 
 The following variables are interpreted in the novaboot script:
 
+- BUILDDIR
+
+    Novaboot chdir()s to this directory before file generation phase. The
+    directory name specified here is relative to the build directory
+    specified by other means (see ["--build-dir"](#--build-dir)).
+
 - WVDESC
 
     Description of the wvtest-compliant program.

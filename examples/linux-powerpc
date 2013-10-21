@@ -8,7 +8,8 @@
 #   make -C build/buildroot-powerpc.
 
 QEMU=qemu-system-ppc -M virtex-ml507 -m 256 -nographic
-build/buildroot-powerpc/images/vmlinux console=ttyS0
-build/buildroot-powerpc/images/rootfs.cpio
+BUILDDIR=build/buildroot-powerpc/images
+vmlinux console=ttyS0
+rootfs.cpio
 # Qemu for PowerPC requires a fixed name for device trees
-ppc.dtb < cat build/buildroot-powerpc/images/virtex440-ml507.dtb
+ppc.dtb < cat virtex440-ml507.dtb

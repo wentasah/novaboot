@@ -2,16 +2,21 @@
 
 cd $(dirname $0)
 . wvtest.sh
+PATH=$(dirname $PWD):$PATH # Find our version of novaboot first
 
 WVSTART Pulsar root
-WVPASS ../examples/linux-test --gen-only --pulsar --pulsar-root=ASDF
-WVPASS grep "root ASDF" ../examples/config-novaboot
+WVPASS ./dummy --gen-only --pulsar --pulsar-root=ASDF
+WVPASS grep "root ASDF" config-novaboot
 
 WVSTART Bender
-WVPASS ../examples/linux-test --gen-only --bender --pulsar
-WVPASS grep "bender" ../examples/config-novaboot
+WVPASS ./dummy --gen-only --bender --pulsar
+WVPASS grep "bender" config-novaboot
 
 WVSTART Chainloader support
-WVPASS ../examples/linux-test --gen-only --chainloader=chain1 -chainloader=chain2 --pulsar
-WVPASS grep "exec chain1" ../examples/config-novaboot
-WVPASS grep "load chain2" ../examples/config-novaboot
+WVPASS ./dummy --gen-only --chainloader=chain1 -chainloader=chain2 --pulsar
+WVPASS grep "exec chain1" config-novaboot
+WVPASS grep "load chain2" config-novaboot
+
+# Broken
+WVSTART ISO image generation
+WVPASS ./dummy --iso

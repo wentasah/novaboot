@@ -137,4 +137,11 @@ WVSTART()
 	echo >&2
 	_wvfind_caller
 	echo "Testing \"$*\" in $WVCALLER_FILE:" >&2
+	cd "$WV_BASE_DIR"
+	local dir=test.$(echo $* | tr -s '[[:blank:]]' _ | tr "A-Z" "a-z")
+	rm -rf "$dir"
+	mkdir -p "$dir"
+	cd "$dir"
 }
+
+WV_BASE_DIR="$PWD"

@@ -4,19 +4,49 @@ cd $(dirname $0)
 . wvtest.sh
 PATH=$(dirname $PWD):$PATH # Find our version of novaboot first
 
+function create_script ()
+{
+    (echo "#!/usr/bin/env novaboot"; cat) > script
+    chmod +x script
+}
+
+function create_dummy ()
+{
+    create_script <<EOF
+kernel
+file
+EOF
+    touch kernel
+    touch file
+}
+
 WVSTART Pulsar root
-WVPASS ./dummy --gen-only --pulsar --pulsar-root=ASDF
+create_dummy
+WVPASS ./script --gen-only --pulsar --pulsar-root=ASDF
 WVPASS grep "root ASDF" config-novaboot
 
 WVSTART Bender
-WVPASS ./dummy --gen-only --bender --pulsar
+create_dummy
+WVPASS ./script --gen-only --bender --pulsar
 WVPASS grep "bender" config-novaboot
 
 WVSTART Chainloader support
-WVPASS ./dummy --gen-only --chainloader=chain1 -chainloader=chain2 --pulsar
+create_dummy
+WVPASS ./script --gen-only --chainloader=chain1 -chainloader=chain2 --pulsar
 WVPASS grep "exec chain1" config-novaboot
 WVPASS grep "load chain2" config-novaboot
 
+WVSTART Configuration files
+create_dummy
+echo '1;' > .novaboot
+WVPASS sh -c "./script --gen-only 2> log"
+WVPASS grep "novaboot: Read $PWD/.novaboot" log
+
+exit
+
 # Broken
 WVSTART ISO image generation
-WVPASS ./dummy --iso
+create_dummy
+WVPASS ./script --iso
+
+# Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

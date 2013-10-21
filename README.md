@@ -222,6 +222,12 @@ scripts. Finally, binaries can be generated in this phases by running
     the MAC address specified either on the command line or taken from
     _.novaboot_ configuration file.
 
+## Target connection check
+
+If supported by the target, the connection to it is made and it is
+checked whether the target is not occupied by another novaboot
+user/instance.
+
 ## File deployment phase
 
 In some setups, it is necessary to copy the files needed for booting

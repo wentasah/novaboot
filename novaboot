@@ -936,6 +936,12 @@ I<.novaboot> configuration file.
 
 =back
 
+=head2 Target connection check
+
+If supported by the target, the connection to it is made and it is
+checked whether the target is not occupied by another novaboot
+user/instance.
+
 =head2 File deployment phase
 
 In some setups, it is necessary to copy the files needed for booting

@@ -65,7 +65,7 @@ sub read_config($) {
 	    die("ERROR: Failure processing '$cfg'");
 	}
     }
-    print "novaboot: Read $cfg\n";
+    print STDERR "novaboot: Read $cfg\n";
 }
 
 my @cfgs;
@@ -141,13 +141,12 @@ if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name 
 
 if ($dump_config) {
     use Data::Dumper;
-    $Data::Dumper::Indent=0;
+    $Data::Dumper::Indent=1;
     print "# This file is in perl syntax.\n";
     foreach my $key(sort(keys(%CFG::))) { # See "Symbol Tables" in perlmod(1)
 	if (defined ${$CFG::{$key}}) { print Data::Dumper->Dump([${$CFG::{$key}}], ["*$key"]); }
 	if (        @{$CFG::{$key}}) { print Data::Dumper->Dump([\@{$CFG::{$key}}], ["*$key"]); }
 	if (        %{$CFG::{$key}}) { print Data::Dumper->Dump([\%{$CFG::{$key}}], ["*$key"]); }
-	print "\n";
     }
     print "1;\n";
     exit;

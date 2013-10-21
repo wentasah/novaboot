@@ -42,7 +42,6 @@ $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
 $CFG::qemu = 'qemu -cpu coreduo -smp 2';
 @CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
-$CFG::pulsar_root = '';	 # TODO: convert to option
 %CFG::targets = (
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324',
@@ -87,7 +86,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
-my ($append, $bender, $builddir, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+my ($append, $bender, $builddir, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -114,6 +113,7 @@ my %opt_spec;
     "off"	     => \$off_opt,
     "on"	     => \$on_opt,
     "pulsar|p:s"     => \$pulsar,
+    "pulsar-root=s"  => \$pulsar_root,
     "qemu|Q=s" 	     => \$qemu,
     "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
@@ -311,7 +311,7 @@ sub generate_pulsar_config($$)
 {
     my ($filename, $modules_ref) = @_;
     open(my $fg, '>', $filename) or die "$filename: $!";
-    print $fg "root $CFG::pulsar_root\n" if $CFG::pulsar_root;
+    print $fg "root $pulsar_root\n" if defined $pulsar_root;
     my $first = 1;
     my ($kbin, $kcmd);
     foreach (@$modules_ref) {

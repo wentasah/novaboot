@@ -141,8 +141,6 @@ if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name 
 if ($qemu) { $CFG::qemu = $qemu; }
 $qemu_append ||= '';
 
-if ($scons) { $CFG::scons = $scons; }
-
 ### Dump sanitized configuration (if requested)
 
 if ($dump_config) {
@@ -521,7 +519,7 @@ foreach my $script (@scripts) {
 	my @files = map({ ($file) = m/([^ ]*)/; $file; } @$modules);
 	# Filter-out generated files
 	my @to_build = grep({ my $file = $_; !scalar(grep($file eq $$_{filename}, @$generated)) } @files);
-	system_verbose($CFG::scons." ".join(" ", @to_build));
+	system_verbose($scons || $CFG::scons." ".join(" ", @to_build));
     }
 
 ### Copy files (using rsync)

@@ -119,6 +119,11 @@ used in the later phases.
     ports and stores the information about them in the BIOS data area for
     use by the kernel.
 
+- \--chainloader=<chainloader>
+
+    Chainloader that is loaded before the kernel and other files specified
+    in the novaboot script. E.g. 'bin/boot/bender promisc'.
+
 - \--dump
 
     Prints the content of the novaboot script after removing comments and
@@ -429,11 +434,6 @@ __\--dump-config__ switch. Some configuration variables can be overriden
 by environment variables (see below) or by command line switches.
 
 Documentation of some configuration variables follows:
-
-- @chainloaders
-
-    Custom chainloaders to load before hypervisor and files specified in
-    novaboot script. E.g. ('bin/boot/bender promisc', 'bin/boot/zapp').
 
 - %targets
 

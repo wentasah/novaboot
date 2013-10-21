@@ -41,10 +41,9 @@ $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
 $CFG::qemu = 'qemu -cpu coreduo -smp 2';
-@CFG::chainloaders = (); #('bin/boot/bender promisc'); # TODO: convert to option
 %CFG::targets = (
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
-    "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar=novaboot --iprelay=147.32.86.92:2324',
+    "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     );
 $CFG::scons = "scons -j2";
@@ -86,7 +85,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
-my ($append, $bender, $builddir, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+my ($append, $bender, $builddir, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -98,6 +97,7 @@ my %opt_spec;
     "bender|b"       => \$bender,
     "build-dir=s"    => \$builddir,
     "concat"	     => \$concat,
+    "chainloader=s"  => \@chainloaders,
     "dhcp-tftp|d"    => \$dhcp_tftp,
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
@@ -492,7 +492,7 @@ foreach my $script (@scripts) {
 	}
     }
     @$modules = ($kernel, @$modules) if $kernel;
-    @$modules = (@CFG::chainloaders, @$modules);
+    @$modules = (@chainloaders, @$modules);
     @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
 
     my $prefix;
@@ -829,6 +829,11 @@ Use F<bender> chainloader. Bender scans the PCI bus for PCI serial
 ports and stores the information about them in the BIOS data area for
 use by the kernel.
 
+=item --chainloader=<chainloader>
+
+Chainloader that is loaded before the kernel and other files specified
+in the novaboot script. E.g. 'bin/boot/bender promisc'.
+
 =item --dump
 
 Prints the content of the novaboot script after removing comments and
@@ -1164,11 +1169,6 @@ by environment variables (see below) or by command line switches.
 Documentation of some configuration variables follows:
 
 =over 8
-
-=item @chainloaders
-
-Custom chainloaders to load before hypervisor and files specified in
-novaboot script. E.g. ('bin/boot/bender promisc', 'bin/boot/zapp').
 
 =item %targets
 

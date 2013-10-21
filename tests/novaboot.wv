@@ -42,6 +42,20 @@ echo '1;' > .novaboot
 WVPASS sh -c "./script --gen-only 2> log"
 WVPASS grep "novaboot: Read $PWD/.novaboot" log
 
+WVSTART Builddir configuration
+WVPASS mkdir -p build
+cat > .novaboot <<'EOF'
+$builddir="build";
+1;
+EOF
+create_script <<'EOF'
+file <<XXX
+Hello
+XXX
+EOF
+WVPASS ./script --gen-only
+WVPASS test -f build/file
+
 exit
 
 # Broken

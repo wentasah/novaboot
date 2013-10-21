@@ -32,8 +32,6 @@ $| = 1;
 
 my $invocation_dir = getcwd();
 
-chomp(my $gittop = `git rev-parse --show-toplevel 2>/dev/null`);
-
 ## Configuration file handling
 
 # Default configuration
@@ -47,6 +45,8 @@ $CFG::qemu = 'qemu -cpu coreduo -smp 2';
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     );
 $CFG::scons = "scons -j2";
+
+my $builddir;
 
 sub read_config($) {
     my ($cfg) = @_;
@@ -63,6 +63,7 @@ sub read_config($) {
 	    die("ERROR: Failure processing '$cfg'");
 	}
     }
+    $builddir = File::Spec->rel2abs($CFG::builddir, dirname($cfg)) if defined $CFG::builddir;
     print STDERR "novaboot: Read $cfg\n";
 }
 
@@ -85,7 +86,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
-my ($append, $bender, $builddir, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -95,7 +96,7 @@ my %opt_spec;
 %opt_spec = (
     "append|a=s"     => \$append,
     "bender|b"       => \$bender,
-    "build-dir=s"    => \$builddir,
+    "build-dir=s"    => sub { my ($n, $v) = @_; $builddir = File::Spec->rel2abs($v); },
     "concat"	     => \$concat,
     "chainloader=s"  => \@chainloaders,
     "dhcp-tftp|d"    => \$dhcp_tftp,
@@ -267,7 +268,7 @@ sub generate_grub_config($$$$;$)
 	}
     }
     close($fg);
-    print("novaboot: Created $CFG::builddir/$filename\n");
+    print("novaboot: Created $builddir/$filename\n");
     return $filename;
 }
 
@@ -297,7 +298,7 @@ sub generate_grub2_config($$$$;$$)
     }
     print $fg "}\n";
     close($fg);
-    print("novaboot: Created $CFG::builddir/$filename\n");
+    print("novaboot: Created $builddir/$filename\n");
     return $filename;
 }
 
@@ -322,7 +323,7 @@ sub generate_pulsar_config($$)
     # Put kernel as last - this is needed for booting Linux and has no influence on non-Linux OSes
     print $fg "exec $kbin $kcmd\n";
     close($fg);
-    print("novaboot: Created $CFG::builddir/$filename\n");
+    print("novaboot: Created $builddir/$filename\n");
     return $filename;
 }
 
@@ -444,20 +445,10 @@ if ($iprelay && (defined $on_opt || defined $off_opt)) {
     exit;
 }
 
-## Figure out the location of builddir and chdir() there
-if ($builddir) {
-    $CFG::builddir = $builddir;
-} else {
-    if (! defined $CFG::builddir) {
-	$CFG::builddir = ( $gittop || $ENV{'HOME'}."/nul" ) . "/build";
-	if (! -d $CFG::builddir) {
-	    $CFG::builddir = $ENV{SRCDIR} = dirname(File::Spec->rel2abs( ${$scripts[0]}{filename}, $invocation_dir ));
-	}
-    }
-}
+$builddir ||= dirname(File::Spec->rel2abs( ${$scripts[0]}{filename}));
 
-chdir($CFG::builddir) or die "Can't change directory to $CFG::builddir: $!";
-print "novaboot: Entering directory `$CFG::builddir'\n";
+chdir($builddir) or die "Can't change directory to $builddir: $!";
+print "novaboot: Entering directory `$builddir'\n";
 
 ## File generation phase
 my (%files_iso, $menu_iso, $config_name, $filename);
@@ -490,7 +481,7 @@ foreach my $script (@scripts) {
 
     my $prefix;
     ($prefix = $grub_prefix) =~ s/\$NAME/$config_name/ if defined $grub_prefix;
-    $prefix ||= $CFG::builddir;
+    $prefix ||= $builddir;
     # TODO: use $grub_prefix as first parameter if some switch is given
     generate_configs('', $generated, $filename);
 
@@ -546,7 +537,7 @@ if (defined $iso_image) {
     my $files = "boot/grub/menu.lst=menu-iso.lst " . join(" ", map("$_=$_", keys(%files_iso)));
     $iso_image ||= "$config_name.iso";
     system_verbose("$CFG::genisoimage -R -b stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -J -joliet-long -o $iso_image -graft-points bin/boot/grub/ $files");
-    print("ISO image created: $CFG::builddir/$iso_image\n");
+    print("ISO image created: $builddir/$iso_image\n");
 }
 
 exit(0) if defined $gen_only;
@@ -636,7 +627,7 @@ host server {
     }
     $tftpd_pid = fork();
     if ($tftpd_pid == 0) {
-	exec_verbose("sudo in.tftpd --foreground --secure -v -v -v $CFG::builddir");
+	exec_verbose("sudo in.tftpd --foreground --secure -v -v -v $builddir");
     }
     $SIG{TERM} = sub { print "CHILDS KILLED\n"; kill 15, $dhcpd_pid, $tftpd_pid; };
 }
@@ -867,14 +858,10 @@ C<scons> or C<make>.
 
 Overrides the default build directory location.
 
-The default build directory location is determined as follows:
-
-If there is a configuration file, the value specified in the
-I<$builddir> variable is used. Otherwise, if the current working
-directory is inside git work tree and there is F<build> directory at
-the top of that tree, it is used. Otherwise, if directory
-F<~/nul/build> exists, it is used. Otherwise, it is the directory that
-contains the first processed novaboot script.
+The default build directory location is determined as follows: If the
+configuration file defines the C<$builddir> variable, its value is
+used. Otherwise, it is the directory that contains the first processed
+novaboot script.
 
 =item -g, --grub[=I<filename>]
 
@@ -1162,6 +1149,11 @@ by environment variables (see below) or by command line switches.
 Documentation of some configuration variables follows:
 
 =over 8
+
+=item $builddir
+
+Build directory location relative to the location of the configuration
+file.
 
 =item %targets
 

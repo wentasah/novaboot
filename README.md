@@ -160,14 +160,10 @@ scripts. Finally, binaries can be generated in this phases by running
 
     Overrides the default build directory location.
 
-    The default build directory location is determined as follows:
-
-    If there is a configuration file, the value specified in the
-    _$builddir_ variable is used. Otherwise, if the current working
-    directory is inside git work tree and there is `build` directory at
-    the top of that tree, it is used. Otherwise, if directory
-    `~/nul/build` exists, it is used. Otherwise, it is the directory that
-    contains the first processed novaboot script.
+    The default build directory location is determined as follows: If the
+    configuration file defines the `$builddir` variable, its value is
+    used. Otherwise, it is the directory that contains the first processed
+    novaboot script.
 
 - \-g, --grub\[=_filename_\]
 
@@ -434,6 +430,11 @@ __\--dump-config__ switch. Some configuration variables can be overriden
 by environment variables (see below) or by command line switches.
 
 Documentation of some configuration variables follows:
+
+- $builddir
+
+    Build directory location relative to the location of the configuration
+    file.
 
 - %targets
 

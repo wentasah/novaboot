@@ -258,8 +258,7 @@ sub generate_grub_config($$$$;$)
     if ($base) { $base = "$base/"; };
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "$preamble\n" if $preamble;
-    my $endmark = ($serial || defined $iprelay) ? ';' : '';
-    print $fg "title $title$endmark\n" if $title;
+    print $fg "title $title\n" if $title;
     #print $fg "root $base\n"; # root doesn't really work for (nd)
     my $first = 1;
     foreach (@$modules_ref) {
@@ -284,9 +283,8 @@ sub generate_grub2_config($$$$;$$)
     if ($base && substr($base,-1,1) ne '/') { $base = "$base/"; };
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "$preamble\n" if $preamble;
-    my $endmark = ($serial || defined $iprelay) ? ';' : '';
     $title ||= 'novaboot';
-    print $fg "menuentry $title$endmark {\n";
+    print $fg "menuentry $title {\n";
     print $fg "$prolog\n" if $prolog;
     my $first = 1;
     foreach (@$modules_ref) {

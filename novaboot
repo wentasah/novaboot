@@ -15,6 +15,7 @@
 
 use strict;
 use warnings;
+use warnings (exists $ENV{NOVABOOT_TEST} ? (FATAL => 'all') : ());
 use Getopt::Long qw(GetOptionsFromString);
 use Pod::Usage;
 use File::Basename;

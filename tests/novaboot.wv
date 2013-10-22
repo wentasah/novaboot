@@ -20,6 +20,14 @@ EOF
     touch file
 }
 
+WVSTART Invoke as script
+create_dummy
+WVPASS ./script --gen-only
+
+WVSTART Invoke as script with absolute path
+create_dummy
+WVPASS $PWD/script --gen-only
+
 WVSTART Pulsar root
 create_dummy
 WVPASS ./script --gen-only --pulsar --pulsar-root=ASDF

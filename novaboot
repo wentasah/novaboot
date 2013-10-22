@@ -74,7 +74,7 @@ my @cfgs;
     # not to the novaboot script. The problem with this approach is that
     # when a script is run as "novaboot <options> <script>" then $ARGV[0]
     # contains the first option. Hence the -f check.
-    my $dir = abs_path($invocation_dir . (($ARGV[0] && -f $ARGV[0]) ? '/'.dirname($ARGV[0]) : ''));
+    my $dir = File::Spec->rel2abs($ARGV[0] && -f $ARGV[0] ? dirname($ARGV[0]) : '', $invocation_dir);
     while (-d $dir && $dir ne "/") {
 	push @cfgs, "$dir/.novaboot" if -r "$dir/.novaboot";
 	$dir = abs_path($dir."/..");

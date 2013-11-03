@@ -60,9 +60,10 @@ it. E.g.
 
 # PHASES AND OPTIONS
 
-Novaboot perform its work in several phases. Each phase can be
+Novaboot performs its work in several phases. Each phase can be
 influenced by several options, certain phases can be skipped. The list
-of phases with the corresponding options follows.
+of phases (in the execution order) and the corresponding options
+follows.
 
 ## Configuration reading phase
 

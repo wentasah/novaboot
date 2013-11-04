@@ -328,9 +328,14 @@ sub generate_pulsar_config($$)
     return $filename;
 }
 
+sub shell_cmd_string(@)
+{
+    return join(' ', map((/^[-_=a-zA-Z0-9\/\.\+]+$/ ? "$_" : "'$_'"), @_));
+}
+
 sub exec_verbose(@)
 {
-    print "novaboot: Running: ".join(' ', map("'$_'", @_))."\n";
+    print "novaboot: Running: ".shell_cmd_string(@_)."\n";
     exec(@_);
 }
 

@@ -27,6 +27,7 @@ use FileHandle;
 use IPC::Open2;
 use POSIX qw(:errno_h);
 use Cwd qw(getcwd abs_path);
+use Expect;
 
 # always flush
 $| = 1;
@@ -365,8 +366,10 @@ if (exists $variables->{WVDESC}) {
 # deploying files. Otherwise, we may rewrite other user's files on a
 # boot server.
 
-my $IPRELAY;
+my $exp; # Expect object to communicate with the target over serial line
+
 if (defined $iprelay) {
+    my $IPRELAY;
     $iprelay =~ /([.0-9]+)(:([0-9]+))?/;
     my $addr = $1;
     my $port = $3 || 23;
@@ -376,23 +379,15 @@ if (defined $iprelay) {
     print "novaboot: Connecting to IP relay... ";
     connect($IPRELAY, $paddr)    || die "connect: $!";
     print "done\n";
-    $IPRELAY->autoflush(1);
+    $exp = Expect->init(\*$IPRELAY);
+    $exp->log_stdout(1);
 
     while (1) {
-	print $IPRELAY "\xFF\xF6";
-	alarm(20);
-	local $SIG{ALRM} = sub { die "Relay AYT timeout"; };
-	my $ayt_reponse = "";
-	my $read = sysread($IPRELAY, $ayt_reponse, 100);
-	alarm(0);
-
-	chomp($ayt_reponse);
-	print "$ayt_reponse\n";
-	if ($ayt_reponse =~ /<iprelayd: not connected/) {
-	    sleep(10);
-	    next;
-	}
-	last;
+	print $exp "\xFF\xF6";	# AYT
+	my $connected = $exp->expect(20, # Timeout in seconds
+				     '<iprelayd: connected>',
+				     '-re', '<WEB51 HW[^>]*>');
+	last if $connected;
     }
 
     sub relaycmd($$) {
@@ -413,35 +408,18 @@ if (defined $iprelay) {
     sub relay($$;$) {
 	my ($relay, $onoff, $can_giveup) = @_;
 	my $confirmation = '';
-	print $IPRELAY relaycmd($relay, $onoff);
-
-	# We use non-blocking I/O and polling here because for some
-	# reason read() on blocking FD returns only after all
-	# requested data is available. If we get during the first
-	# read() only a part of confirmation, we may get the rest
-	# after the system boots and print someting, which may be too
-	# long.
-	$IPRELAY->blocking(0);
-
-	alarm(20); # Timeout in seconds
-	my $giveup = 0;
-        local $SIG{ALRM} = sub {
-	    if ($can_giveup) { print("Relay confirmation timeout - ignoring\n"); $giveup = 1;}
-	    else {die "Relay confirmation timeout";}
-	};
-	my $index;
-	while (($index=index($confirmation, relayconf($relay, $onoff))) < 0 && !$giveup) {
-	    my $read = read($IPRELAY, $confirmation, 70, length($confirmation));
-	    if (!defined($read)) {
-		die("IP relay: $!") unless $! == EAGAIN;
-		usleep(10000);
-		next;
+	$exp->log_stdout(0);
+	print $exp relaycmd($relay, $onoff);
+	my $confirmed = $exp->expect(20, # Timeout in seconds
+				     relayconf($relay, $onoff));
+	if (!$confirmed) {
+	    if ($can_giveup) {
+		print("Relay confirmation timeout - ignoring\n");
+	    } else {
+		die "Relay confirmation timeout";
 	    }
-	    #use MIME::QuotedPrint;
-	    #print "confirmation = ".encode_qp($confirmation)."\n";
 	}
-	alarm(0);
-	$IPRELAY->blocking(1);
+	$exp->log_stdout(1);
     }
 }
 
@@ -453,7 +431,7 @@ if ($iprelay && (defined $on_opt || defined $off_opt)) {
 	print "novaboot: Switching the target off...\n";
 	usleep(6000000);	# Long press to switch off
     }
-    print $IPRELAY relay(1, 0);
+    print $exp relay(1, 0);
     exit;
 }
 
@@ -608,7 +586,9 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
 	push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
     }
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
-    exec_verbose(($qemu,  '-name', $config_name, @qemu_flags));
+    unshift(@qemu_flags, ('-name', $config_name));
+    print "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
+    $exp = Expect->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
 }
 
 ### Local DHCPD and TFTPD
@@ -652,31 +632,30 @@ host server {
 ### Serial line or IP relay
 
 if ($serial || defined $iprelay) {
-    my $CONN;
     if (defined $iprelay) {
 	print "novaboot: Reseting the test box... ";
 	relay(2, 1, 1); # Reset the machine
 	usleep(100000);
 	relay(2, 0);
 	print "done\n";
-
-	$CONN = $IPRELAY;
     } elsif ($serial) {
+	my $CONN;
 	system("stty -F $serial raw -crtscts -onlcr 115200");
 	open($CONN, "+<", $serial) || die "open $serial: $!";
-	$CONN->autoflush(1);
+	$exp = Expect->init(\*$CONN);
     }
+}
 
-    # Pass the NOVA output to stdout.
-    while (<$CONN>) {
-	print;
-    }
-    kill 15, $dhcpd_pid, $tftpd_pid if ($dhcp_tftp);
-    exit;
+if (defined $exp) {
+    # Serial line of the target is available
+    print "novaboot: Serial line interaction...\n";
+    $exp->log_stdout(1);
+    $exp->interact(undef, "\cC"); # Interact until Ctrl-C is pressed
 }
 
 ### Wait for dhcpc or tftpd
 if (defined $dhcp_tftp) {
+    kill 15, $dhcpd_pid, $tftpd_pid;
     my $pid = wait();
     if ($pid == $dhcpd_pid) { print "dhcpd exited!\n"; }
     elsif ($pid == $tftpd_pid) { print "tftpd exited!\n"; }

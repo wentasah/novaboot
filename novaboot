@@ -352,7 +352,13 @@ if (exists $variables->{WVDESC}) {
     print "Testing \"all\" in $last_fn:\n";
 }
 
-## Handle reset and power on/off - TODO: move after the file generation phase
+## Connect to the target and check whether is not occupied
+
+# We have to do this before file generation phase, because file
+# generation is intermixed with file deployment phase and we want to
+# check whether the target is not used by somebody else before
+# deploying files. Otherwise, we may rewrite other user's files on a
+# boot server.
 
 my $IPRELAY;
 if (defined $iprelay) {

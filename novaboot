@@ -462,12 +462,15 @@ if (defined $off_opt && defined $target_power_off) {
     exit;
 }
 
-$builddir ||= dirname(File::Spec->rel2abs( ${$scripts[0]}{filename}));
-chdir($builddir) or die "Can't change directory to $builddir: $!";
-print "novaboot: Entering directory `$builddir'\n";
+$builddir ||= dirname(File::Spec->rel2abs( ${$scripts[0]}{filename})) if scalar @scripts;
+if (defined $builddir) {
+    chdir($builddir) or die "Can't change directory to $builddir: $!";
+    print "novaboot: Entering directory `$builddir'\n";
+}
 
 ## File generation phase
-my (%files_iso, $menu_iso, $config_name, $filename);
+my (%files_iso, $menu_iso, $filename);
+my $config_name = '';
 
 foreach my $script (@scripts) {
     $filename = $$script{filename};
@@ -602,15 +605,17 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
 	foreach (@$modules) {s/,/+/g;}
 	generate_configs("", $generated, $filename);
 
-	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
-	$kcmd = '' if !defined $kcmd;
-	my $dtb;
-	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
-	my $initrd = join ",", @$modules;
+	if (scalar @$modules) {
+	    my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
+	    $kcmd = '' if !defined $kcmd;
+	    my $dtb;
+	    @$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
+	    my $initrd = join ",", @$modules;
 
-	push(@qemu_flags, ('-kernel', $kbin, '-append', $kcmd));
-	push(@qemu_flags, ('-initrd', $initrd)) if $initrd;
-	push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
+	    push(@qemu_flags, ('-kernel', $kbin, '-append', $kcmd));
+	    push(@qemu_flags, ('-initrd', $initrd)) if $initrd;
+	    push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
+	}
     }
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     unshift(@qemu_flags, ('-name', $config_name));

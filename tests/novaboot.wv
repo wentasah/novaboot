@@ -20,6 +20,9 @@ EOF
     touch file
 }
 
+WVSTART Invoke with no script
+WVPASS novaboot < /dev/null
+
 WVSTART Invoke as script
 create_dummy
 WVPASS ./script --gen-only

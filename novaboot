@@ -368,6 +368,8 @@ if (exists $variables->{WVDESC}) {
 
 my $exp; # Expect object to communicate with the target over serial line
 
+my ($target_reset, $target_power_on, $target_power_off);
+
 if (defined $iprelay) {
     my $IPRELAY;
     $iprelay =~ /([.0-9]+)(:([0-9]+))?/;
@@ -421,17 +423,42 @@ if (defined $iprelay) {
 	}
 	$exp->log_stdout(1);
     }
+
+    $target_reset = sub {
+	relay(2, 1, 1); # Reset the machine
+	usleep(100000);
+	relay(2, 0);
+    };
+
+    $target_power_off = sub {
+	relay(1, 1);		# Press power button
+	usleep(6000000);	# Long press to switch off
+	relay(1, 0);
+    };
+
+    $target_power_on = sub {
+	relay(1, 1);		# Press power button
+	usleep(100000);		# Short press
+	relay(1, 0);
+    };
+}
+elsif ($serial) {
+    my $CONN;
+    system("stty -F $serial raw -crtscts -onlcr 115200");
+    open($CONN, "+<", $serial) || die "open $serial: $!";
+    $exp = Expect->init(\*$CONN);
+}
+else {
+    $exp = new Expect(); # Make $exp ready for calling $exp->spawn() later
 }
 
-if ($iprelay && (defined $on_opt || defined $off_opt)) {
-     relay(1, 1); # Press power button
-    if (defined $on_opt) {
-	usleep(100000);		# Short press
-    } else {
-	print "novaboot: Switching the target off...\n";
-	usleep(6000000);	# Long press to switch off
-    }
-    print $exp relay(1, 0);
+if (defined $on_opt && defined $target_power_on) {
+    &$target_power_on();
+    exit;
+}
+if (defined $off_opt && defined $target_power_off) {
+    print "novaboot: Switching the target off...\n";
+    &$target_power_off();
     exit;
 }
 
@@ -588,7 +615,7 @@ if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $serv
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     unshift(@qemu_flags, ('-name', $config_name));
     print "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
-    $exp = Expect->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
+    $exp->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
 }
 
 ### Local DHCPD and TFTPD
@@ -631,24 +658,15 @@ host server {
 
 ### Serial line or IP relay
 
-if ($serial || defined $iprelay) {
-    if (defined $iprelay) {
-	print "novaboot: Reseting the test box... ";
-	relay(2, 1, 1); # Reset the machine
-	usleep(100000);
-	relay(2, 0);
-	print "done\n";
-    } elsif ($serial) {
-	my $CONN;
-	system("stty -F $serial raw -crtscts -onlcr 115200");
-	open($CONN, "+<", $serial) || die "open $serial: $!";
-	$exp = Expect->init(\*$CONN);
-    }
+if (defined $target_reset) {
+    print "novaboot: Reseting the test box... ";
+    &$target_reset();
+    print "done\n";
 }
 
 if (defined $exp) {
     # Serial line of the target is available
-    print "novaboot: Serial line interaction...\n";
+    print "novaboot: Serial line interaction (press Ctrl-C to interrupt)...\n";
     $exp->log_stdout(1);
     $exp->interact(undef, "\cC"); # Interact until Ctrl-C is pressed
 }

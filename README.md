@@ -33,8 +33,8 @@ specified by command line switches. Thus running `novaboot ./script`
 (or `./script` as described above) will run Qemu and make it boot the
 configuration specified in the _script_.
 2. Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2 and Pulsar) and copy it with all other
-files needed for booting to another, perhaps remote, location.
+bootloaders are GRUB, GRUB2, Pulsar and uBoot) and copy it with all
+other files needed for booting to another, perhaps remote, location.
 
         ./script --server --iprelay=192.168.1.2
 
@@ -318,6 +318,13 @@ to a particular location, e.g. to a TFTP boot server or to the
 ## Interaction with the bootloader on the target
 
 See __\--serial__. There will be new options soon.
+
+- \--uboot
+
+    Interact with uBoot bootloader to boot the thing described in the
+    novaboot script. Implementation of this option is currently tied to a
+    particular board that we use. It may be subject to changes in the
+    future!
 
 ## Target's output reception phase
 

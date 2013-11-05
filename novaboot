@@ -45,6 +45,9 @@ $CFG::qemu = 'qemu -cpu coreduo -smp 2';
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
+    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}" --remote-cmd="ssh pc-sojkam.felk.cvut.cz \"cu -l /dev/ttyUSB0 -s 115200\"" --reset-cmd="ssh pc-sojkam.felk.cvut.cz \"dtrrts /dev/ttyUSB0 1 1\""',
+    "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}" --reset-cmd="dtrrts $serial 0 1; sleep 0.1; dtrrts $serial 1 1"',
+
     );
 $CFG::scons = "scons -j2";
 
@@ -135,6 +138,7 @@ my %opt_spec;
 			      exists $CFG::targets{$opt_value} or die("Unknown target '$opt_value' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
 			      GetOptionsFromString($CFG::targets{$opt_value}, %opt_spec); },
     "uboot"	     => \$uboot,
+    "uboot-init=s"   => \$uboot_init,
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
@@ -689,11 +693,10 @@ if (defined $uboot) {
     print "novaboot: Waiting for uBoot prompt...\n";
     $exp->log_stdout(1);
     $exp->expect(20,
-		 [qr/Hit any key to stop autoboot:/, sub { $exp->send('.'); exp_continue; }],
+		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
 		 '=> ') || die "No uBoot prompt deteceted";
-
-    $exp->send("dhcp\n");
-    $exp->expect(1, '=> ');
+    $exp->send("$uboot_init\n") if $uboot_init;
+    $exp->expect(10, '=> ') || die "uBoot prompt timeout";
 
     my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
     my $dtb;
@@ -704,29 +707,28 @@ if (defined $uboot) {
     my $initrd_addr = '-';
     my $dtb_addr = '';
 
-    sleep(1);
     $exp->send("tftp $kern_addr $kbin\n");
-    $exp->expect(1,
+    $exp->expect(10,
 		 [qr/#/, sub { exp_continue; }],
 		 '=> ') || die "Kernel load failed";
     if (defined $dtb) {
 	$dtb_addr = '7f0000';
 	$exp->send("tftp $dtb_addr $dtb\n");
-	$exp->expect(1,
+	$exp->expect(10,
 		     [qr/#/, sub { exp_continue; }],
 		     '=> ') || die "Device tree load failed";
     }
     if (defined $initrd) {
 	$initrd_addr = 'b00000';
 	$exp->send("tftp $initrd_addr $initrd\n");
-	$exp->expect(1,
+	$exp->expect(10,
 		     [qr/#/, sub { exp_continue; }],
 		     '=> ') || die "Initrd load failed";
     }
-    $exp->send("mw f0000b00 \${psc_cfg}\n");
     $exp->send("set bootargs $kcmd\n");
-    $exp->expect(1, '=> ');
+    $exp->expect(1, '=> ')  || die "uBoot prompt timeout";
     $exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
+    $exp->expect(1, "\n")  || die "uBoot command timeout";
 }
 
 if (defined $exp) {
@@ -1124,6 +1126,11 @@ Interact with uBoot bootloader to boot the thing described in the
 novaboot script. Implementation of this option is currently tied to a
 particular board that we use. It may be subject to changes in the
 future!
+
+=item --uboot-init
+
+Command(s) to send the uBoot bootloader before loading the images and
+botting them.
 
 =back
 

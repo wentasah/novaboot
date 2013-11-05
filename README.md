@@ -326,6 +326,11 @@ See __\--serial__. There will be new options soon.
     particular board that we use. It may be subject to changes in the
     future!
 
+- \--uboot-init
+
+    Command(s) to send the uBoot bootloader before loading the images and
+    botting them.
+
 ## Target's output reception phase
 
 - \-s, --serial\[=device\]

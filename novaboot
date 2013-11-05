@@ -652,16 +652,17 @@ host server {
 	    sudo ip l set dev eth0 up;
 	    sudo touch dhcpd.leases");
 
+    # We run servers by forking ourselves, because the servers end up
+    # in our process group and get killed by signals sent to the
+    # process group (e.g. Ctrl-C on terminal).
     $dhcpd_pid = fork();
-    if ($dhcpd_pid == 0) {
-	# This way, the spawned server are killed when this script is killed.
-	exec_verbose("sudo dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid");
-    }
+    exec_verbose("sudo dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid") if ($dhcpd_pid == 0);
     $tftpd_pid = fork();
-    if ($tftpd_pid == 0) {
-	exec_verbose("sudo in.tftpd --foreground --secure -v -v -v $builddir");
-    }
-    $SIG{TERM} = sub { print "CHILDS KILLED\n"; kill 15, $dhcpd_pid, $tftpd_pid; };
+    exec_verbose("sudo in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid $builddir") if ($tftpd_pid == 0);
+
+    # Kill server when we die
+    $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid');
+			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
 }
 
 ### Serial line or IP relay
@@ -710,7 +711,7 @@ if (defined $uboot) {
 		     [qr/#/, sub { exp_continue; }],
 		     '=> ') || die "Initrd load failed";
     }
-    $exp->send('mw f0000b00 ${psc_cfg}');
+    $exp->send("mw f0000b00 \${psc_cfg}\n");
     $exp->send("set bootargs $kcmd\n");
     $exp->expect(1, '=> ');
     $exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
@@ -723,14 +724,9 @@ if (defined $exp) {
     $exp->interact(undef, "\cC"); # Interact until Ctrl-C is pressed
 }
 
-### Wait for dhcpc or tftpd
+## Kill dhcpc or tftpd
 if (defined $dhcp_tftp) {
-    kill 15, $dhcpd_pid, $tftpd_pid;
-    my $pid = wait();
-    if ($pid == $dhcpd_pid) { print "dhcpd exited!\n"; }
-    elsif ($pid == $tftpd_pid) { print "tftpd exited!\n"; }
-    else { print "wait returned: $pid\n"; }
-    kill(15, 0); # Kill current process group i.e. all remaining children
+    die("novaboot: This should kill servers on background\n");
 }
 
 ## Documentation
@@ -1024,7 +1020,7 @@ uses C<sudo> command to obtain those. You can put the following to
 I</etc/sudoers> to allow running the necessary commands without
 asking for password.
 
- Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v *, /usr/bin/touch dhcpd.leases
+ Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, pkill --pidfile=dhcpd.pid, pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
 
 =item -i, --iso[=filename]

@@ -256,7 +256,7 @@ to a particular location, e.g. to a TFTP boot server or to the
     _/etc/sudoers_ to allow running the necessary commands without
     asking for password.
 
-        Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v *, /usr/bin/touch dhcpd.leases
+        Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, pkill --pidfile=dhcpd.pid, pkill --pidfile=tftpd.pid
         your_login ALL=NOPASSWD: NOVABOOT
 
 - \-i, --iso\[=filename\]

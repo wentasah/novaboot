@@ -721,7 +721,22 @@ if (defined $exp) {
     # Serial line of the target is available
     print "novaboot: Serial line interaction (press Ctrl-C to interrupt)...\n";
     $exp->log_stdout(1);
-    $exp->interact(undef, "\cC"); # Interact until Ctrl-C is pressed
+    my @inputs = ($exp);
+    if (-t STDIN) { # Set up bi-directional communication if we run on terminal
+	my $infile = new IO::File;
+	$infile->IO::File::fdopen(*STDIN,'r');
+	my $in_object = Expect->exp_init($infile);
+	$in_object->set_group($exp);
+	#$in_object->set_seq("\cC",undef);
+
+	# I'm not sure when to use raw mode and when not. With
+	# --dhcp-tftp, I want the output of daemons to be normally
+	# formated (no raw mode). On the other hand, I don't want
+	# input for qemu to be echoed. Need to think more about this.
+	$in_object->manual_stty(1);
+	push(@inputs, $in_object);
+    }
+    Expect::interconnect(@inputs);
 }
 
 ## Kill dhcpc or tftpd

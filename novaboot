@@ -685,7 +685,7 @@ if (defined $uboot) {
 
     my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
     my $dtb;
-    @$modules = map { print "DTBBBB $_\n"; if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
+    @$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
     my $initrd = shift @$modules;
 
     my $kern_addr = '800000';

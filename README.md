@@ -326,6 +326,12 @@ See __\--serial__. There will be new options soon.
     Use serial line to control GRUB bootloader and to see the output
     serial output of the machine. The default value is `/dev/ttyUSB0`.
 
+- \--stty=<settings>
+
+    Specifies settings passed to `stty` invoked on the serial line
+    specified with __\--serial__. If this option is not given, `stty` is
+    called with `raw -crtscts -onlcr 115200` settings.
+
 See also __\--iprelay__.
 
 ## Termination phase

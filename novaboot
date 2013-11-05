@@ -88,10 +88,11 @@ read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
+$stty = 'raw -crtscts -onlcr 115200';
 
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
@@ -127,6 +128,7 @@ my %opt_spec;
     "serial|s:s"     => \$serial,
     "server:s" 	     => \$server,
     "strip-rom"	     => sub { $rom_prefix = ''; },
+    "stty=s"	     => \$stty,
     "target|t=s"     => sub { my ($opt_name, $opt_value) = @_;
 			      exists $CFG::targets{$opt_value} or die("Unknown target '$opt_value' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
 			      GetOptionsFromString($CFG::targets{$opt_value}, %opt_spec); },
@@ -444,7 +446,7 @@ if (defined $iprelay) {
 }
 elsif ($serial) {
     my $CONN;
-    system("stty -F $serial raw -crtscts -onlcr 115200");
+    system_verbose("stty -F $serial $stty");
     open($CONN, "+<", $serial) || die "open $serial: $!";
     $exp = Expect->init(\*$CONN);
 }
@@ -1054,6 +1056,12 @@ See B<--serial>. There will be new options soon.
 
 Use serial line to control GRUB bootloader and to see the output
 serial output of the machine. The default value is F</dev/ttyUSB0>.
+
+=item --stty=<settings>
+
+Specifies settings passed to C<stty> invoked on the serial line
+specified with B<--serial>. If this option is not given, C<stty> is
+called with C<raw -crtscts -onlcr 115200> settings.
 
 =back
 

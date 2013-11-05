@@ -88,7 +88,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 
 ## Command line handling
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -122,6 +122,8 @@ my %opt_spec;
     "qemu|Q=s" 	     => \$qemu,
     "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
+    "remote-cmd=s"   => \$remote_cmd,
+    "reset-cmd=s"    => \$reset_cmd,
     "rsync-flags=s"  => \$rsync_flags,
     "scons:s"	     => \$scons,
     "scriptmod=s"    => \@scriptmod,
@@ -450,9 +452,19 @@ elsif ($serial) {
     system_verbose("stty -F $serial $stty");
     open($CONN, "+<", $serial) || die "open $serial: $!";
     $exp = Expect->init(\*$CONN);
-}
-else {
+} else {
     $exp = new Expect(); # Make $exp ready for calling $exp->spawn() later
+
+    if ($remote_cmd) {
+	print "novaboot: Running: $remote_cmd\n";
+	$exp->spawn($remote_cmd);
+    }
+}
+
+if (defined $reset_cmd) {
+    $target_reset = sub {
+	system_verbose($reset_cmd);
+    };
 }
 
 if (defined $on_opt && defined $target_power_on) {
@@ -1129,6 +1141,15 @@ serial output of the machine. The default value is F</dev/ttyUSB0>.
 Specifies settings passed to C<stty> invoked on the serial line
 specified with B<--serial>. If this option is not given, C<stty> is
 called with C<raw -crtscts -onlcr 115200> settings.
+
+=item --remote-cmd=<cmd>
+
+Command that mediates connection to the target's serial line. For
+example C<ssh server 'cu -l /dev/ttyS0'>.
+
+=item --reset-cmd=<cmd>
+
+Command that resets the target.
 
 =back
 

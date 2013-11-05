@@ -339,6 +339,15 @@ See __\--serial__. There will be new options soon.
     specified with __\--serial__. If this option is not given, `stty` is
     called with `raw -crtscts -onlcr 115200` settings.
 
+- \--remote-cmd=<cmd>
+
+    Command that mediates connection to the target's serial line. For
+    example `ssh server 'cu -l /dev/ttyS0'`.
+
+- \--reset-cmd=<cmd>
+
+    Command that resets the target.
+
 See also __\--iprelay__.
 
 ## Termination phase

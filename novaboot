@@ -770,8 +770,6 @@ B<novaboot> [ options ] [--] script...
 
 B<./script> [ options ]
 
-B<novaboot> --help
-
 =head1 DESCRIPTION
 
 This program makes it easier to boot NOVA or other operating system
@@ -858,7 +856,7 @@ for configuration file search.
 
 =over 8
 
-=item -c, --config=<filename>
+=item -c, --config=I<filename>
 
 Use the specified configuration file instead of the default one(s).
 
@@ -877,7 +875,7 @@ initial template for a configuration file.
 
 Print short (B<-h>) or long (B<--help>) help.
 
-=item -t, --target=<target>
+=item -t, --target=I<target>
 
 This option serves as a user configurable shortcut for other novaboot
 options. The effect of this option is the same as the options stored
@@ -893,7 +891,7 @@ used in the later phases.
 
 =over 8
 
-=item -a, --append=<parameters>
+=item -a, --append=I<parameters>
 
 Appends a string to the first "filename" line in the novaboot script.
 This can be used to append parameters to the kernel's or root task's
@@ -905,7 +903,7 @@ Use F<bender> chainloader. Bender scans the PCI bus for PCI serial
 ports and stores the information about them in the BIOS data area for
 use by the kernel.
 
-=item --chainloader=<chainloader>
+=item --chainloader=I<chainloader>
 
 Chainloader that is loaded before the kernel and other files specified
 in the novaboot script. E.g. 'bin/boot/bender promisc'.
@@ -946,7 +944,7 @@ C<scons> or C<make>.
 
 =over 8
 
-=item --build-dir=<directory>
+=item --build-dir=I<directory>
 
 Overrides the default build directory location.
 
@@ -1045,13 +1043,13 @@ Note: This option is supposed to work with HWG-ER02a IP relays.
 Target's serial line is connected to host's serial line (device). The
 default value for device is F</dev/ttyUSB0>.
 
-=item --stty=<settings>
+=item --stty=I<settings>
 
 Specifies settings passed to C<stty> invoked on the serial line
 specified with B<--serial> option. If this option is not given,
 C<stty> is called with C<raw -crtscts -onlcr 115200> settings.
 
-=item --remote-cmd=<cmd>
+=item --remote-cmd=I<cmd>
 
 Command that mediates connection to the target's serial line. For
 example C<ssh server 'cu -l /dev/ttyS0'>.
@@ -1133,7 +1131,7 @@ C<-cpu coreduo -smp 2>).
 Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
 -smp 2>) with I<flags> specified here.
 
-=item --reset-cmd=<cmd>
+=item --reset-cmd=I<cmd>
 
 Command that resets the target.
 

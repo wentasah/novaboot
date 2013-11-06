@@ -8,8 +8,6 @@ __novaboot__ \[ options \] \[--\] script...
 
 __./script__ \[ options \]
 
-__novaboot__ --help
-
 # DESCRIPTION
 
 This program makes it easier to boot NOVA or other operating system
@@ -81,7 +79,7 @@ and options precede the script name, as in the example ["4."](#4.) above.
 In this case the current working directory is used as a starting point
 for configuration file search.
 
-- \-c, --config=<filename>
+- \-c, --config=_filename_
 
     Use the specified configuration file instead of the default one(s).
 
@@ -96,7 +94,7 @@ for configuration file search.
 
     Print short (__\-h__) or long (__\--help__) help.
 
-- \-t, --target=<target>
+- \-t, --target=_target_
 
     This option serves as a user configurable shortcut for other novaboot
     options. The effect of this option is the same as the options stored
@@ -108,7 +106,7 @@ for configuration file search.
 This phases allows to modify the parsed novaboot script before it is
 used in the later phases.
 
-- \-a, --append=<parameters>
+- \-a, --append=_parameters_
 
     Appends a string to the first "filename" line in the novaboot script.
     This can be used to append parameters to the kernel's or root task's
@@ -120,7 +118,7 @@ used in the later phases.
     ports and stores the information about them in the BIOS data area for
     use by the kernel.
 
-- \--chainloader=<chainloader>
+- \--chainloader=_chainloader_
 
     Chainloader that is loaded before the kernel and other files specified
     in the novaboot script. E.g. 'bin/boot/bender promisc'.
@@ -157,7 +155,7 @@ to generate other files using _heredoc_ or _"<"_ syntax in novaboot
 scripts. Finally, binaries can be generated in this phases by running
 `scons` or `make`.
 
-- \--build-dir=<directory>
+- \--build-dir=_directory_
 
     Overrides the default build directory location.
 
@@ -252,13 +250,13 @@ user/instance.
     Target's serial line is connected to host's serial line (device). The
     default value for device is `/dev/ttyUSB0`.
 
-- \--stty=<settings>
+- \--stty=_settings_
 
     Specifies settings passed to `stty` invoked on the serial line
     specified with __\--serial__ option. If this option is not given,
     `stty` is called with `raw -crtscts -onlcr 115200` settings.
 
-- \--remote-cmd=<cmd>
+- \--remote-cmd=_cmd_
 
     Command that mediates connection to the target's serial line. For
     example `ssh server 'cu -l /dev/ttyS0'`.
@@ -332,7 +330,7 @@ to a particular location, e.g. to a TFTP boot server or to the
     Replace the default qemu flags (QEMU\_FLAGS variable or `-cpu coreduo
     -smp 2`) with _flags_ specified here.
 
-- \--reset-cmd=<cmd>
+- \--reset-cmd=_cmd_
 
     Command that resets the target.
 

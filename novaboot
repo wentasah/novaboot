@@ -46,7 +46,7 @@ $CFG::qemu = 'qemu -cpu coreduo -smp 2';
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}" --remote-cmd="ssh pc-sojkam.felk.cvut.cz \"cu -l /dev/ttyUSB0 -s 115200\"" --reset-cmd="ssh pc-sojkam.felk.cvut.cz \"dtrrts /dev/ttyUSB0 1 1\""',
-    "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}" --reset-cmd="dtrrts $serial 0 1; sleep 0.1; dtrrts $serial 1 1"',
+    "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}" --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
 
     );
 $CFG::scons = "scons -j2";
@@ -166,7 +166,10 @@ if ($dump_config) {
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
 
 # Default options
-if (defined $serial) { $serial ||= "/dev/ttyUSB0"; }
+if (defined $serial) {
+    $serial ||= "/dev/ttyUSB0";
+    $ENV{NB_SERIAL} = $serial;
+}
 if (defined $grub_config) { $grub_config ||= "menu.lst"; }
 if (defined $grub2_config) { $grub2_config ||= "grub.cfg"; }
 
@@ -1042,6 +1045,9 @@ Note: This option is supposed to work with HWG-ER02a IP relays.
 
 Target's serial line is connected to host's serial line (device). The
 default value for device is F</dev/ttyUSB0>.
+
+The value of this option is exported in NB_NOVABOOT environment
+variable to all subprocesses run by C<novaboot>.
 
 =item --stty=I<settings>
 

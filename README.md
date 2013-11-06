@@ -250,6 +250,9 @@ user/instance.
     Target's serial line is connected to host's serial line (device). The
     default value for device is `/dev/ttyUSB0`.
 
+    The value of this option is exported in NB\_NOVABOOT environment
+    variable to all subprocesses run by `novaboot`.
+
 - \--stty=_settings_
 
     Specifies settings passed to `stty` invoked on the serial line

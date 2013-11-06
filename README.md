@@ -13,20 +13,20 @@ __novaboot__ --help
 # DESCRIPTION
 
 This program makes it easier to boot NOVA or other operating system
-(OS) in different environments. It reads a so called novaboot script
-and uses it either to boot the OS in an emulator (e.g. in qemu) or to
-generate the configuration for a specific bootloader and optionally to
-copy the necessary binaries and other needed files to proper
-locations, perhaps on a remote server. In case the system is actually
-booted, its serial output is redirected to standard output if that is
-possible.
+(OS) on different targets (machines or emulators). It reads a so
+called novaboot script, that specifies the boot configuration, and
+setups the target to boot that configuration. Setting up the target
+means to generate the bootloader configuration files, deploy the
+binaries and other needed files to proper locations, perhaps on a
+remote boot server and reset the target. Then, target's serial output
+is redirected to standard output if that is possible.
 
 A typical way of using novaboot is to make the novaboot script
 executable and set its first line to _\#!/usr/bin/env novaboot_. Then,
 booting a particular OS configuration becomes the same as executing a
 local program - the novaboot script.
 
-With `novaboot` you can:
+For example, with `novaboot` you can:
 
 1. Run an OS in Qemu. This is the default action when no other action is
 specified by command line switches. Thus running `novaboot ./script`
@@ -42,8 +42,8 @@ other files needed for booting to another, perhaps remote, location.
     configuration file and uses TCP/IP-controlled relay to reset the test
     box and receive its serial output.
 
-3. Run DHCP and TFTP server on developer's machine to PXE-boot NOVA from
-it. E.g.
+3. Run DHCP and TFTP server on developer's machine to PXE-boot the OS
+from it. E.g.
 
         ./script --dhcp-tftp
 
@@ -239,6 +239,30 @@ If supported by the target, the connection to it is made and it is
 checked whether the target is not occupied by another novaboot
 user/instance.
 
+- \--iprelay=_addr\[:port\]_
+
+    Use TCP/IP relay and serial port to access the target's serial port
+    and powercycle it. The IP address of the relay is given by _addr_
+    parameter. If _port_ is not specified, it default to 23.
+
+    Note: This option is supposed to work with HWG-ER02a IP relays.
+
+- \-s, --serial\[=device\]
+
+    Target's serial line is connected to host's serial line (device). The
+    default value for device is `/dev/ttyUSB0`.
+
+- \--stty=<settings>
+
+    Specifies settings passed to `stty` invoked on the serial line
+    specified with __\--serial__ option. If this option is not given,
+    `stty` is called with `raw -crtscts -onlcr 115200` settings.
+
+- \--remote-cmd=<cmd>
+
+    Command that mediates connection to the target's serial line. For
+    example `ssh server 'cu -l /dev/ttyS0'`.
+
 ## File deployment phase
 
 In some setups, it is necessary to copy the files needed for booting
@@ -247,9 +271,9 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - \-d, --dhcp-tftp
 
-    Turns your workstation into a DHCP and TFTP server so that NOVA
-    can be booted via PXE BIOS on a test machine directly connected by
-    a plain Ethernet cable to your workstation.
+    Turns your workstation into a DHCP and TFTP server so that the OS can
+    be booted via PXE BIOS (or similar mechanism) on the test machine
+    directly connected by a plain Ethernet cable to your workstation.
 
     The DHCP and TFTP servers require root privileges and `novaboot`
     uses `sudo` command to obtain those. You can put the following to
@@ -289,13 +313,6 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 ## Target power-on and reset phase
 
-- \--iprelay=_addr\[:port\]_
-
-    Use IP relay to reset the machine and to get the serial output. The IP
-    address of the relay is given by _addr_ parameter.
-
-    Note: This option is expected to work with HWG-ER02a IP relays.
-
 - \--on, --off
 
     Switch on/off the target machine. Currently works only with
@@ -315,9 +332,11 @@ to a particular location, e.g. to a TFTP boot server or to the
     Replace the default qemu flags (QEMU\_FLAGS variable or `-cpu coreduo
     -smp 2`) with _flags_ specified here.
 
-## Interaction with the bootloader on the target
+- \--reset-cmd=<cmd>
 
-See __\--serial__. There will be new options soon.
+    Command that resets the target.
+
+## Interaction with the bootloader on the target
 
 - \--uboot
 
@@ -331,33 +350,13 @@ See __\--serial__. There will be new options soon.
     Command(s) to send the uBoot bootloader before loading the images and
     botting them.
 
-## Target's output reception phase
+## Target interaction phase
 
-- \-s, --serial\[=device\]
+In this phase, target's serial output is passed to `novaboot` stdout.
+If `novaboot`'s stdin is on TTY, the stdin is passed to the target
+allowing interactive work with the target.
 
-    Use serial line to control GRUB bootloader and to see the output
-    serial output of the machine. The default value is `/dev/ttyUSB0`.
-
-- \--stty=<settings>
-
-    Specifies settings passed to `stty` invoked on the serial line
-    specified with __\--serial__. If this option is not given, `stty` is
-    called with `raw -crtscts -onlcr 115200` settings.
-
-- \--remote-cmd=<cmd>
-
-    Command that mediates connection to the target's serial line. For
-    example `ssh server 'cu -l /dev/ttyS0'`.
-
-- \--reset-cmd=<cmd>
-
-    Command that resets the target.
-
-See also __\--iprelay__.
-
-## Termination phase
-
-Daemons that were spwned (`dhcpd` and `tftpd`) are killed here.
+This phase end when the target hangs up or when Ctrl-C is pressed.
 
 # NOVABOOT SCRIPT SYNTAX
 

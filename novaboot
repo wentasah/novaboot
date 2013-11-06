@@ -775,20 +775,20 @@ B<novaboot> --help
 =head1 DESCRIPTION
 
 This program makes it easier to boot NOVA or other operating system
-(OS) in different environments. It reads a so called novaboot script
-and uses it either to boot the OS in an emulator (e.g. in qemu) or to
-generate the configuration for a specific bootloader and optionally to
-copy the necessary binaries and other needed files to proper
-locations, perhaps on a remote server. In case the system is actually
-booted, its serial output is redirected to standard output if that is
-possible.
+(OS) on different targets (machines or emulators). It reads a so
+called novaboot script, that specifies the boot configuration, and
+setups the target to boot that configuration. Setting up the target
+means to generate the bootloader configuration files, deploy the
+binaries and other needed files to proper locations, perhaps on a
+remote boot server and reset the target. Then, target's serial output
+is redirected to standard output if that is possible.
 
 A typical way of using novaboot is to make the novaboot script
 executable and set its first line to I<#!/usr/bin/env novaboot>. Then,
 booting a particular OS configuration becomes the same as executing a
 local program - the novaboot script.
 
-With C<novaboot> you can:
+For example, with C<novaboot> you can:
 
 =over 3
 
@@ -813,8 +813,8 @@ box and receive its serial output.
 
 =item 3.
 
-Run DHCP and TFTP server on developer's machine to PXE-boot NOVA from
-it. E.g.
+Run DHCP and TFTP server on developer's machine to PXE-boot the OS
+from it. E.g.
 
  ./script --dhcp-tftp
 
@@ -1030,6 +1030,34 @@ If supported by the target, the connection to it is made and it is
 checked whether the target is not occupied by another novaboot
 user/instance.
 
+=over 8
+
+=item --iprelay=I<addr[:port]>
+
+Use TCP/IP relay and serial port to access the target's serial port
+and powercycle it. The IP address of the relay is given by I<addr>
+parameter. If I<port> is not specified, it default to 23.
+
+Note: This option is supposed to work with HWG-ER02a IP relays.
+
+=item -s, --serial[=device]
+
+Target's serial line is connected to host's serial line (device). The
+default value for device is F</dev/ttyUSB0>.
+
+=item --stty=<settings>
+
+Specifies settings passed to C<stty> invoked on the serial line
+specified with B<--serial> option. If this option is not given,
+C<stty> is called with C<raw -crtscts -onlcr 115200> settings.
+
+=item --remote-cmd=<cmd>
+
+Command that mediates connection to the target's serial line. For
+example C<ssh server 'cu -l /dev/ttyS0'>.
+
+=back
+
 =head2 File deployment phase
 
 In some setups, it is necessary to copy the files needed for booting
@@ -1040,9 +1068,9 @@ F</boot> partition.
 
 =item -d, --dhcp-tftp
 
-Turns your workstation into a DHCP and TFTP server so that NOVA
-can be booted via PXE BIOS on a test machine directly connected by
-a plain Ethernet cable to your workstation.
+Turns your workstation into a DHCP and TFTP server so that the OS can
+be booted via PXE BIOS (or similar mechanism) on the test machine
+directly connected by a plain Ethernet cable to your workstation.
 
 The DHCP and TFTP servers require root privileges and C<novaboot>
 uses C<sudo> command to obtain those. You can put the following to
@@ -1086,13 +1114,6 @@ copying files as a result of I<--server> option.
 
 =over 8
 
-=item --iprelay=I<addr[:port]>
-
-Use IP relay to reset the machine and to get the serial output. The IP
-address of the relay is given by I<addr> parameter.
-
-Note: This option is expected to work with HWG-ER02a IP relays.
-
 =item --on, --off
 
 Switch on/off the target machine. Currently works only with
@@ -1112,11 +1133,13 @@ C<-cpu coreduo -smp 2>).
 Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
 -smp 2>) with I<flags> specified here.
 
+=item --reset-cmd=<cmd>
+
+Command that resets the target.
+
 =back
 
 =head2 Interaction with the bootloader on the target
-
-See B<--serial>. There will be new options soon.
 
 =over 8
 
@@ -1134,37 +1157,13 @@ botting them.
 
 =back
 
-=head2 Target's output reception phase
+=head2 Target interaction phase
 
-=over 8
+In this phase, target's serial output is passed to C<novaboot> stdout.
+If C<novaboot>'s stdin is on TTY, the stdin is passed to the target
+allowing interactive work with the target.
 
-=item -s, --serial[=device]
-
-Use serial line to control GRUB bootloader and to see the output
-serial output of the machine. The default value is F</dev/ttyUSB0>.
-
-=item --stty=<settings>
-
-Specifies settings passed to C<stty> invoked on the serial line
-specified with B<--serial>. If this option is not given, C<stty> is
-called with C<raw -crtscts -onlcr 115200> settings.
-
-=item --remote-cmd=<cmd>
-
-Command that mediates connection to the target's serial line. For
-example C<ssh server 'cu -l /dev/ttyS0'>.
-
-=item --reset-cmd=<cmd>
-
-Command that resets the target.
-
-=back
-
-See also B<--iprelay>.
-
-=head2 Termination phase
-
-Daemons that were spwned (F<dhcpd> and F<tftpd>) are killed here.
+This phase end when the target hangs up or when Ctrl-C is pressed.
 
 =head1 NOVABOOT SCRIPT SYNTAX
 

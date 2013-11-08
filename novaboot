@@ -125,7 +125,7 @@ my %opt_spec;
     "on"	     => \$on_opt,
     "pulsar|p:s"     => \$pulsar,
     "pulsar-root=s"  => \$pulsar_root,
-    "qemu|Q=s" 	     => \$qemu,
+    "qemu|Q:s" 	     => \$qemu,
     "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
     "remote-cmd=s"   => \$remote_cmd,
@@ -612,7 +612,7 @@ sub trim($) {
 
 ### Qemu
 
-if (!(defined $dhcp_tftp || defined $serial || defined $iprelay || defined $server || defined $iso_image)) {
+if (defined $qemu) {
     # Qemu
     $qemu ||= $variables->{QEMU} || $CFG::qemu;
     my @qemu_flags = split(" ", $qemu);
@@ -1132,9 +1132,10 @@ copying files as a result of I<--server> option.
 Switch on/off the target machine. Currently works only with
 B<--iprelay>.
 
-=item -Q, --qemu=I<qemu-binary>
+=item -Q, --qemu[=I<qemu-binary>]
 
-The name of qemu binary to use. The default is 'qemu'.
+Boot the configuration in qemu. Optionally, the name of qemu binary
+can be specified as a parameter.
 
 =item --qemu-append=I<flags>
 

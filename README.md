@@ -323,9 +323,10 @@ to a particular location, e.g. to a TFTP boot server or to the
     Switch on/off the target machine. Currently works only with
     __\--iprelay__.
 
-- \-Q, --qemu=_qemu-binary_
+- \-Q, --qemu\[=_qemu-binary_\]
 
-    The name of qemu binary to use. The default is 'qemu'.
+    Boot the configuration in qemu. Optionally, the name of qemu binary
+    can be specified as a parameter.
 
 - \--qemu-append=_flags_
 

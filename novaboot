@@ -470,13 +470,9 @@ elsif ($serial) {
     system_verbose("stty -F $serial $stty");
     open($CONN, "+<", $serial) || die "open $serial: $!";
     $exp = Expect->init(\*$CONN);
-} else {
-    $exp = new Expect(); # Make $exp ready for calling $exp->spawn() later
-
-    if ($remote_cmd) {
-	print "novaboot: Running: $remote_cmd\n";
-	$exp->spawn($remote_cmd);
-    }
+} elsif ($remote_cmd) {
+    print "novaboot: Running: $remote_cmd\n";
+    $exp = Expect->spawn($remote_cmd);
 }
 
 if (defined $reset_cmd) {
@@ -655,7 +651,7 @@ if (defined $qemu) {
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     unshift(@qemu_flags, ('-name', $config_name));
     print "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
-    $exp->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
+    $exp = Expect->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
 }
 
 ### Local DHCPD and TFTPD

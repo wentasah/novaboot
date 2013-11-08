@@ -453,27 +453,27 @@ The following variables are interpreted in the novaboot script:
 
 # CONFIGURATION FILE
 
-Novaboot can read its configuration from a file. Configuration file
-was necessary in early days of novaboot. Nowadays, an attempt is made
-to not use the configuration file because it makes certain novaboot
-scripts unusable on systems without (or with different) configuration
-file. The only recommended use of the configuration file is to specify
-custom\_options (see bellow).
+Novaboot can read its configuration from one or more files. By
+default, novaboot looks for files named `.novaboot` as described in
+["Configuration reading phase"](#Configuration reading phase). Alternatively, its location can be
+specified with the __\-c__ switch or with the NOVABOOT\_CONFIG
+environment variable. The configuration file has perl syntax and
+should set values of certain Perl variables. The current configuration
+can be dumped with the __\--dump-config__ switch. Some configuration
+variables can be overriden by environment variables (see below) or by
+command line switches.
 
-If you decide to use the configuration file, it is looked up, by
-default, in files named `.novaboot` as described in ["Configuration reading phase"](#Configuration reading phase). Alternatively, its location can be specified with the
-__\-c__ switch or with the NOVABOOT\_CONFIG environment variable. The
-configuration file has perl syntax and should set values of certain
-Perl variables. The current configuration can be dumped with the
-__\--dump-config__ switch. Some configuration variables can be overriden
-by environment variables (see below) or by command line switches.
-
-Documentation of some configuration variables follows:
+Supporte configuration variables include:
 
 - $builddir
 
     Build directory location relative to the location of the configuration
     file.
+
+- $default\_target
+
+    Default target (see below) to use when no target is explicitely
+    specified on command line with the __\--target__ option.
 
 - %targets
 

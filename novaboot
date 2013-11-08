@@ -49,7 +49,8 @@ $CFG::qemu = 'qemu -cpu coreduo -smp 2';
     "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}" --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
 
     );
-$CFG::scons = "scons -j2";
+my $nproc = `nproc`;
+$CFG::scons = "scons -j$nproc";
 
 my $builddir;
 

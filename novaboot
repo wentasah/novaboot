@@ -145,7 +145,7 @@ my %opt_spec;
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
-GetOptions %opt_spec or pod2usage(2);
+GetOptions %opt_spec;
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 

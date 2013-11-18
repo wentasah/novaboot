@@ -47,7 +47,7 @@ $CFG::default_target = 'qemu';
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
-    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}" --remote-cmd="ssh pc-sojkam.felk.cvut.cz \"cu -l /dev/ttyUSB0 -s 115200\"" --reset-cmd="ssh pc-sojkam.felk.cvut.cz \"dtrrts /dev/ttyUSB0 1 1\""',
+    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}" --remote-cmd="ssh -t pc-sojkam.felk.cvut.cz \"cu -l /dev/ttyUSB0 -s 115200\"" --remote-expect="Connected." --reset-cmd="ssh -t pc-sojkam.felk.cvut.cz \"dtrrts /dev/ttyUSB0 1 1\""',
     "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}" --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
 
     );
@@ -98,7 +98,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -134,6 +134,7 @@ my %opt_spec;
     "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
     "remote-cmd=s"   => \$remote_cmd,
+    "remote-expect=s"=> \$remote_expect,
     "reset-cmd=s"    => \$reset_cmd,
     "rsync-flags=s"  => \$rsync_flags,
     "scons:s"	     => \$scons,
@@ -473,6 +474,10 @@ elsif ($serial) {
 } elsif ($remote_cmd) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
+}
+
+if ($remote_expect) {
+    $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
 }
 
 if (defined $reset_cmd) {
@@ -1072,6 +1077,11 @@ C<stty> is called with C<raw -crtscts -onlcr 115200> settings.
 
 Command that mediates connection to the target's serial line. For
 example C<ssh server 'cu -l /dev/ttyS0'>.
+
+=item --remote-expect=I<string>
+
+Wait for reception of I<string> on the remote connection before
+continuing.
 
 =back
 

@@ -268,6 +268,11 @@ user/instance.
     Command that mediates connection to the target's serial line. For
     example `ssh server 'cu -l /dev/ttyS0'`.
 
+- \--remote-expect=_string_
+
+    Wait for reception of _string_ on the remote connection before
+    continuing.
+
 ## File deployment phase
 
 In some setups, it is necessary to copy the files needed for booting

@@ -820,11 +820,11 @@ Create a bootloader configuration file (currently supported
 bootloaders are GRUB, GRUB2, Pulsar and uBoot) and copy it with all
 other files needed for booting to another, perhaps remote, location.
 
- ./script --server --iprelay=192.168.1.2
+ ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
-This command copies files to a TFTP server specified in the
-configuration file and uses TCP/IP-controlled relay to reset the test
-box and receive its serial output.
+This command copies files to the TFTP server and uses
+TCP/IP-controlled relay to reset the test box and receive its serial
+output.
 
 =item 3.
 
@@ -848,12 +848,16 @@ configurations.
 
 =back
 
+Note that the options needed for a specific target can be stored in a
+L</"CONFIGURATION FILE"> and then it is sufficient to use only the
+B<-t> option to specify the name of the target.
+
 =head1 PHASES AND OPTIONS
 
 Novaboot performs its work in several phases. Each phase can be
 influenced by several options, certain phases can be skipped. The list
 of phases (in the execution order) and the corresponding options
-follows.
+follow.
 
 =head2 Configuration reading phase
 
@@ -1008,7 +1012,7 @@ i.e. run update-grub on Debian/Ubuntu.
 
 =item --grub2-prolog=I<prolog>
 
-Specifies text I<preable> that is put at the begiging of the entry
+Specifies text I<preable> that is put at the beginning of the entry
 GRUB2 entry.
 
 =item -m, --make[=make command]
@@ -1296,7 +1300,7 @@ can be dumped with the B<--dump-config> switch. Some configuration
 variables can be overriden by environment variables (see below) or by
 command line switches.
 
-Supporte configuration variables include:
+Supported configuration variables include:
 
 =over 8
 
@@ -1307,7 +1311,7 @@ file.
 
 =item $default_target
 
-Default target (see below) to use when no target is explicitely
+Default target (see below) to use when no target is explicitly
 specified on command line with the B<--target> option.
 
 =item %targets

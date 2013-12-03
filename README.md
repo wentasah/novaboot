@@ -34,11 +34,11 @@ configuration specified in the _script_.
 bootloaders are GRUB, GRUB2, Pulsar and uBoot) and copy it with all
 other files needed for booting to another, perhaps remote, location.
 
-        ./script --server --iprelay=192.168.1.2
+        ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
-    This command copies files to a TFTP server specified in the
-    configuration file and uses TCP/IP-controlled relay to reset the test
-    box and receive its serial output.
+    This command copies files to the TFTP server and uses
+    TCP/IP-controlled relay to reset the test box and receive its serial
+    output.
 
 3. Run DHCP and TFTP server on developer's machine to PXE-boot the OS
 from it. E.g.
@@ -56,12 +56,16 @@ from it. E.g.
     the boot menu will allow selecting between _script1_ and _script2_
     configurations.
 
+Note that the options needed for a specific target can be stored in a
+["CONFIGURATION FILE"](#configuration-file) and then it is sufficient to use only the
+__\-t__ option to specify the name of the target.
+
 # PHASES AND OPTIONS
 
 Novaboot performs its work in several phases. Each phase can be
 influenced by several options, certain phases can be skipped. The list
 of phases (in the execution order) and the corresponding options
-follows.
+follow.
 
 ## Configuration reading phase
 
@@ -75,7 +79,7 @@ settings from the former ones.
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
 read from the standard input or when novaboot is invoked explicitly
-and options precede the script name, as in the example ["4."](#4.) above.
+and options precede the script name, as in the example ["4."](#4) above.
 In this case the current working directory is used as a starting point
 for configuration file search.
 
@@ -99,7 +103,7 @@ for configuration file search.
     This option serves as a user configurable shortcut for other novaboot
     options. The effect of this option is the same as the options stored
     in the `%targets` configuration variable under key _target_. See
-    also ["CONFIGURATION FILE"](#CONFIGURATION FILE).
+    also ["CONFIGURATION FILE"](#configuration-file).
 
 ## Script preprocessing phase
 
@@ -193,7 +197,7 @@ scripts. Finally, binaries can be generated in this phases by running
 
     In order to use the the generated menuentry on your development
     machine that uses GRUB2, append the following snippet to
-    `/etc/grub.d/40\_custom` file and regenerate your grub configuration,
+    `/etc/grub.d/40_custom` file and regenerate your grub configuration,
     i.e. run update-grub on Debian/Ubuntu.
 
         if [ -f /path/to/nul/build/grub.cfg ]; then
@@ -202,7 +206,7 @@ scripts. Finally, binaries can be generated in this phases by running
 
 - \--grub2-prolog=_prolog_
 
-    Specifies text _preable_ that is put at the begiging of the entry
+    Specifies text _preable_ that is put at the beginning of the entry
     GRUB2 entry.
 
 - \-m, --make\[=make command\]
@@ -420,7 +424,7 @@ The following variables are interpreted in the novaboot script:
 
     Novaboot chdir()s to this directory before file generation phase. The
     directory name specified here is relative to the build directory
-    specified by other means (see ["--build-dir"](#--build-dir)).
+    specified by other means (see ["--build-dir"](#build-dir)).
 
 - WVDESC
 
@@ -460,7 +464,7 @@ The following variables are interpreted in the novaboot script:
 
 Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named `.novaboot` as described in
-["Configuration reading phase"](#Configuration reading phase). Alternatively, its location can be
+["Configuration reading phase"](#configuration-reading-phase). Alternatively, its location can be
 specified with the __\-c__ switch or with the NOVABOOT\_CONFIG
 environment variable. The configuration file has perl syntax and
 should set values of certain Perl variables. The current configuration
@@ -468,7 +472,7 @@ can be dumped with the __\--dump-config__ switch. Some configuration
 variables can be overriden by environment variables (see below) or by
 command line switches.
 
-Supporte configuration variables include:
+Supported configuration variables include:
 
 - $builddir
 
@@ -477,7 +481,7 @@ Supporte configuration variables include:
 
 - $default\_target
 
-    Default target (see below) to use when no target is explicitely
+    Default target (see below) to use when no target is explicitly
     specified on command line with the __\--target__ option.
 
 - %targets

@@ -53,6 +53,15 @@ echo '1;' > .novaboot
 WVPASS sh -c "./script --gen-only 2> log"
 WVPASS grep "novaboot: Read $PWD/.novaboot" log
 
+WVSTART Configuration files in symlinked directories
+mkdir config
+echo '1;' > config/.novaboot
+mkdir script
+( cd script; create_dummy )
+ln -s ../script config
+WVPASS sh -c "./config/script/script --gen-only 2> log"
+WVPASS grep "novaboot: Read $PWD/config/.novaboot" log
+
 WVSTART Builddir configuration variable
 WVPASS mkdir -p build
 cat > .novaboot <<'EOF'
@@ -79,7 +88,6 @@ create_dummy
 echo '$hypervisor="HYP";' > .novaboot
 WVPASS ./script --gen-only --pulsar
 WVPASS grep "exec HYP" config-novaboot
-
 
 exit
 

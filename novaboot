@@ -32,7 +32,7 @@ use Expect;
 # always flush
 $| = 1;
 
-my $invocation_dir = getcwd();
+my $invocation_dir = $ENV{PWD} || getcwd();
 
 ## Configuration file handling
 
@@ -83,9 +83,10 @@ my @cfgs;
     # when a script is run as "novaboot <options> <script>" then $ARGV[0]
     # contains the first option. Hence the -f check.
     my $dir = File::Spec->rel2abs($ARGV[0] && -f $ARGV[0] ? dirname($ARGV[0]) : '', $invocation_dir);
-    while (-d $dir && $dir ne "/") {
+    while ((-d $dir || -l $dir ) && $dir ne "/") {
 	push @cfgs, "$dir/.novaboot" if -r "$dir/.novaboot";
-	$dir = abs_path($dir."/..");
+	my @dirs = File::Spec->splitdir($dir);
+	$dir = File::Spec->catdir(@dirs[0..$#dirs-1]);
     }
 }
 my $cfg = $ENV{'NOVABOOT_CONFIG'};

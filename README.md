@@ -373,6 +373,16 @@ allowing interactive work with the target.
 
 This phase end when the target hangs up or when Ctrl-C is pressed.
 
+- \--exiton=_string_
+
+    When _string_ is sent by the target, novaboot exits. This option can
+    be specified multiple times.
+
+    If _string_ is `-re`, then the next __\--exiton__'s _string_ is
+    treated as regular expression. For example:
+
+        --exiton -re --exiton 'error:.*failed'
+
 # NOVABOOT SCRIPT SYNTAX
 
 The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.
@@ -425,6 +435,11 @@ The following variables are interpreted in the novaboot script:
     Novaboot chdir()s to this directory before file generation phase. The
     directory name specified here is relative to the build directory
     specified by other means (see ["--build-dir"](#build-dir)).
+
+- EXITON
+
+    Assigning this variable has the same effect as specifying ["--exiton"](#exiton)
+    option.
 
 - HYPERVISOR\_PARAMS
 

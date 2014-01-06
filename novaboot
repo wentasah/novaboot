@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -116,6 +116,7 @@ my %opt_spec;
     "dhcp-tftp|d"    => \$dhcp_tftp,
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
+    "exiton=s"       => \@exiton,
     "gen-only"	     => \$gen_only,
     "grub|g:s" 	     => \$grub_config,
     "grub-preamble=s"=> \$grub_preamble,
@@ -213,6 +214,7 @@ while (<>) {
 
     if (/^([A-Z_]+)=(.*)$/) {	# Internal variable
 	$$variables{$1} = $2;
+	push(@exiton, $2) if ($1 eq "EXITON");
 	next;
     }
     if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
@@ -753,22 +755,26 @@ if (defined $exp) {
     # Serial line of the target is available
     print "novaboot: Serial line interaction (press Ctrl-C to interrupt)...\n";
     $exp->log_stdout(1);
-    my @inputs = ($exp);
-    if (-t STDIN) { # Set up bi-directional communication if we run on terminal
-	my $infile = new IO::File;
-	$infile->IO::File::fdopen(*STDIN,'r');
-	my $in_object = Expect->exp_init($infile);
-	$in_object->set_group($exp);
-	#$in_object->set_seq("\cC",undef);
+    if (@exiton) {
+	$exp->expect(undef, @exiton);
+    } else {
+	my @inputs = ($exp);
+	if (-t STDIN) { # Set up bi-directional communication if we run on terminal
+	    my $infile = new IO::File;
+	    $infile->IO::File::fdopen(*STDIN,'r');
+	    my $in_object = Expect->exp_init($infile);
+	    $in_object->set_group($exp);
+	    #$in_object->set_seq("\cC",undef);
 
-	# I'm not sure when to use raw mode and when not. With
-	# --dhcp-tftp, I want the output of daemons to be normally
-	# formated (no raw mode). On the other hand, I don't want
-	# input for qemu to be echoed. Need to think more about this.
-	$in_object->manual_stty(1);
-	push(@inputs, $in_object);
+	    # I'm not sure when to use raw mode and when not. With
+	    # --dhcp-tftp, I want the output of daemons to be normally
+	    # formated (no raw mode). On the other hand, I don't want
+	    # input for qemu to be echoed. Need to think more about this.
+	    $in_object->manual_stty(1);
+	    push(@inputs, $in_object);
+	}
+	Expect::interconnect(@inputs);
     }
-    Expect::interconnect(@inputs);
 }
 
 ## Kill dhcpc or tftpd
@@ -1198,6 +1204,20 @@ allowing interactive work with the target.
 
 This phase end when the target hangs up or when Ctrl-C is pressed.
 
+=over 8
+
+=item --exiton=I<string>
+
+When I<string> is sent by the target, novaboot exits. This option can
+be specified multiple times.
+
+If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
+treated as regular expression. For example:
+
+    --exiton -re --exiton 'error:.*failed'
+
+=back
+
 =head1 NOVABOOT SCRIPT SYNTAX
 
 The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.
@@ -1252,6 +1272,11 @@ The following variables are interpreted in the novaboot script:
 Novaboot chdir()s to this directory before file generation phase. The
 directory name specified here is relative to the build directory
 specified by other means (see L</--build-dir>).
+
+=item EXITON
+
+Assigning this variable has the same effect as specifying L</--exiton>
+option.
 
 =item HYPERVISOR_PARAMS
 

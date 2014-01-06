@@ -426,16 +426,17 @@ The following variables are interpreted in the novaboot script:
     directory name specified here is relative to the build directory
     specified by other means (see ["--build-dir"](#build-dir)).
 
-- WVDESC
+- HYPERVISOR\_PARAMS
 
-    Description of the wvtest-compliant program.
+    Parameters passed to hypervisor. The default value is "serial", unless
+    overriden in configuration file.
 
-- WVTEST\_TIMEOUT
+- KERNEL
 
-    The timeout in seconds for WvTest harness. If no complete line appears
-    in the test output within the time specified here, the test fails. It
-    is necessary to specify this for long running tests that produce no
-    intermediate output.
+    The kernel to use instead of NOVA hypervisor specified in the
+    configuration file. The value should contain the name of the kernel
+    image as well as its command line parameters. If this variable is
+    defined and non-empty, the variable HYPERVISOR\_PARAMS is not used.
 
 - QEMU
 
@@ -448,17 +449,16 @@ The following variables are interpreted in the novaboot script:
 
     Use specific qemu flags (can be overriden with __\-q__).
 
-- HYPERVISOR\_PARAMS
+- WVDESC
 
-    Parameters passed to hypervisor. The default value is "serial", unless
-    overriden in configuration file.
+    Description of the wvtest-compliant program.
 
-- KERNEL
+- WVTEST\_TIMEOUT
 
-    The kernel to use instead of NOVA hypervisor specified in the
-    configuration file. The value should contain the name of the kernel
-    image as well as its command line parameters. If this variable is
-    defined and non-empty, the variable HYPERVISOR\_PARAMS is not used.
+    The timeout in seconds for WvTest harness. If no complete line appears
+    in the test output within the time specified here, the test fails. It
+    is necessary to specify this for long running tests that produce no
+    intermediate output.
 
 # CONFIGURATION FILE
 

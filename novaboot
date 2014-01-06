@@ -1253,16 +1253,17 @@ Novaboot chdir()s to this directory before file generation phase. The
 directory name specified here is relative to the build directory
 specified by other means (see L</--build-dir>).
 
-=item WVDESC
+=item HYPERVISOR_PARAMS
 
-Description of the wvtest-compliant program.
+Parameters passed to hypervisor. The default value is "serial", unless
+overriden in configuration file.
 
-=item WVTEST_TIMEOUT
+=item KERNEL
 
-The timeout in seconds for WvTest harness. If no complete line appears
-in the test output within the time specified here, the test fails. It
-is necessary to specify this for long running tests that produce no
-intermediate output.
+The kernel to use instead of NOVA hypervisor specified in the
+configuration file. The value should contain the name of the kernel
+image as well as its command line parameters. If this variable is
+defined and non-empty, the variable HYPERVISOR_PARAMS is not used.
 
 =item QEMU
 
@@ -1275,17 +1276,16 @@ QEMU_FLAGS.
 
 Use specific qemu flags (can be overriden with B<-q>).
 
-=item HYPERVISOR_PARAMS
+=item WVDESC
 
-Parameters passed to hypervisor. The default value is "serial", unless
-overriden in configuration file.
+Description of the wvtest-compliant program.
 
-=item KERNEL
+=item WVTEST_TIMEOUT
 
-The kernel to use instead of NOVA hypervisor specified in the
-configuration file. The value should contain the name of the kernel
-image as well as its command line parameters. If this variable is
-defined and non-empty, the variable HYPERVISOR_PARAMS is not used.
+The timeout in seconds for WvTest harness. If no complete line appears
+in the test output within the time specified here, the test fails. It
+is necessary to specify this for long running tests that produce no
+intermediate output.
 
 =back
 

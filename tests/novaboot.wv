@@ -74,6 +74,10 @@ EOF
 WVPASS ./script --gen-only
 WVPASS test -f build/file
 
+WVSTART Fail with unknown target
+create_dummy
+WVFAIL sh -c "./script --gen-only -t non-existing-target"
+
 WVSTART BUILDDIR variable
 WVPASS mkdir -p build
 create_script <<'EOF'

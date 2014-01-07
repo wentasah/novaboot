@@ -160,7 +160,7 @@ my %opt_spec;
 
 # Then process other command line options - some of them may override
 # what was specified by the target
-GetOptions %opt_spec;
+GetOptions %opt_spec or die("Error in command line arguments");
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 

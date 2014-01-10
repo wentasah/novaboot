@@ -182,6 +182,10 @@ if ($dump_config) {
 
 ### Sanitize configuration
 
+if ($interactive && !-t STDIN) {
+    die("novaboot: Interactive mode not supported when not on terminal");
+}
+
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
 
 # Default options

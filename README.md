@@ -389,8 +389,8 @@ This phase end when the target hangs up or when Ctrl-C is pressed.
     switched to raw mode. In raw mode, your system does not process input
     in any way (no echoing of entered characters, no interpretation
     special characters). This, among others, means that Ctrl-C is passed
-    to the target and does no longer interrupt novaboot. Use "~." sequence
-    to exit novaboot.
+    to the target and does no longer interrupt novaboot. Use "~~."
+    sequence to exit novaboot.
 
 # NOVABOOT SCRIPT SYNTAX
 

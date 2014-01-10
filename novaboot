@@ -758,7 +758,11 @@ if (defined $uboot) {
 
 if (defined $exp) {
     # Serial line of the target is available
-    print "novaboot: Serial line interaction (press Ctrl-C to interrupt)...\n";
+    my $interrupt = 'Ctrl-C';
+    if ($interactive && !@exiton) {
+	$interrupt = '"~~."';
+    }
+    print "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect(undef, @exiton);

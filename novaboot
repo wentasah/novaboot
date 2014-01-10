@@ -779,7 +779,6 @@ if (defined $exp) {
 	    $in_object->set_group($exp);
 
 	    if ($interactive) {
-		$in_object->debug(1);
 		$in_object->set_seq('~~\.', sub { print "novaboot: Escape sequence detected\r\n"; undef; });
 		$in_object->manual_stty(0);	  # Use raw terminal mode
 	    } else {

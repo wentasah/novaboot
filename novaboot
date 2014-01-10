@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -125,6 +125,7 @@ my %opt_spec;
     "grub2-prolog=s" => \$grub2_prolog,
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
+    "interactive|i"  => \$interactive,
     "name=s"	     => \$config_name_opt,
     "make|m:s"	     => \$make,
     "no-file-gen"    => \$no_file_gen,
@@ -768,13 +769,13 @@ if (defined $exp) {
 	    $infile->IO::File::fdopen(*STDIN,'r');
 	    my $in_object = Expect->exp_init($infile);
 	    $in_object->set_group($exp);
-	    #$in_object->set_seq("\cC",undef);
 
-	    # I'm not sure when to use raw mode and when not. With
-	    # --dhcp-tftp, I want the output of daemons to be normally
-	    # formated (no raw mode). On the other hand, I don't want
-	    # input for qemu to be echoed. Need to think more about this.
-	    $in_object->manual_stty(1);
+	    if ($interactive) {
+		$in_object->set_seq("~.", undef); # Set escape sequence
+		$in_object->manual_stty(0);	  # Use raw terminal mode
+	    } else {
+		$in_object->manual_stty(1);	  # Do not modify terminal settings
+	    }
 	    push(@inputs, $in_object);
 	}
 	Expect::interconnect(@inputs);
@@ -1219,6 +1220,15 @@ If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
 treated as regular expression. For example:
 
     --exiton -re --exiton 'error:.*failed'
+
+=item -i, --interactive
+
+Setup things for interactive use of target. Your terminal will be
+switched to raw mode. In raw mode, your system does not process input
+in any way (no echoing of entered characters, no interpretation
+special characters). This, among others, means that Ctrl-C is passed
+to the target and does no longer interrupt novaboot. Use "~." sequence
+to exit novaboot.
 
 =back
 

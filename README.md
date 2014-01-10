@@ -383,6 +383,15 @@ This phase end when the target hangs up or when Ctrl-C is pressed.
 
         --exiton -re --exiton 'error:.*failed'
 
+- \-i, --interactive
+
+    Setup things for interactive use of target. Your terminal will be
+    switched to raw mode. In raw mode, your system does not process input
+    in any way (no echoing of entered characters, no interpretation
+    special characters). This, among others, means that Ctrl-C is passed
+    to the target and does no longer interrupt novaboot. Use "~." sequence
+    to exit novaboot.
+
 # NOVABOOT SCRIPT SYNTAX
 
 The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.

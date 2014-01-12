@@ -721,6 +721,7 @@ if (defined $target_reset) {
 if (defined $uboot) {
     print "novaboot: Waiting for uBoot prompt...\n";
     $exp->log_stdout(1);
+    #$exp->exp_internal(1);
     $exp->expect(20,
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
 		 '=> ') || die "No uBoot prompt deteceted";
@@ -754,7 +755,7 @@ if (defined $uboot) {
 		     [qr/#/, sub { exp_continue; }],
 		     '=> ') || die "Initrd load failed";
     }
-    $exp->send("set bootargs $kcmd\n");
+    $exp->send("set bootargs '$kcmd'\n");
     $exp->expect(1, '=> ')  || die "uBoot prompt timeout";
     $exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
     $exp->expect(1, "\n")  || die "uBoot command timeout";

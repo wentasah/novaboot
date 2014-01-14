@@ -756,9 +756,9 @@ if (defined $uboot) {
 		     '=> ') || die "Initrd load failed";
     }
     $exp->send("set bootargs '$kcmd'\n");
-    $exp->expect(1, '=> ')  || die "uBoot prompt timeout";
+    $exp->expect(5, '=> ')  || die "uBoot prompt timeout";
     $exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
-    $exp->expect(1, "\n")  || die "uBoot command timeout";
+    $exp->expect(5, "\n")  || die "uBoot command timeout";
 }
 
 if (defined $exp) {

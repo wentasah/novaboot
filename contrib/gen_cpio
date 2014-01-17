@@ -10,6 +10,7 @@
 # Released under the terms of the GNU GPL
 
 # Usage: gen_cpio rootfs.cpio myapp->/bin/ start.sh->/etc/init.d/S90startmyapp
+#        gen_cpio --mkimage="-T ramdisk -A powerpc -O linux" ...
 
 set -e
 

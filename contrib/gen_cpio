@@ -9,14 +9,53 @@
 #
 # Released under the terms of the GNU GPL
 
-# Usage: gen_cpio rootfs.cpio myapp->/bin/ start.sh->/etc/init.d/S90startmyapp
+# Usage: gen_cpio rootfs.cpio "myapp->/bin/" "start.sh->/etc/init.d/S90startmyapp"
 #        gen_cpio --mkimage="-T ramdisk -A powerpc -O linux" ...
 
 set -e
 
+root_uid=$(id -u)
+root_gid=$(id -g)
+
+usage() {
+cat >&2 << EOF
+Usage:
+$0 [--mkimage="<mkimage params>"] [-u <uid>] [-g <gid>] {<cpio_source>}...
+	--mkimage=...  Pack the resulting image with U-Boot's "mkimage ..."
+	-u <uid>       User ID to map to user ID 0 (root).
+		       <uid> is only meaningful if <cpio_source> is a
+		       directory.  "squash" forces all files to uid 0.
+		       Default: $root_uid (you)
+	-g <gid>       Group ID to map to group ID 0 (root).
+		       <gid> is only meaningful if <cpio_source> is a
+		       directory.  "squash" forces all files to gid 0.
+		       Default: $root_gid (you)
+	<cpio_source>  One of:
+		       - *.cpio: Included directly into the output
+		       - directory: Content of the directory is included
+		         in the output
+		       - src/file->/dst/file: src/file appear in the output
+		         as dst/file
+		       - src/file->/dst/dir/: src/file appear in the output
+		         as dsr/dir/file
+
+All options except --mkimage may be repeated and are interpreted
+sequentially and immediately. -u and -g states are preserved across
+<cpio_source> options so an explicit "-u 0 -g 0" is required to reset
+the root/group mapping.
+EOF
+}
+
+
 while [ $# -gt 0 ]; do
     case "$1" in
-	--mkimage=*) mkimage=${1#--mkimage=};;
+	--mkimage=*)
+	    mkimage=${1#--mkimage=}
+	    ;;
+	"-h"|"--help")
+	    usage
+	    exit 0
+	    ;;
 	*) break;;
     esac
     shift
@@ -31,6 +70,12 @@ gen_cpio_from_list() {
     [ "$cpio_list" ] || return 0
     echo "$cpio_list" | LANG=C sort -u | gen_init_cpio -
     cpio_list=
+}
+
+# awk style field access
+# $1 - field number; rest is argument string
+field() {
+	shift $1 ; echo $1
 }
 
 filetype() {
@@ -55,9 +100,72 @@ filetype() {
     return 0
 }
 
-ends_with() { [ x"${1}" != x"${1#$2}" ]; }
+# for each file print a line in following format
+# <filetype> <name> <path to file> <octal mode> <uid> <gid>
+# for links, devices etc the format differs. See gen_init_cpio for details
+parse() {
+	local location="$1"
+	local name="/${location#${srcdir}}"
+	# change '//' into '/'
+	name=$(echo "$name" | sed -e 's://*:/:g')
+	local mode="$2"
+	local uid="$3"
+	local gid="$4"
+	local ftype=$(filetype "${location}")
+	# remap uid/gid to 0 if necessary
+	[ "$root_uid" = "squash" ] && uid=0 || [ "$uid" -eq "$root_uid" ] && uid=0
+	[ "$root_gid" = "squash" ] && gid=0 || [ "$gid" -eq "$root_gid" ] && gid=0
+	local str="${mode} ${uid} ${gid}"
 
-gen_list() {
+	[ "${ftype}" = "invalid" ] && return 0
+	[ "${location}" = "${srcdir}" ] && return 0
+
+	case "${ftype}" in
+		"file")
+			str="${ftype} ${name} ${location} ${str}"
+			;;
+		"nod")
+			local dev=`LC_ALL=C ls -l "${location}"`
+			local maj=`field 5 ${dev}`
+			local min=`field 6 ${dev}`
+			maj=${maj%,}
+
+			[ -b "${location}" ] && dev="b" || dev="c"
+
+			str="${ftype} ${name} ${str} ${dev} ${maj} ${min}"
+			;;
+		"slink")
+			local target=`readlink "${location}"`
+			str="${ftype} ${name} ${target} ${str}"
+			;;
+		*)
+			str="${ftype} ${name} ${str}"
+			;;
+	esac
+
+	echo "${str}"
+
+	return 0
+}
+
+# process one directory (incl sub-directories)
+gen_dirlist() {
+    srcdir=$(echo "$1" | sed -e 's://*:/:g')
+    dirlist=$(find "${srcdir}" -printf "%p %m %U %G\n")
+
+    # If $dirlist is only one line, then the directory is empty
+    if [  "$(echo "${dirlist}" | wc -l)" -gt 1 ]; then
+	echo "${dirlist}" | \
+	    while read x; do
+	    parse ${x}
+	done
+    fi
+}
+
+
+ends_with() { [ x"${1}" != x"${1%$2}" ]; }
+
+gen_filelist() {
     local src=$1
     local dst=$2
 
@@ -75,29 +183,40 @@ gen_list() {
 while [ $# -gt 0 ]; do
     arg="$1"
     shift
-    if [ -f "$arg" ]; then
-	case "$(file $arg)" in
-	    *"cpio archive"*)
-		gen_cpio_from_list
-		cat $arg
-		;;
-	    *)
-		echo >&2 "Unsuported file format: $arg"
-		exit 1
-		;;
-	esac
-    else
-	case "$arg" in
-	    *"->"*)
-		src=${arg%%->*}
-	    	dst=${arg#*->}
-		cpio_list="$cpio_list$(gen_list $src $dst)"
-		;;
-	    *)
+    case "$arg" in
+	"-u")	# map $1 to uid=0 (root)
+	    root_uid="$1"
+	    shift
+	    ;;
+	"-g")	# map $1 to gid=0 (root)
+	    root_gid="$1"
+	    shift
+	    ;;
+	*"->"*)
+	    src=${arg%%->*}
+	    dst=${arg#*->}
+	    cpio_list="$cpio_list$(gen_filelist $src $dst)"
+	    ;;
+	*)
+	    if [ -d "$arg" ]; then
+		cpio_list="$cpio_list$(gen_dirlist $arg)"
+	    elif [ -f "$arg" ]; then
+		case "$(file $arg)" in
+		    *"cpio archive"*)
+			gen_cpio_from_list
+			cat $arg
+			;;
+		    *)
+			echo >&2 "Unsuported file format: $arg"
+			usage
+			exit 1
+			;;
+		esac
+	    else
 		echo >&2 "No file: $arg"
 		exit 1
-	esac
-    fi
+	    fi
+    esac
 done
 
 gen_cpio_from_list

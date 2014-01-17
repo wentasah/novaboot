@@ -9,6 +9,8 @@
 #
 # Released under the terms of the GNU GPL
 
+# Usage: gen_cpio rootfs.cpio myapp->/bin/ start.sh->/etc/init.d/S90startmyapp
+
 set -e
 
 while [ $# -gt 0 ]; do

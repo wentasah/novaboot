@@ -1,0 +1,108 @@
+#!/bin/sh
+#
+# Copyright (C) Michal Sojka <sojkam1@fel.cvut.cz>
+#
+# Includes pieces from gen_initramfs_list.sh:
+#
+# Copyright (C) Martin Schlemmer <azarah@nosferatu.za.org>
+# Copyright (C) 2006 Sam Ravnborg <sam@ravnborg.org>
+#
+# Released under the terms of the GNU GPL
+
+set -e
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+	--mkimage=*) mkimage=${1#--mkimage=};;
+	*) break;;
+    esac
+    shift
+done
+
+if [ -n "$mkimage" ]; then
+    tmp=$(mktemp)
+    exec 3<&1 1>$tmp
+fi
+
+gen_cpio_from_list() {
+    [ "$cpio_list" ] || return 0
+    echo "$cpio_list" | LANG=C sort -u | gen_init_cpio -
+    cpio_list=
+}
+
+filetype() {
+    local argv1="$1"
+
+    # symlink test must come before file test
+    if [ -L "${argv1}" ]; then
+	echo "slink"
+    elif [ -f "${argv1}" ]; then
+	echo "file"
+    elif [ -d "${argv1}" ]; then
+	echo "dir"
+    elif [ -b "${argv1}" -o -c "${argv1}" ]; then
+	echo "nod"
+    elif [ -p "${argv1}" ]; then
+	echo "pipe"
+    elif [ -S "${argv1}" ]; then
+	echo "sock"
+    else
+	echo "invalid"
+    fi
+    return 0
+}
+
+ends_with() { [ x"${1}" != x"${1#$2}" ]; }
+
+gen_list() {
+    local src=$1
+    local dst=$2
+
+    if ends_with "$dst" "/"; then
+	dst="$dst$(basename $src)"
+    fi
+    local dir=$(dirname $dst)
+    while [ -n "$dir" -a "$dir" != "." -a "$dir" != "/" ]; do
+	echo "dir $dir 0755 0 0"
+	dir=$(dirname $dir)
+    done
+    echo "$(filetype $src) $dst $src $(find $src -printf '%m') 0 0"
+}
+
+while [ $# -gt 0 ]; do
+    arg="$1"
+    shift
+    if [ -f "$arg" ]; then
+	case "$(file $arg)" in
+	    *"cpio archive"*)
+		gen_cpio_from_list
+		cat $arg
+		;;
+	    *)
+		echo >&2 "Unsuported file format: $arg"
+		exit 1
+		;;
+	esac
+    else
+	case "$arg" in
+	    *"->"*)
+		src=${arg%%->*}
+	    	dst=${arg#*->}
+		cpio_list="$cpio_list$(gen_list $src $dst)"
+		;;
+	    *)
+		echo >&2 "No file: $arg"
+		exit 1
+	esac
+    fi
+done
+
+gen_cpio_from_list
+
+if [ -n "$mkimage" ]; then
+    exec 1<&3
+    tmp2=$(mktemp)
+    mkimage $mkimage -d $tmp $tmp2 >&2
+    cat $tmp2
+    rm $tmp $tmp2
+fi

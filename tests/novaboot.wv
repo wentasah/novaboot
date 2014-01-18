@@ -21,7 +21,7 @@ EOF
 }
 
 WVSTART Invoke with no script
-WVPASS novaboot < /dev/null
+WVPASS novaboot -t '' < /dev/null
 
 WVSTART Invoke as script
 create_dummy

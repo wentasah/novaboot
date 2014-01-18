@@ -154,9 +154,11 @@ my %opt_spec;
 
 # First process target options
 {
-    my $t = $explicit_target || $CFG::default_target;
-    exists $CFG::targets{$t} or die("Unknown target '$t' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
-    GetOptionsFromString($CFG::targets{$t}, %opt_spec);
+    my $t = defined($explicit_target) ? $explicit_target : $CFG::default_target;
+    if ($t) {
+	exists $CFG::targets{$t} or die("Unknown target '$t' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
+	GetOptionsFromString($CFG::targets{$t}, %opt_spec);
+    }
 }
 
 # Then process other command line options - some of them may override

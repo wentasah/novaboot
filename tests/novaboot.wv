@@ -19,17 +19,6 @@ create_dummy
 WVPASS ./script --gen-only --pulsar --pulsar-root=ASDF
 WVPASS grep "root ASDF" config-novaboot
 
-WVSTART Bender
-create_dummy
-WVPASS ./script --gen-only --bender --pulsar
-WVPASS grep "bender" config-novaboot
-
-WVSTART Chainloader support
-create_dummy
-WVPASS ./script --gen-only --chainloader=chain1 -chainloader=chain2 --pulsar
-WVPASS grep "exec chain1" config-novaboot
-WVPASS grep "load chain2" config-novaboot
-
 WVSTART Configuration files
 create_dummy
 echo '1;' > .novaboot

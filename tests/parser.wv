@@ -43,3 +43,22 @@ WVPASS diff -u - dump <<EOF
 new arg1 arg2
 file farg11
 EOF
+
+WVSTART --bender
+create_dummy
+WVPASS bash -c "./script --gen-only --bender --dump > dump"
+WVPASS diff -u - dump <<EOF
+bin/boot/bender
+kernel
+file
+EOF
+
+WVSTART --chainloader
+create_dummy
+WVPASS bash -c "./script --chainloader=chain1 -chainloader='chain2 arg' --dump > dump"
+WVPASS diff -u - dump <<EOF
+chain1
+chain2 arg
+kernel
+file
+EOF

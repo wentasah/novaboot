@@ -12,16 +12,19 @@ __./script__ \[option\]...
 
 # DESCRIPTION
 
-This program makes it easier to boot NOVA or other operating system
-(OS) on different targets (machines or emulators). It reads a so
-called novaboot script, that specifies the boot configuration, and
-setups the target to boot that configuration. Setting up the target
-means to generate the bootloader configuration files, deploy the
-binaries and other needed files to proper locations, perhaps on a
-remote boot server and reset the target. Then, target's serial output
-is redirected to standard output if that is possible.
+This program makes booting of an operating system (e.g. NOVA or Linux)
+as simple as running a local program. It facilitates booting on local
+or remote hosts or in emulators such as qemu. Novaboot operation is
+controlled by command line options and by a so called novaboot script,
+which can be thought as a generalization of bootloader configuration
+files. Based on this input, novaboot setups everything for the target
+host to boot the desired configuration, i.e. it generates the
+bootloader configuration file in the proper format, deploy the
+binaries and other needed files to required locations, perhaps on a
+remote boot server and reset the target host. Finally, target host's
+serial output is redirected to standard output if that is possible.
 
-A typical way of using novaboot is to make the novaboot script
+Typical way of using novaboot is to make the novaboot script
 executable and set its first line to _\#!/usr/bin/env novaboot_. Then,
 booting a particular OS configuration becomes the same as executing a
 local program - the novaboot script.
@@ -31,19 +34,19 @@ For example, with `novaboot` you can:
 1. Run an OS in Qemu. This is the default action when no other action is
 specified by command line switches. Thus running `novaboot ./script`
 (or `./script` as described above) will run Qemu and make it boot the
-configuration specified in the _script_.
+configuration specified in the `script`.
 2. Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2, Pulsar and uBoot) and copy it with all
-other files needed for booting to another, perhaps remote, location.
+bootloaders are GRUB, GRUB2, Pulsar and U-Boot) and copy it with all
+other files needed for booting to a remote boot server.
 
         ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
     This command copies files to the TFTP server and uses
-    TCP/IP-controlled relay to reset the test box and receive its serial
-    output.
+    TCP/IP-controlled relay to reset the target host and receive its
+    serial output.
 
-3. Run DHCP and TFTP server on developer's machine to PXE-boot the OS
-from it. E.g.
+3. Run DHCP and TFTP server on developer's machine to PXE-boot the target
+host from it. E.g.
 
         ./script --dhcp-tftp
 
@@ -59,8 +62,8 @@ from it. E.g.
     configurations.
 
 Note that the options needed for a specific target can be stored in a
-["CONFIGURATION FILE"](#configuration-file) and then it is sufficient to use only the
-__\-t__ option to specify the name of the target.
+["CONFIGURATION FILE"](#configuration-file). Then it is sufficient to use only the __\-t__
+option to specify the name of the target.
 
 # PHASES AND OPTIONS
 
@@ -155,7 +158,7 @@ used in the later phases.
 ## File generation phase
 
 In this phase, files needed for booting are generated in a so called
-_build directory_ (see [--build-dir](https://metacpan.org/pod/--build-dir)). In most cases configuration
+_build directory_ (see ["--build-dir"](#build-dir)). In most cases configuration
 for a bootloader is generated automatically by novaboot. It is also
 possible to generate other files using _heredoc_ or _"<"_ syntax in
 novaboot scripts. Finally, binaries can be generated in this phases by
@@ -170,7 +173,7 @@ running `scons` or `make`.
     used. Otherwise, it is the directory that contains the first processed
     novaboot script.
 
-    See also [BUILDDIR](https://metacpan.org/pod/BUILDDIR) variable.
+    See also ["BUILDDIR"](#builddir) variable.
 
 - \-g, --grub\[=_filename_\]
 
@@ -442,7 +445,7 @@ Lines that end with "\\" are concatenated with the following line after
 removal of the final "\\" and leading whitespace of the following line.
 
 Lines of the form _VARIABLE=..._ (i.e. matching '^\[A-Z\_\]+=' regular
-expression) assign values to internal variables. See [VARIABLES](https://metacpan.org/pod/VARIABLES)
+expression) assign values to internal variables. See ["VARIABLES"](#variables)
 section.
 
 Lines starting with `load` keyword represent modules to boot. The

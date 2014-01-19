@@ -146,3 +146,21 @@ WVSTART()
 
 WV_BASE_DIR="$PWD"
 export NOVABOOT_TEST=1
+
+PATH=$(dirname $PWD):$PATH # Find our version of novaboot first
+
+function create_script ()
+{
+    (echo "#!/usr/bin/env novaboot"; cat) > script
+    chmod +x script
+}
+
+function create_dummy ()
+{
+    create_script <<EOF
+kernel
+file
+EOF
+    touch kernel
+    touch file
+}

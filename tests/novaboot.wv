@@ -2,23 +2,6 @@
 
 cd $(dirname $0)
 . wvtest.sh
-PATH=$(dirname $PWD):$PATH # Find our version of novaboot first
-
-function create_script ()
-{
-    (echo "#!/usr/bin/env novaboot"; cat) > script
-    chmod +x script
-}
-
-function create_dummy ()
-{
-    create_script <<EOF
-kernel
-file
-EOF
-    touch kernel
-    touch file
-}
 
 WVSTART Invoke with no script
 WVPASS novaboot -t '' < /dev/null
@@ -93,7 +76,7 @@ echo '$hypervisor="HYP";' > .novaboot
 WVPASS ./script --gen-only --pulsar
 WVPASS grep "exec HYP" config-novaboot
 
-exit
+exit 0
 
 # Broken
 WVSTART ISO image generation

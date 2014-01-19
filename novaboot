@@ -99,11 +99,29 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
 $stty = 'raw -crtscts -onlcr 115200';
+
+my @expect_seen = ();
+sub handle_expect
+{
+    my ($n, $v) = @_;
+    push(@expect_seen, '-re') if $n eq "expect-re";
+    push(@expect_seen, $v);
+}
+
+sub handle_send
+{
+    my ($n, $v) = @_;
+    unless (@expect_seen) { die("No --expect before --send"); }
+    my $ret = ($n eq "sendcont") ? exp_continue : 0;
+    unshift(@expect_raw, sub { shift->send(eval("\"$v\"")); $ret; });
+    unshift(@expect_raw, @expect_seen);
+    @expect_seen = ();
+}
 
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
@@ -117,6 +135,9 @@ my %opt_spec;
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
     "exiton=s"       => \@exiton,
+    "expect=s"	     => \&handle_expect,
+    "expect-re=s"    => \&handle_expect,
+    "expect-raw=s"   => sub { my ($n, $v) = @_; unshift(@expect_raw, eval($v)); },
     "gen-only"	     => \$gen_only,
     "grub|g:s" 	     => \$grub_config,
     "grub-preamble=s"=> \$grub_preamble,
@@ -142,6 +163,8 @@ my %opt_spec;
     "rsync-flags=s"  => \$rsync_flags,
     "scons:s"	     => \$scons,
     "scriptmod=s"    => \@scriptmod,
+    "send=s"	     => \&handle_send,
+    "sendcont=s"     => \&handle_send,
     "serial|s:s"     => \$serial,
     "server:s" 	     => \$server,
     "strip-rom"	     => sub { $rom_prefix = ''; },
@@ -772,7 +795,7 @@ if (defined $exp) {
     print "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
-	$exp->expect(undef, @exiton);
+	$exp->expect(undef, @expect_raw, @exiton);
     } else {
 	my @inputs = ($exp);
 	if (-t STDIN) { # Set up bi-directional communication if we run on terminal
@@ -789,7 +812,10 @@ if (defined $exp) {
 	    }
 	    push(@inputs, $in_object);
 	}
-	Expect::interconnect(@inputs);
+	#use Data::Dumper;
+	#print Dumper(\@expect_raw);
+	$exp->expect(undef, @expect_raw) if @expect_raw;
+	Expect::interconnect(@inputs) unless defined($exp->exitstatus);
     }
 }
 
@@ -1107,8 +1133,8 @@ example C<ssh server 'cu -l /dev/ttyS0'>.
 
 =item --remote-expect=I<string>
 
-Wait for reception of I<string> on the remote connection before
-continuing.
+Wait for reception of I<string> after establishing the the remote
+connection before continuing.
 
 =back
 
@@ -1207,18 +1233,16 @@ future!
 
 =item --uboot-init
 
-Command(s) to send the uBoot bootloader before loading the images and
-botting them.
+Command(s) to send the U-Boot bootloader before loading the images and
+booting them.
 
 =back
 
 =head2 Target interaction phase
 
-In this phase, target's serial output is passed to C<novaboot> stdout.
-If C<novaboot>'s stdin is on TTY, the stdin is passed to the target
-allowing interactive work with the target.
-
-This phase end when the target hangs up or when Ctrl-C is pressed.
+In this phase, target's serial output is redirected to stdout and if
+stdin is a TTY, it is redirected to the target's serial input allowing
+interactive work with the target.
 
 =over 8
 
@@ -1240,6 +1264,38 @@ in any way (no echoing of entered characters, no interpretation
 special characters). This, among others, means that Ctrl-C is passed
 to the target and does no longer interrupt novaboot. Use "~~."
 sequence to exit novaboot.
+
+=item --expect=I<string>
+
+When I<string> is received from the target, send the string specified
+with the subsequent B<--send*> option to the target.
+
+=item --expect-re=I<regex>
+
+When target's output matches regular expression I<regex>, send the
+string specified with the subsequent B<--send*> option to the target.
+
+=item --expect-raw=I<perl-code>
+
+Provides direct control over Perl's Expect module.
+
+=item --send=I<string>
+
+Send I<string> to the target after the previously specified
+B<--expect*> was matched in the target's output. The I<string> may
+contain escape sequences such as "\n".
+
+Note that I<string> is actually interpreted by Perl, so it can contain
+much more that escape sequences. This behavior may change in the
+future.
+
+Example: C<--expect='login: ' --send='root\n'>
+
+=item --sendcont=I<string>
+
+Similar to B<--send> but continue expecting more input.
+
+Example: C<--expect='Continue?' --sendcont='yes\n'>
 
 =back
 

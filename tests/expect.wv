@@ -1,0 +1,31 @@
+#!/bin/bash
+
+cd $(dirname $0)
+. wvtest.sh
+
+WVSTART Exiton
+WVPASS create_dummy
+WVPASS ./script -t '' --exiton=Hello --remote-cmd="echo Hello; cat"
+
+WVSTART Expect send
+WVPASS create_dummy
+WVPASS ./script -t '' --expect=question --send="answer\n" \
+    --remote-cmd='echo question; read x; echo $x > output'
+WVPASS grep answer output
+
+WVSTART Expect send
+WVPASS create_dummy
+WVPASS ./script -t '' --expect=question --send="answer\n" \
+    --remote-cmd='echo question; read x; echo $x > output'
+WVPASS grep answer output
+
+WVSTART Expect regexp send
+WVPASS create_dummy
+WVPASS ./script -t '' --expect-re=q..st..n --send="answer\n" \
+    --remote-cmd='echo question; read x; echo $x > output'
+WVPASS grep answer output
+
+WVSTART Expect sendcond
+WVPASS create_dummy
+WVPASS ./script -t '' --expect=More --sendcont="\n" \
+    --remote-cmd='seq 100|more'

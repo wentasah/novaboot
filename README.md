@@ -274,8 +274,8 @@ user/instance.
 
 - \--remote-expect=_string_
 
-    Wait for reception of _string_ on the remote connection before
-    continuing.
+    Wait for reception of _string_ after establishing the the remote
+    connection before continuing.
 
 ## File deployment phase
 
@@ -362,16 +362,14 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - \--uboot-init
 
-    Command(s) to send the uBoot bootloader before loading the images and
-    botting them.
+    Command(s) to send the U-Boot bootloader before loading the images and
+    booting them.
 
 ## Target interaction phase
 
-In this phase, target's serial output is passed to `novaboot` stdout.
-If `novaboot`'s stdin is on TTY, the stdin is passed to the target
-allowing interactive work with the target.
-
-This phase end when the target hangs up or when Ctrl-C is pressed.
+In this phase, target's serial output is redirected to stdout and if
+stdin is a TTY, it is redirected to the target's serial input allowing
+interactive work with the target.
 
 - \--exiton=_string_
 
@@ -391,6 +389,38 @@ This phase end when the target hangs up or when Ctrl-C is pressed.
     special characters). This, among others, means that Ctrl-C is passed
     to the target and does no longer interrupt novaboot. Use "~~."
     sequence to exit novaboot.
+
+- \--expect=_string_
+
+    When _string_ is received from the target, send the string specified
+    with the subsequent __\--send\*__ option to the target.
+
+- \--expect-re=_regex_
+
+    When target's output matches regular expression _regex_, send the
+    string specified with the subsequent __\--send\*__ option to the target.
+
+- \--expect-raw=_perl-code_
+
+    Provides direct control over Perl's Expect module.
+
+- \--send=_string_
+
+    Send _string_ to the target after the previously specified
+    __\--expect\*__ was matched in the target's output. The _string_ may
+    contain escape sequences such as "\\n".
+
+    Note that _string_ is actually interpreted by Perl, so it can contain
+    much more that escape sequences. This behavior may change in the
+    future.
+
+    Example: `--expect='login: ' --send='root\n'`
+
+- \--sendcont=_string_
+
+    Similar to __\--send__ but continue expecting more input.
+
+    Example: `--expect='Continue?' --sendcont='yes\n'`
 
 # NOVABOOT SCRIPT SYNTAX
 

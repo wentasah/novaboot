@@ -73,3 +73,15 @@ WVPASS bash -c "./script --dump > dump"
 WVPASS diff -u - dump <<EOF
 file
 EOF
+
+WVSTART Load without file
+WVFAIL novaboot <<EOF
+load
+EOF
+
+WVSTART Heredoc without file
+WVFAIL novaboot <<EOF
+load <<XXX
+inside heredoc
+XXX
+EOF

@@ -270,6 +270,7 @@ while (<>) {
 	next;
     }
     if (s/^load *//) {		# Load line
+	die("novaboot: '$last_fn' line $.: Missing file name\n") unless /^[^ <]+/;
 	if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
 	    push @$modules, "$1$2";
 	    $file = [];

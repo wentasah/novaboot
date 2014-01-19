@@ -464,12 +464,18 @@ that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
 
-Example:
+Example (Linux):
+
+    #!/usr/bin/env novaboot
+    load bzImage console=ttyS0,115200
+    load rootfs.cpio < gen_cpio buildroot/images/rootfs.cpio "myapp->/etc/init.d/S99myapp"
+
+Example (NOVA User Land - NUL):
 
     #!/usr/bin/env novaboot
     WVDESC=Example program
     load bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
-      verbose hostkeyb:0,0x60,1,12,2
+                             verbose hostkeyb:0,0x60,1,12,2
     load bin/apps/hello.nul
     load hello.nulconfig <<EOF
     sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||

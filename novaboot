@@ -1351,7 +1351,7 @@ until the line containing solely WORD are copied literally to the file
 named on that line. This is similar to shell's heredoc feature.
 
 When the C<load> line ends with "< CMD" then command CMD is executed
-with C</bin/sh> and its standard output is stored in the file named on
+with F</bin/sh> and its standard output is stored in the file named on
 that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.

@@ -135,6 +135,11 @@ used in the later phases.
     parsing the novaboot script, i.e. after evaluating all _\--scriptmod_
     expressions etc. Exit after reading (and dumping) the script.
 
+- \-k, --kernel=`file`
+
+    Replace the first word on the first `load` line in the novaboot
+    script with `file`.
+
 - \--scriptmod=_perl expression_
 
     When novaboot script is read, _perl expression_ is executed for every

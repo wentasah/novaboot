@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my (@append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my (@append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -146,6 +146,7 @@ my %opt_spec;
     "grub2-prolog=s" => \$grub2_prolog,
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
+    "kernel|k=s"     => \$kernel_opt,
     "interactive|i"  => \$interactive,
     "name=s"	     => \$config_name_opt,
     "make|m:s"	     => \$make,
@@ -291,11 +292,11 @@ while (<>) {
 # print Dumper(\@scripts);
 
 
-if (@append) {
-    foreach my $script (@scripts) {
-	$$script{modules}[0] .= ' ' . join(' ', @append);
-    }
+foreach my $script (@scripts) {
+    $$script{modules}[0] =~ s/^[^ ]*/$kernel_opt/ if $kernel_opt;
+    $$script{modules}[0] .= ' ' . join(' ', @append) if @append;
 }
+
 
 
 if ($dump_opt) {
@@ -1000,6 +1001,11 @@ in the novaboot script. E.g. 'bin/boot/bender promisc'.
 Print the modules to boot and their parameters. This happens after
 parsing the novaboot script, i.e. after evaluating all I<--scriptmod>
 expressions etc. Exit after reading (and dumping) the script.
+
+=item -k, --kernel=F<file>
+
+Replace the first word on the first C<load> line in the novaboot
+script with F<file>.
 
 =item --scriptmod=I<perl expression>
 

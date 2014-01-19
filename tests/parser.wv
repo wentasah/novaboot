@@ -6,29 +6,40 @@ cd $(dirname $0)
 WVSTART Simple script
 WVPASS create_dummy
 WVPASS bash -c "./script --dump > dump"
-WVPASS diff -u dump - <<EOF
+WVPASS diff -u - dump <<EOF
 kernel
 file
 EOF
 
-WVSTART Append
+WVSTART --append
 WVPASS create_dummy
 WVPASS bash -c "./script --dump --append 1 --append 2 > dump"
-WVPASS diff -u dump - <<EOF
+WVPASS diff -u - dump <<EOF
 kernel 1 2
 file
 EOF
 
 WVSTART Line continuation
 WVPASS bash -c '(echo "load line1 \\"; echo " line2")|novaboot --dump > dump'
-WVPASS diff -u dump - <<EOF
+WVPASS diff -u - dump <<EOF
 line1 line2
 EOF
 
-WVSTART Scriptmod
+WVSTART --scriptmod
 create_dummy
 WVPASS bash -c './script --scriptmod="s/e/3/g" --dump > dump'
-WVPASS diff -u dump - <<EOF
+WVPASS diff -u - dump <<EOF
 k3rn3l
 fil3
+EOF
+
+WVSTART --kernel
+create_script <<EOF
+load kernel arg1 arg2
+load file farg11
+EOF
+WVPASS bash -c './script -k new --dump > dump'
+WVPASS diff -u - dump <<EOF
+new arg1 arg2
+file farg11
 EOF

@@ -847,9 +847,11 @@ novaboot - A tool for booting various operating systems on various hardware or i
 
 =head1 SYNOPSIS
 
-B<novaboot> [ options ] [--] script...
+B<novaboot> --help
 
-B<./script> [ options ]
+B<novaboot> [option]... [--] script...
+
+B<./script> [option]...
 
 =head1 DESCRIPTION
 

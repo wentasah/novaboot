@@ -4,9 +4,11 @@ novaboot - A tool for booting various operating systems on various hardware or i
 
 # SYNOPSIS
 
-__novaboot__ \[ options \] \[--\] script...
+__novaboot__ --help
 
-__./script__ \[ options \]
+__novaboot__ \[option\]... \[--\] script...
+
+__./script__ \[option\]...
 
 # DESCRIPTION
 

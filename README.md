@@ -17,12 +17,13 @@ as simple as running a local program. It facilitates booting on local
 or remote hosts or in emulators such as qemu. Novaboot operation is
 controlled by command line options and by a so called novaboot script,
 which can be thought as a generalization of bootloader configuration
-files. Based on this input, novaboot setups everything for the target
-host to boot the desired configuration, i.e. it generates the
-bootloader configuration file in the proper format, deploy the
-binaries and other needed files to required locations, perhaps on a
-remote boot server and reset the target host. Finally, target host's
-serial output is redirected to standard output if that is possible.
+files (see ["NOVABOOT SCRIPT SYNTAX"](#novaboot-script-syntax)). Based on this input,
+novaboot setups everything for the target host to boot the desired
+configuration, i.e. it generates the bootloader configuration file in
+the proper format, deploy the binaries and other needed files to
+required locations, perhaps on a remote boot server and reset the
+target host. Finally, target host's serial output is redirected to
+standard output if that is possible.
 
 Typical way of using novaboot is to make the novaboot script
 executable and set its first line to _\#!/usr/bin/env novaboot_. Then,
@@ -464,15 +465,16 @@ absolute path of the directory containing the interpreted novaboot
 script.
 
 Example:
-  \#!/usr/bin/env novaboot
-  WVDESC=Example program
-  load bin/apps/sigma0.nul S0\_DEFAULT script\_start:1,1 \\
-    verbose hostkeyb:0,0x60,1,12,2
-  load bin/apps/hello.nul
-  load hello.nulconfig <<EOF
-  sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
-  rom://bin/apps/hello.nul
-  EOF
+
+    #!/usr/bin/env novaboot
+    WVDESC=Example program
+    load bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
+      verbose hostkeyb:0,0x60,1,12,2
+    load bin/apps/hello.nul
+    load hello.nulconfig <<EOF
+    sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
+    rom://bin/apps/hello.nul
+    EOF
 
 This example will load three modules: `sigma0.nul`, `hello.nul` and
 `hello.nulconfig`. sigma0 receives some command line parameters and

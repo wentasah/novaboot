@@ -860,12 +860,13 @@ as simple as running a local program. It facilitates booting on local
 or remote hosts or in emulators such as qemu. Novaboot operation is
 controlled by command line options and by a so called novaboot script,
 which can be thought as a generalization of bootloader configuration
-files. Based on this input, novaboot setups everything for the target
-host to boot the desired configuration, i.e. it generates the
-bootloader configuration file in the proper format, deploy the
-binaries and other needed files to required locations, perhaps on a
-remote boot server and reset the target host. Finally, target host's
-serial output is redirected to standard output if that is possible.
+files (see L</"NOVABOOT SCRIPT SYNTAX">). Based on this input,
+novaboot setups everything for the target host to boot the desired
+configuration, i.e. it generates the bootloader configuration file in
+the proper format, deploy the binaries and other needed files to
+required locations, perhaps on a remote boot server and reset the
+target host. Finally, target host's serial output is redirected to
+standard output if that is possible.
 
 Typical way of using novaboot is to make the novaboot script
 executable and set its first line to I<#!/usr/bin/env novaboot>. Then,
@@ -1356,6 +1357,7 @@ absolute path of the directory containing the interpreted novaboot
 script.
 
 Example:
+
   #!/usr/bin/env novaboot
   WVDESC=Example program
   load bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \

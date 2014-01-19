@@ -52,7 +52,7 @@ $builddir="build";
 1;
 EOF
 create_script <<'EOF'
-file < echo Hello
+load file < echo Hello
 EOF
 WVPASS ./script --gen-only
 WVPASS test -f build/file
@@ -65,7 +65,7 @@ WVSTART BUILDDIR variable
 WVPASS mkdir -p build
 create_script <<'EOF'
 BUILDDIR=build
-file < echo Hello
+load file < echo Hello
 EOF
 WVPASS ./script --gen-only
 WVPASS test -f build/file

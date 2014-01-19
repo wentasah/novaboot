@@ -7,5 +7,5 @@
 #   git submodule update --init
 #   make -C build/buildroot.
 
-build/buildroot/images/bzImage console=ttyS0,115200
-build/buildroot/images/rootfs.cpio.gz
+load build/buildroot/images/bzImage console=ttyS0,115200
+load build/buildroot/images/rootfs.cpio.gz

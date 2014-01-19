@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my (@append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -126,7 +126,7 @@ sub handle_send
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
 %opt_spec = (
-    "append|a=s"     => \$append,
+    "append|a=s"     => \@append,
     "bender|b"       => \$bender,
     "build-dir=s"    => sub { my ($n, $v) = @_; $builddir = File::Spec->rel2abs($v); },
     "concat"	     => \$concat,
@@ -224,14 +224,13 @@ if (defined $grub2_config) { $grub2_config ||= "grub.cfg"; }
 ## Parse the novaboot script(s)
 my @scripts;
 my $file;
-my $line;
 my $EOF;
 my $last_fn = '';
 my ($modules, $variables, $generated, $continuation);
 while (<>) {
     if ($ARGV ne $last_fn) { # New script
 	die "Missing EOF in $last_fn" if $file;
-	die "Unfinished line in $last_fn" if $line;
+	die "Unfinished line in $last_fn" if $continuation;
 	$last_fn = $ARGV;
 	push @scripts, { 'filename' => $ARGV,
 			 'modules' => $modules = [],
@@ -242,20 +241,39 @@ while (<>) {
     chomp();
     next if /^#/ || /^\s*$/;	# Skip comments and empty lines
 
-    foreach my $mod(@scriptmod) { eval $mod; }
+    $_ =~ s/^[[:space:]]*// if ($continuation);
 
-    print "$_\n" if $dump_opt;
+    if (/\\$/) {		# Line continuation
+	$continuation .= substr($_, 0, length($_)-1);
+	next;
+    }
+
+    if ($continuation) {	# Last continuation line
+	$_ = $continuation . $_;
+	$continuation = '';
+    }
+
+    foreach my $mod(@scriptmod) { eval $mod; }
 
     if (/^([A-Z_]+)=(.*)$/) {	# Internal variable
 	$$variables{$1} = $2;
 	push(@exiton, $2) if ($1 eq "EXITON");
 	next;
     }
-    if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
-	push @$modules, "$1$2";
-	$file = [];
-	push @$generated, {filename => $1, content => $file};
-	$EOF = $3;
+    if (s/^load *//) {		# Load line
+	if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
+	    push @$modules, "$1$2";
+	    $file = [];
+	    push @$generated, {filename => $1, content => $file};
+	    $EOF = $3;
+	    next;
+	}
+	if (/^([^ ]*)(.*?)[[:space:]]*< ?(.*)$/) { # Command substitution
+	    push @$modules, "$1$2";
+	    push @$generated, {filename => $1, command => $3};
+	    next;
+	}
+	push @$modules, $_;
 	next;
     }
     if ($file && $_ eq $EOF) {	# Heredoc end
@@ -266,29 +284,26 @@ while (<>) {
 	push @{$file}, "$_\n";
 	next;
     }
-    $_ =~ s/^[[:space:]]*// if ($continuation);
-    if (/\\$/) {		# Line continuation
-	$line .= substr($_, 0, length($_)-1);
-	$continuation = 1;
-	next;
-    }
-    $continuation = 0;
-    $line .= $_;
-    $line .= " $append" if ($append && scalar(@$modules) == 0);
 
-    if ($line =~ /^([^ ]*)(.*?)[[:space:]]*< ?(.*)$/) { # Command substitution
-	push @$modules, "$1$2";
-	push @$generated, {filename => $1, command => $3};
-	$line = '';
-	next;
-    }
-    push @$modules, $line;
-    $line = '';
+    die("novaboot: Cannot parse script '$last_fn' line $.. Didn't you forget 'load' keyword?\n");
 }
-#use Data::Dumper;
-#print Dumper(\@scripts);
+# use Data::Dumper;
+# print Dumper(\@scripts);
 
-exit if $dump_opt;
+
+if (@append) {
+    foreach my $script (@scripts) {
+	$$script{modules}[0] .= ' ' . join(' ', @append);
+    }
+}
+
+
+if ($dump_opt) {
+    foreach my $script (@scripts) {
+	print join("\n", @{$$script{modules}})."\n";
+    }
+    exit(0);
+}
 
 ## Helper functions
 
@@ -963,9 +978,9 @@ used in the later phases.
 
 =item -a, --append=I<parameters>
 
-Appends a string to the first "filename" line in the novaboot script.
-This can be used to append parameters to the kernel's or root task's
-command line.
+Append a string to the first C<load> line in the novaboot script. This
+can be used to append parameters to the kernel's or root task's
+command line. Can appear multiple times.
 
 =item -b, --bender
 
@@ -980,9 +995,9 @@ in the novaboot script. E.g. 'bin/boot/bender promisc'.
 
 =item --dump
 
-Prints the content of the novaboot script after removing comments and
-evaluating all I<--scriptmod> expressions. Exit after reading (and
-dumping) the script.
+Print the modules to boot and their parameters. This happens after
+parsing the novaboot script, i.e. after evaluating all I<--scriptmod>
+expressions etc. Exit after reading (and dumping) the script.
 
 =item --scriptmod=I<perl expression>
 
@@ -1022,6 +1037,8 @@ The default build directory location is determined as follows: If the
 configuration file defines the C<$builddir> variable, its value is
 used. Otherwise, it is the directory that contains the first processed
 novaboot script.
+
+See also L<BUILDDIR> variable.
 
 =item -g, --grub[=I<filename>]
 
@@ -1301,46 +1318,48 @@ Example: C<--expect='Continue?' --sendcont='yes\n'>
 
 =head1 NOVABOOT SCRIPT SYNTAX
 
-The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.
+The syntax tries to mimic POSIX shell syntax. The syntax is defined
+with the following rules.
 
-Lines starting with "#" are ignored.
+Lines starting with "#" and empty lines are ignored.
 
 Lines that end with "\" are concatenated with the following line after
 removal of the final "\" and leading whitespace of the following line.
 
-Lines in the form I<VARIABLE=...> (i.e. matching '^[A-Z_]+=' regular
-expression) assign values to internal variables. See VARIABLES
+Lines of the form I<VARIABLE=...> (i.e. matching '^[A-Z_]+=' regular
+expression) assign values to internal variables. See L<VARIABLES>
 section.
 
-Otherwise, the first word on the line represents the filename
-(relative to the build directory (see B<--build-dir>) of the module to
-load and the remaining words are passed as the command line
-parameters.
+Lines starting with C<load> keyword represent modules to boot. The
+word after C<load> is a file name (relative to the build directory
+(see B<--build-dir>) of the module to load and the remaining words are
+passed to it as the command line parameters.
 
-When the line ends with "<<WORD" then the subsequent lines until the
-line containing only WORD are copied literally to the file named on
-that line.
+When the C<load> line ends with "<<WORD" then the subsequent lines
+until the line containing solely WORD are copied literally to the file
+named on that line. This is similar to shell's heredoc feature.
 
-When the line ends with "< CMD" the command CMD is executed with
-C</bin/sh> and its standard output is stored in the file named on that
-line. The SRCDIR variable in CMD's environment is set to the absolute
-path of the directory containing the interpreted novaboot script.
+When the C<load> line ends with "< CMD" then command CMD is executed
+with C</bin/sh> and its standard output is stored in the file named on
+that line. The SRCDIR variable in CMD's environment is set to the
+absolute path of the directory containing the interpreted novaboot
+script.
 
 Example:
   #!/usr/bin/env novaboot
   WVDESC=Example program
-  bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
+  load bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
     verbose hostkeyb:0,0x60,1,12,2
-  bin/apps/hello.nul
-  hello.nulconfig <<EOF
+  load bin/apps/hello.nul
+  load hello.nulconfig <<EOF
   sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
   rom://bin/apps/hello.nul
   EOF
 
-This example will load three modules: sigma0.nul, hello.nul and
-hello.nulconfig. sigma0 gets some command line parameters and
-hello.nulconfig file is generated on the fly from the lines between
-<<EOF and EOF.
+This example will load three modules: F<sigma0.nul>, F<hello.nul> and
+F<hello.nulconfig>. sigma0 receives some command line parameters and
+F<hello.nulconfig> file is generated on the fly from the lines between
+C<<<EOF> and C<EOF>.
 
 =head2 VARIABLES
 
@@ -1362,25 +1381,26 @@ option.
 =item HYPERVISOR_PARAMS
 
 Parameters passed to hypervisor. The default value is "serial", unless
-overriden in configuration file.
+overridden in configuration file.
 
 =item KERNEL
 
-The kernel to use instead of NOVA hypervisor specified in the
-configuration file. The value should contain the name of the kernel
-image as well as its command line parameters. If this variable is
-defined and non-empty, the variable HYPERVISOR_PARAMS is not used.
+The kernel to use instead of the hypervisor specified in the
+configuration file with the C<$hypervisor> variable. The value should
+contain the name of the kernel image as well as its command line
+parameters. If this variable is defined and non-empty, the variable
+HYPERVISOR_PARAMS is not used.
 
 =item QEMU
 
-Use a specific qemu binary (can be overriden with B<-Q>) and flags
+Use a specific qemu binary (can be overridden with B<-Q>) and flags
 when booting this script under qemu. If QEMU_FLAGS variable is also
 specified flags specified in QEMU variable are replaced by those in
 QEMU_FLAGS.
 
 =item QEMU_FLAGS
 
-Use specific qemu flags (can be overriden with B<-q>).
+Use specific qemu flags (can be overridden with B<-q>).
 
 =item WVDESC
 
@@ -1404,7 +1424,7 @@ specified with the B<-c> switch or with the NOVABOOT_CONFIG
 environment variable. The configuration file has perl syntax and
 should set values of certain Perl variables. The current configuration
 can be dumped with the B<--dump-config> switch. Some configuration
-variables can be overriden by environment variables (see below) or by
+variables can be overridden by environment variables (see below) or by
 command line switches.
 
 Supported configuration variables include:

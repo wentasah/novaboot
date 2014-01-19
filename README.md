@@ -112,9 +112,9 @@ used in the later phases.
 
 - \-a, --append=_parameters_
 
-    Appends a string to the first "filename" line in the novaboot script.
-    This can be used to append parameters to the kernel's or root task's
-    command line.
+    Append a string to the first `load` line in the novaboot script. This
+    can be used to append parameters to the kernel's or root task's
+    command line. Can appear multiple times.
 
 - \-b, --bender
 
@@ -129,9 +129,9 @@ used in the later phases.
 
 - \--dump
 
-    Prints the content of the novaboot script after removing comments and
-    evaluating all _\--scriptmod_ expressions. Exit after reading (and
-    dumping) the script.
+    Print the modules to boot and their parameters. This happens after
+    parsing the novaboot script, i.e. after evaluating all _\--scriptmod_
+    expressions etc. Exit after reading (and dumping) the script.
 
 - \--scriptmod=_perl expression_
 
@@ -167,6 +167,8 @@ scripts. Finally, binaries can be generated in this phases by running
     configuration file defines the `$builddir` variable, its value is
     used. Otherwise, it is the directory that contains the first processed
     novaboot script.
+
+    See also [BUILDDIR](https://metacpan.org/pod/BUILDDIR) variable.
 
 - \-g, --grub\[=_filename_\]
 
@@ -424,46 +426,48 @@ interactive work with the target.
 
 # NOVABOOT SCRIPT SYNTAX
 
-The syntax tries to mimic POSIX shell syntax. The syntax is defined with the following rules.
+The syntax tries to mimic POSIX shell syntax. The syntax is defined
+with the following rules.
 
-Lines starting with "\#" are ignored.
+Lines starting with "\#" and empty lines are ignored.
 
 Lines that end with "\\" are concatenated with the following line after
 removal of the final "\\" and leading whitespace of the following line.
 
-Lines in the form _VARIABLE=..._ (i.e. matching '^\[A-Z\_\]+=' regular
-expression) assign values to internal variables. See VARIABLES
+Lines of the form _VARIABLE=..._ (i.e. matching '^\[A-Z\_\]+=' regular
+expression) assign values to internal variables. See [VARIABLES](https://metacpan.org/pod/VARIABLES)
 section.
 
-Otherwise, the first word on the line represents the filename
-(relative to the build directory (see __\--build-dir__) of the module to
-load and the remaining words are passed as the command line
-parameters.
+Lines starting with `load` keyword represent modules to boot. The
+word after `load` is a file name (relative to the build directory
+(see __\--build-dir__) of the module to load and the remaining words are
+passed to it as the command line parameters.
 
-When the line ends with "<<WORD" then the subsequent lines until the
-line containing only WORD are copied literally to the file named on
-that line.
+When the `load` line ends with "<<WORD" then the subsequent lines
+until the line containing solely WORD are copied literally to the file
+named on that line. This is similar to shell's heredoc feature.
 
-When the line ends with "< CMD" the command CMD is executed with
-`/bin/sh` and its standard output is stored in the file named on that
-line. The SRCDIR variable in CMD's environment is set to the absolute
-path of the directory containing the interpreted novaboot script.
+When the `load` line ends with "< CMD" then command CMD is executed
+with `/bin/sh` and its standard output is stored in the file named on
+that line. The SRCDIR variable in CMD's environment is set to the
+absolute path of the directory containing the interpreted novaboot
+script.
 
 Example:
   \#!/usr/bin/env novaboot
   WVDESC=Example program
-  bin/apps/sigma0.nul S0\_DEFAULT script\_start:1,1 \\
+  load bin/apps/sigma0.nul S0\_DEFAULT script\_start:1,1 \\
     verbose hostkeyb:0,0x60,1,12,2
-  bin/apps/hello.nul
-  hello.nulconfig <<EOF
+  load bin/apps/hello.nul
+  load hello.nulconfig <<EOF
   sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
   rom://bin/apps/hello.nul
   EOF
 
-This example will load three modules: sigma0.nul, hello.nul and
-hello.nulconfig. sigma0 gets some command line parameters and
-hello.nulconfig file is generated on the fly from the lines between
-<<EOF and EOF.
+This example will load three modules: `sigma0.nul`, `hello.nul` and
+`hello.nulconfig`. sigma0 receives some command line parameters and
+`hello.nulconfig` file is generated on the fly from the lines between
+`<<EOF` and `EOF`.
 
 ## VARIABLES
 
@@ -483,25 +487,26 @@ The following variables are interpreted in the novaboot script:
 - HYPERVISOR\_PARAMS
 
     Parameters passed to hypervisor. The default value is "serial", unless
-    overriden in configuration file.
+    overridden in configuration file.
 
 - KERNEL
 
-    The kernel to use instead of NOVA hypervisor specified in the
-    configuration file. The value should contain the name of the kernel
-    image as well as its command line parameters. If this variable is
-    defined and non-empty, the variable HYPERVISOR\_PARAMS is not used.
+    The kernel to use instead of the hypervisor specified in the
+    configuration file with the `$hypervisor` variable. The value should
+    contain the name of the kernel image as well as its command line
+    parameters. If this variable is defined and non-empty, the variable
+    HYPERVISOR\_PARAMS is not used.
 
 - QEMU
 
-    Use a specific qemu binary (can be overriden with __\-Q__) and flags
+    Use a specific qemu binary (can be overridden with __\-Q__) and flags
     when booting this script under qemu. If QEMU\_FLAGS variable is also
     specified flags specified in QEMU variable are replaced by those in
     QEMU\_FLAGS.
 
 - QEMU\_FLAGS
 
-    Use specific qemu flags (can be overriden with __\-q__).
+    Use specific qemu flags (can be overridden with __\-q__).
 
 - WVDESC
 
@@ -523,7 +528,7 @@ specified with the __\-c__ switch or with the NOVABOOT\_CONFIG
 environment variable. The configuration file has perl syntax and
 should set values of certain Perl variables. The current configuration
 can be dumped with the __\--dump-config__ switch. Some configuration
-variables can be overriden by environment variables (see below) or by
+variables can be overridden by environment variables (see below) or by
 command line switches.
 
 Supported configuration variables include:

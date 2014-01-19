@@ -158,8 +158,8 @@ function create_script ()
 function create_dummy ()
 {
     create_script <<EOF
-kernel
-file
+load kernel
+load file
 EOF
     touch kernel
     touch file

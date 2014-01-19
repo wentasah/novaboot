@@ -256,6 +256,14 @@ while (<>) {
 
     foreach my $mod(@scriptmod) { eval $mod; }
 
+    if ($file && $_ eq $EOF) {	# Heredoc end
+	undef $file;
+	next;
+    }
+    if ($file) {		# Heredoc content
+	push @{$file}, "$_\n";
+	next;
+    }
     if (/^([A-Z_]+)=(.*)$/) {	# Internal variable
 	$$variables{$1} = $2;
 	push(@exiton, $2) if ($1 eq "EXITON");
@@ -275,14 +283,6 @@ while (<>) {
 	    next;
 	}
 	push @$modules, $_;
-	next;
-    }
-    if ($file && $_ eq $EOF) {	# Heredoc end
-	undef $file;
-	next;
-    }
-    if ($file) {		# Heredoc content
-	push @{$file}, "$_\n";
 	next;
     }
 

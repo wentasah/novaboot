@@ -62,3 +62,14 @@ chain2 arg
 kernel
 file
 EOF
+
+WVSTART Heredoc
+create_script <<EOF
+load file <<XXX
+load inside heredoc
+XXX
+EOF
+WVPASS bash -c "./script --dump > dump"
+WVPASS diff -u - dump <<EOF
+file
+EOF

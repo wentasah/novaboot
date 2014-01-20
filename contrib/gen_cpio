@@ -177,7 +177,7 @@ gen_filelist() {
 	echo "dir $dir 0755 0 0"
 	dir=$(dirname $dir)
     done
-    echo "$(filetype $src) $dst $src $(find $src -printf '%m') 0 0"
+    echo "file $dst $src $(find $src -printf '%m') 0 0"
 }
 
 while [ $# -gt 0 ]; do
@@ -195,13 +195,13 @@ while [ $# -gt 0 ]; do
 	*"->"*)
 	    src=${arg%%->*}
 	    dst=${arg#*->}
-	    cpio_list="$cpio_list$(gen_filelist $src $dst)"
+	    cpio_list=$(echo "$cpio_list"; gen_filelist $src $dst)
 	    ;;
 	*)
 	    if [ -d "$arg" ]; then
 		cpio_list="$cpio_list$(gen_dirlist $arg)"
 	    elif [ -f "$arg" ]; then
-		case "$(file $arg)" in
+		case "$(file -L $arg)" in
 		    *"cpio archive"*)
 			gen_cpio_from_list
 			cat $arg

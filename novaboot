@@ -28,6 +28,9 @@ use IPC::Open2;
 use POSIX qw(:errno_h);
 use Cwd qw(getcwd abs_path);
 use Expect;
+use FindBin qw( $RealBin );
+use lib "$RealBin/contrib/";
+use WSman;
 
 # always flush
 $| = 1;
@@ -99,7 +102,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my (@append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -126,6 +129,7 @@ sub handle_send
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
 %opt_spec = (
+	"amt=s" 	     => \$amt,
     "append|a=s"     => \@append,
     "bender|b"       => \$bender,
     "build-dir=s"    => sub { my ($n, $v) = @_; $builddir = File::Spec->rel2abs($v); },
@@ -543,6 +547,26 @@ elsif ($serial) {
 } elsif ($remote_cmd) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
+} elsif (defined $amt){    
+	my (@amt_info, $len, $amt_password);
+	@amt_info=split(":",$amt,3);
+	$len=@amt_info;
+	$len==3 ? $amt_password=$amt_info[1] : ($len==2 ? ($ENV{'AMT_PASSWORD'} ? $amt_password=$ENV{'AMT_PASSWORD'}
+		: die "AMT password not specified" ): die "AMT parametrs not specified") ;
+	
+	$target_power_off = sub {
+		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
+	};
+	
+	$target_power_on = sub {
+		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
+	};
+	
+	$target_reset = sub {
+		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "reset");
+	};
+	
+	$exp = Expect->spawn("amtterm -u $amt_info[0] -p $amt_password $amt_info[$len-1]"); 
 }
 
 if ($remote_expect) {
@@ -1131,6 +1155,13 @@ checked whether the target is not occupied by another novaboot
 user/instance.
 
 =over 8
+
+=item --amt=I<username[:password]:addr>
+
+Use Intel AMT to connect to target. using SOL redirection and WS management 
+to powercycle it. The IP address of the relay is given by I<addr>
+parameter. If I<password> is not specified, environment variable 
+AMT_PASSWORD is used.
 
 =item --iprelay=I<addr[:port]>
 

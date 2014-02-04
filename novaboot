@@ -47,7 +47,7 @@ $CFG::default_target = 'qemu';
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
-    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --remote-cmd="ssh -t pc-sojkam.felk.cvut.cz \"cu -l /dev/ttyUSB0 -s 115200\"" --remote-expect="Connected." --reset-cmd="ssh -t pc-sojkam.felk.cvut.cz \"dtrrts /dev/ttyUSB0 1 1\""',
+    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --remote-cmd="ssh -tt pc-sojkam.felk.cvut.cz \"sterm -d -s 115200 /dev/ttyUSB0\""',
     "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}; sleep 1" --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
 
     );

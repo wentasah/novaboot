@@ -36,10 +36,7 @@ sub genXML { #IP, username, password, schema, className, pstate
 	</p:RequestPowerStateChange_INPUT>";
 	my $footer="</s:Body></s:Envelope>
 	";
-	my $XML=$head.$body.$footer;
-	$XML =~ s/\n/ /;
-	$XML =~ s/\t/ /; 
-	$XML;
+	$head.$body.$footer;
 }
   
 sub sendPOST{ #ip, username, password, content
@@ -47,20 +44,28 @@ sub sendPOST{ #ip, username, password, content
 	my $username=$_[1];
 	my $password=$_[2];
 	my $content=$_[3];
-
-	my $ua = LWP::UserAgent->new(keep_alive=>1);
-	$ua->agent(" ");
-	$ua->credentials("$host:16992","Digest:DAC80000000000000000000000000000",  $username => $password); #not sure if realm is identical for every AMT computer, need test
-	# Create a request
+	
 	my $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
+	my $ua = LWP::UserAgent->new();
+	my $res = $ua->request($req);
+	my $header = $res->header("WWW-Authenticate");
+	my $digRealm = "Digest realm=\"";
+	my $posRealm = index($header,$digRealm)+length($digRealm);
+	my $realm = substr($header,$posRealm,index($header,"\"",$posRealm)-$posRealm);
+	
+	
+	$ua = LWP::UserAgent->new();
+	$ua->agent(" ");
+	$ua->credentials("$host:16992",$realm,  $username => $password); 
+	# Create a request
+	$req = HTTP::Request->new(POST => "http://$host:16992/wsman");
 	$req->content_type('application/x-www-form-urlencoded');
 	$req->content($content);
 
-	my $res = $ua->request($req);
 	$res = $ua->request($req);
 	if (!($res->is_success)) {
 		die $res->status_line;
-	}	
+	}
 }
 
 sub powerChange  {#IP, username, password, pstate

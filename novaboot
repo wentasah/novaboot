@@ -548,25 +548,28 @@ elsif ($serial) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
 } elsif (defined $amt){    
+	
 	my (@amt_info, $len, $amt_password);
 	@amt_info=split(":",$amt,3);
 	$len=@amt_info;
 	$len==3 ? $amt_password=$amt_info[1] : ($len==2 ? ($ENV{'AMT_PASSWORD'} ? $amt_password=$ENV{'AMT_PASSWORD'}
 		: die "AMT password not specified" ): die "AMT parametrs not specified") ;
-	
+	#WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
 	$target_power_off = sub {
 		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
 	};
 	
 	$target_power_on = sub {
-		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
+		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "on");
 	};
 	
 	$target_reset = sub {
 		WSman::powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "reset");
-	};
-	
-	$exp = Expect->spawn("amtterm -u $amt_info[0] -p $amt_password $amt_info[$len-1]"); 
+		select(undef, undef, undef, 2); 
+		#if not using pause, connection to AMT machine is initiated before reset and fails after restart
+		$exp = Expect->spawn("amtterm -u $amt_info[0] -p $amt_password $amt_info[$len-1]"); 
+		#expect must be here because AMT doesnt allow to reset/on/off computer when somebody is connected
+	};	
 }
 
 if ($remote_expect) {
@@ -1194,6 +1197,7 @@ example C<ssh server 'cu -l /dev/ttyS0'>.
 
 Wait for reception of I<string> after establishing the the remote
 connection before continuing.
+
 
 =back
 

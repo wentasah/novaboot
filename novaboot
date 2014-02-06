@@ -557,27 +557,28 @@ elsif ($serial) {
                     "off", 8,
                     "reset", 10,
                     "MNI", 11);
-        my $head="<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">
-        <s:Header><a:To>http://$host:16992/wsman</a:To>
-        <w:ResourceURI s:mustUnderstand=\"true\">$schema</w:ResourceURI>
-        <a:ReplyTo><a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:ReplyTo>
-        <a:Action s:mustUnderstand=\"true\">$schema$className</a:Action>
-        <w:MaxEnvelopeSize s:mustUnderstand=\"true\">153600</w:MaxEnvelopeSize>
-        <a:MessageID>uuid:709072C9-609C-4B43-B301-075004043C7C</a:MessageID>
-        <w:Locale xml:lang=\"en-US\" s:mustUnderstand=\"false\" />
-        <w:OperationTimeout>PT60.000S</w:OperationTimeout>
-        <w:SelectorSet><w:Selector Name=\"Name\">Intel(r) AMT Power Management Service</w:Selector></w:SelectorSet>
-        </s:Header><s:Body>";
-        my $body="<p:RequestPowerStateChange_INPUT xmlns:p=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService\">
-        <p:PowerState>".$pstates{$pstate}."</p:PowerState>
-        <p:ManagedElement><a:Address>http://$host:16992/wsman</a:Address>
-        <a:ReferenceParameters><w:ResourceURI>http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ComputerSystem</w:ResourceURI>
-            <w:SelectorSet><w:Selector Name=\"Name\">ManagedSystem</w:Selector></w:SelectorSet>
-        </a:ReferenceParameters></p:ManagedElement>
-        </p:RequestPowerStateChange_INPUT>";
-        my $footer="</s:Body></s:Envelope>
-        ";
-        $head.$body.$footer;
+        my $text = <<END;
+		<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+		<s:Header><a:To>http://$host:16992/wsman</a:To>
+		<w:ResourceURI s:mustUnderstand="true">$schema</w:ResourceURI>
+		<a:ReplyTo><a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:ReplyTo>
+		<a:Action s:mustUnderstand="true">$schema$className</a:Action>
+		<w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
+		<a:MessageID>uuid:709072C9-609C-4B43-B301-075004043C7C</a:MessageID>
+		<w:Locale xml:lang="en-US" s:mustUnderstand="false" />
+		<w:OperationTimeout>PT60.000S</w:OperationTimeout>
+		<w:SelectorSet><w:Selector Name="Name">Intel(r) AMT Power Management Service</w:Selector></w:SelectorSet>
+		</s:Header><s:Body>
+		<p:RequestPowerStateChange_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService">
+		<p:PowerState>$pstates{$pstate}</p:PowerState>
+		<p:ManagedElement><a:Address>http://$host:16992/wsman</a:Address>
+		<a:ReferenceParameters><w:ResourceURI>http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ComputerSystem</w:ResourceURI>
+		<w:SelectorSet><w:Selector Name="Name">ManagedSystem</w:Selector></w:SelectorSet>
+		</a:ReferenceParameters></p:ManagedElement>
+		</p:RequestPowerStateChange_INPUT>
+		</s:Body></s:Envelope>
+END
+        return $text;
     }
   
     sub sendPOST{ #ip, username, password, content
@@ -624,6 +625,7 @@ elsif ($serial) {
 	
 	$target_reset = sub {
 		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "reset");
+		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "on");
 		select(undef, undef, undef, 2); 
 		#if not using pause, connection to AMT machine is initiated before reset and fails after restart
 		$exp = Expect->spawn("amtterm -u $amt_info[0] -p $amt_password $amt_info[$len-1]"); 

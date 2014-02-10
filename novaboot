@@ -586,6 +586,7 @@ END
         my $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
         my $ua = LWP::UserAgent->new();
         my $res = $ua->request($req);
+        die ($res->status_line) unless $res->code==401;
         my $header = $res->header("WWW-Authenticate");
         my $digRealm = "Digest realm=\"";
         my $posRealm = index($header,$digRealm)+length($digRealm);
@@ -600,6 +601,8 @@ END
         $req->content($content);
         $res = $ua->request($req);
         die ($res->status_line) unless $res->is_success;
+        $res->content() =~ /<g:ReturnValue>(\d+)<\/g:ReturnValue>/;
+        return $1;
     }
 
     sub powerChange  {#IP, username, password, pstate
@@ -607,28 +610,32 @@ END
         my $schema="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService";
         my $className="/RequestPowerStateChange";
         my $content = genXML($host, $username, $password ,$schema, $className, $pstate);
-        sendPOST($host, $username, $password, $content);
+        return sendPOST($host, $username, $password, $content);
     }  
 
-	my (@amt_info, $len, $amt_password);
-	@amt_info=split(":",$amt,3);
+	my (@amt_info, $len, $amt_password, $result, $host, $port, $user);
+	($user,$amt_password,$host,$port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
 	$len=@amt_info;
-	$len == 3 ? $amt_password=$amt_info[1] : die "AMT parametrs not specified" unless $len==2;
+	die "AMT host not specified" unless $host;
+	$user ||= "admin";
+	$port ||= 16994;
     $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
 	$target_power_off = sub {
-		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "off");
+		$result = powerChange($host,$user,$amt_password, "off");
+		die "Cannot turn off the computer, somebody is connected or computer is already off" unless $result==0;
 	};
 	
 	$target_power_on = sub {
-		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "on");
+		$result = powerChange($host,$user,$amt_password, "on");
 	};
 	
 	$target_reset = sub {
-		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "reset");
-		powerChange($amt_info[$len-1],$amt_info[0],$amt_password, "on");
+		$result = powerChange($host,$user,$amt_password, "off");
+		print "Warning: host was off or somebody is connected to it." unless $result==0;
+		$result = powerChange($host,$user,$amt_password, "on");
 		select(undef, undef, undef, 2); 
 		#if not using pause, connection to AMT machine is initiated before reset and fails after restart
-		$exp = Expect->spawn("amtterm -u $amt_info[0] -p $amt_password $amt_info[$len-1]"); 
+		$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port"); 
 		#expect must be here because AMT doesnt allow to reset/on/off computer when somebody is connected
 	};	
 }
@@ -1220,12 +1227,13 @@ user/instance.
 
 =over 8
 
-=item --amt=I<username[:password]:host>
+=item --amt=I<"[user[:password]@]host[:port]>
 
 Use Intel AMT to connect to target. Using SOL redirection and WS management 
-to powercycle it. The IP address of the PC is given by I<host>
+to powercycle it. The IP address or FQDN of the PC is given by I<host>
 parameter. If I<password> is not specified, environment variable 
-AMT_PASSWORD is used.
+AMT_PASSWORD is used. I<port> is defining port number for SOL, 
+if not specified, default is 16992. Default I<user> is admin.
 
 =item --iprelay=I<addr[:port]>
 

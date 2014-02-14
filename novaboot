@@ -630,11 +630,13 @@ END
 	};
 	
 	$target_reset = sub {
-		$result = powerChange($host,$user,$amt_password, "off");
-		print "Warning: host was off or somebody is connected to it." unless $result==0;
-		$result = powerChange($host,$user,$amt_password, "on");
-		select(undef, undef, undef, 2); 
-		#if not using pause, connection to AMT machine is initiated before reset and fails after restart
+		$result = powerChange($host,$user,$amt_password, "reset");
+		if ($result != 0) {
+		    print STDERR "Warning: Cannot reset $host, trying power on. ";
+		    $result = powerChange($host,$user,$amt_password, "on");
+		}
+		die "AMT reset failed (code $result)" if $result;
+		sleep(2); # Without pause, connection to AMT machine is initiated before reset and fails after restart
 		$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port"); 
 		#expect must be here because AMT doesnt allow to reset/on/off computer when somebody is connected
 	};	

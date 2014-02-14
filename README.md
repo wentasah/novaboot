@@ -258,6 +258,14 @@ If supported by the target, the connection to it is made and it is
 checked whether the target is not occupied by another novaboot
 user/instance.
 
+- \--amt=_"\[user\[:password\]@\]host\[:port\]_
+
+    Use Intel AMT to connect to target. Using SOL redirection and WS management 
+    to powercycle it. The IP address or FQDN of the PC is given by _host_
+    parameter. If _password_ is not specified, environment variable 
+    AMT\_PASSWORD is used. _port_ is defining port number for SOL, 
+    if not specified, default is 16992. Default _user_ is admin.
+
 - \--iprelay=_addr\[:port\]_
 
     Use TCP/IP relay and serial port to access the target's serial port
@@ -289,6 +297,8 @@ user/instance.
 
     Wait for reception of _string_ after establishing the the remote
     connection before continuing.
+
+
 
 ## File deployment phase
 

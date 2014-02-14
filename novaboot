@@ -28,8 +28,6 @@ use IPC::Open2;
 use POSIX qw(:errno_h);
 use Cwd qw(getcwd abs_path);
 use Expect;
-use LWP::UserAgent;
-use LWP::Authen::Digest;  
 
 # always flush
 $| = 1;
@@ -547,6 +545,8 @@ elsif ($serial) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
 } elsif (defined $amt){    
+    use LWP::UserAgent;
+    use LWP::Authen::Digest;  
     sub genXML { #HOST, username, password, schema, className, pstate
         my ($host, $username, $password, $schema, $className, $pstate) = @_;
         #AMT numbers for PowerStateChange: 2 on, 4 standby, 7 hibernate, 8 off, 

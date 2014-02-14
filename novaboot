@@ -544,19 +544,19 @@ elsif ($serial) {
 } elsif ($remote_cmd) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
-} elsif (defined $amt){    
+} elsif (defined $amt) {
     use LWP::UserAgent;
-    use LWP::Authen::Digest;  
+    use LWP::Authen::Digest;
     sub genXML { #HOST, username, password, schema, className, pstate
         my ($host, $username, $password, $schema, $className, $pstate) = @_;
-        #AMT numbers for PowerStateChange: 2 on, 4 standby, 7 hibernate, 8 off, 
-        #10 reset, 11 MNI interupt(on windows->bluescreen;-)) 
+        #AMT numbers for PowerStateChange: 2 on, 4 standby, 7 hibernate, 8 off,
+        #10 reset, 11 MNI interupt(on windows->bluescreen;-))
         my %pstates = ("on", 2,
-                    "standby", 4,
-                    "hibernate", 7,
-                    "off", 8,
-                    "reset", 10,
-                    "MNI", 11);
+		       "standby", 4,
+		       "hibernate", 7,
+		       "off", 8,
+		       "reset", 10,
+		       "MNI", 11);
         my $text = <<END;
 		<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
 		<s:Header><a:To>http://$host:16992/wsman</a:To>
@@ -580,10 +580,10 @@ elsif ($serial) {
 END
         return $text;
     }
-  
+
     sub sendPOST{ #ip, username, password, content
         my ($host, $username, $password, $content)=@_;+
-        my $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
+	    my $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
         my $ua = LWP::UserAgent->new();
         my $res = $ua->request($req);
         die ($res->status_line) unless $res->code==401;
@@ -591,10 +591,10 @@ END
         my $digRealm = "Digest realm=\"";
         my $posRealm = index($header,$digRealm)+length($digRealm);
         my $realm = substr($header,$posRealm,index($header,"\"",$posRealm)-$posRealm);
-        
+
         $ua = LWP::UserAgent->new();
         $ua->agent("novaboot");
-        $ua->credentials("$host:16992",$realm,  $username => $password); 
+        $ua->credentials("$host:16992",$realm,  $username => $password);
         # Create a request
         $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
         $req->content_type('application/x-www-form-urlencoded');
@@ -611,35 +611,35 @@ END
         my $className="/RequestPowerStateChange";
         my $content = genXML($host, $username, $password ,$schema, $className, $pstate);
         return sendPOST($host, $username, $password, $content);
-    }  
+    }
 
-	my (@amt_info, $len, $amt_password, $result, $host, $port, $user);
-	($user,$amt_password,$host,$port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
-	$len=@amt_info;
-	die "AMT host not specified" unless $host;
-	$user ||= "admin";
-	$port ||= 16994;
+    my (@amt_info, $len, $amt_password, $result, $host, $port, $user);
+    ($user,$amt_password,$host,$port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
+    $len=@amt_info;
+    die "AMT host not specified" unless $host;
+    $user ||= "admin";
+    $port ||= 16994;
     $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
-	$target_power_off = sub {
-		$result = powerChange($host,$user,$amt_password, "off");
-		die "Cannot turn off the computer, somebody is connected or computer is already off" unless $result==0;
-	};
-	
-	$target_power_on = sub {
-		$result = powerChange($host,$user,$amt_password, "on");
-	};
-	
-	$target_reset = sub {
-		$result = powerChange($host,$user,$amt_password, "reset");
-		if ($result != 0) {
-		    print STDERR "Warning: Cannot reset $host, trying power on. ";
-		    $result = powerChange($host,$user,$amt_password, "on");
-		}
-		die "AMT reset failed (code $result)" if $result;
-		sleep(2); # Without pause, connection to AMT machine is initiated before reset and fails after restart
-		$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port"); 
-		#expect must be here because AMT doesnt allow to reset/on/off computer when somebody is connected
-	};	
+    $target_power_off = sub {
+	$result = powerChange($host,$user,$amt_password, "off");
+	die "Cannot turn off the computer, somebody is connected or computer is already off" unless $result==0;
+    };
+
+    $target_power_on = sub {
+	$result = powerChange($host,$user,$amt_password, "on");
+    };
+
+    $target_reset = sub {
+	$result = powerChange($host,$user,$amt_password, "reset");
+	if ($result != 0) {
+	    print STDERR "Warning: Cannot reset $host, trying power on. ";
+	    $result = powerChange($host,$user,$amt_password, "on");
+	}
+	die "AMT reset failed (code $result)" if $result;
+	sleep(2); # Without pause, connection to AMT machine is initiated before reset and fails after restart
+	$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port");
+	#expect must be here because AMT doesnt allow to reset/on/off computer when somebody is connected
+    };
 }
 
 if ($remote_expect) {
@@ -1231,10 +1231,10 @@ user/instance.
 
 =item --amt=I<"[user[:password]@]host[:port]>
 
-Use Intel AMT to connect to target. Using SOL redirection and WS management 
+Use Intel AMT to connect to target. Using SOL redirection and WS management
 to powercycle it. The IP address or FQDN of the PC is given by I<host>
-parameter. If I<password> is not specified, environment variable 
-AMT_PASSWORD is used. I<port> is defining port number for SOL, 
+parameter. If I<password> is not specified, environment variable
+AMT_PASSWORD is used. I<port> is defining port number for SOL,
 if not specified, default is 16992. Default I<user> is admin.
 
 =item --iprelay=I<addr[:port]>

@@ -260,10 +260,10 @@ user/instance.
 
 - \--amt=_"\[user\[:password\]@\]host\[:port\]_
 
-    Use Intel AMT to connect to target. Using SOL redirection and WS management 
+    Use Intel AMT to connect to target. Using SOL redirection and WS management
     to powercycle it. The IP address or FQDN of the PC is given by _host_
-    parameter. If _password_ is not specified, environment variable 
-    AMT\_PASSWORD is used. _port_ is defining port number for SOL, 
+    parameter. If _password_ is not specified, environment variable
+    AMT\_PASSWORD is used. _port_ is defining port number for SOL,
     if not specified, default is 16992. Default _user_ is admin.
 
 - \--iprelay=_addr\[:port\]_

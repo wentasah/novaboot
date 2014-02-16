@@ -342,8 +342,8 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - \--on, --off
 
-    Switch on/off the target machine. Currently works only with
-    __\--iprelay__.
+    Switch on/off the target machine and exit. If script (if any) is
+    completely ignored. Currently works only with __\--iprelay__.
 
 - \-Q, --qemu\[=_qemu-binary_\]
 

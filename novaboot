@@ -228,7 +228,8 @@ my $file;
 my $EOF;
 my $last_fn = '';
 my ($modules, $variables, $generated, $continuation);
-while (<>) {
+my $skip_reading = defined($on_opt) || defined($off_opt);
+while (!$skip_reading && ($_ = <>)) {
     if ($ARGV ne $last_fn) { # New script
 	die "Missing EOF in $last_fn" if $file;
 	die "Unfinished line in $last_fn" if $continuation;
@@ -1224,8 +1225,8 @@ copying files as a result of I<--server> option.
 
 =item --on, --off
 
-Switch on/off the target machine. Currently works only with
-B<--iprelay>.
+Switch on/off the target machine and exit. If script (if any) is
+completely ignored. Currently works only with B<--iprelay>.
 
 =item -Q, --qemu[=I<qemu-binary>]
 

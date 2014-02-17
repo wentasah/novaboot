@@ -1233,11 +1233,12 @@ user/instance.
 
 =item --amt=I<"[user[:password]@]host[:port]>
 
-Use Intel AMT to connect to target. Using SOL redirection and WS management
-to powercycle it. The IP address or FQDN of the PC is given by I<host>
-parameter. If I<password> is not specified, environment variable
-AMT_PASSWORD is used. I<port> is defining port number for SOL,
-if not specified, default is 16992. Default I<user> is admin.
+Use Intel AMT technology to control the target machine. WS management
+is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+The hostname or (IP address) is given by the I<host> parameter. If
+I<password> is not specified, environment variable AMT_PASSWORD is
+used. The I<port> specifies a TCP port for SOL. If not specified, the
+default is 16992. Default I<user> is admin.
 
 =item --iprelay=I<addr[:port]>
 
@@ -1332,8 +1333,8 @@ copying files as a result of I<--server> option.
 
 =item --on, --off
 
-Switch on/off the target machine. Currently works only with
-B<--iprelay>.
+Switch on/off the target machine. Currently it works only with
+B<--iprelay> or B<--amt>.
 
 =item -Q, --qemu[=I<qemu-binary>]
 

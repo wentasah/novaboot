@@ -260,11 +260,12 @@ user/instance.
 
 - \--amt=_"\[user\[:password\]@\]host\[:port\]_
 
-    Use Intel AMT to connect to target. Using SOL redirection and WS management
-    to powercycle it. The IP address or FQDN of the PC is given by _host_
-    parameter. If _password_ is not specified, environment variable
-    AMT\_PASSWORD is used. _port_ is defining port number for SOL,
-    if not specified, default is 16992. Default _user_ is admin.
+    Use Intel AMT technology to control the target machine. WS management
+    is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+    The hostname or (IP address) is given by the _host_ parameter. If
+    _password_ is not specified, environment variable AMT\_PASSWORD is
+    used. The _port_ specifies a TCP port for SOL. If not specified, the
+    default is 16992. Default _user_ is admin.
 
 - \--iprelay=_addr\[:port\]_
 
@@ -352,8 +353,8 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - \--on, --off
 
-    Switch on/off the target machine. Currently works only with
-    __\--iprelay__.
+    Switch on/off the target machine. Currently it works only with
+    __\--iprelay__ or __\--amt__.
 
 - \-Q, --qemu\[=_qemu-binary_\]
 

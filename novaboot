@@ -453,7 +453,7 @@ if (exists $variables->{WVDESC}) {
     print "Testing \"all\" in $last_fn:\n";
 }
 
-## Connect to the target and check whether is not occupied
+## Connect to the target and check whether it is not occupied
 
 # We have to do this before file generation phase, because file
 # generation is intermixed with file deployment phase and we want to
@@ -542,10 +542,12 @@ elsif ($serial) {
     system_verbose("stty -F $serial $stty");
     open($CONN, "+<", $serial) || die "open $serial: $!";
     $exp = Expect->init(\*$CONN);
-} elsif ($remote_cmd) {
+}
+elsif ($remote_cmd) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
-} elsif (defined $amt) {
+}
+elsif (defined $amt) {
     use LWP::UserAgent;
     use LWP::Authen::Digest;
 
@@ -771,7 +773,7 @@ sub trim($) {
     return $str
 }
 
-### Qemu
+### Start in Qemu
 
 if (defined $qemu) {
     # Qemu
@@ -850,7 +852,7 @@ host server {
 			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
 }
 
-### Serial line or IP relay
+### Reset target (IP relay, AMT, ...)
 
 if (defined $target_reset) {
     print "novaboot: Reseting the test box... ";
@@ -858,6 +860,7 @@ if (defined $target_reset) {
     print "done\n";
 }
 
+### U-boot conversation
 if (defined $uboot) {
     print "novaboot: Waiting for uBoot prompt...\n";
     $exp->log_stdout(1);
@@ -901,6 +904,7 @@ if (defined $uboot) {
     $exp->expect(5, "\n")  || die "uBoot command timeout";
 }
 
+### Serial line interaction
 if (defined $exp) {
     # Serial line of the target is available
     my $interrupt = 'Ctrl-C';

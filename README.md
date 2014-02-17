@@ -258,6 +258,15 @@ If supported by the target, the connection to it is made and it is
 checked whether the target is not occupied by another novaboot
 user/instance.
 
+- \--amt=_"\[user\[:password\]@\]host\[:port\]_
+
+    Use Intel AMT technology to control the target machine. WS management
+    is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+    The hostname or (IP address) is given by the _host_ parameter. If
+    _password_ is not specified, environment variable AMT\_PASSWORD is
+    used. The _port_ specifies a TCP port for SOL. If not specified, the
+    default is 16992. Default _user_ is admin.
+
 - \--iprelay=_addr\[:port\]_
 
     Use TCP/IP relay and serial port to access the target's serial port
@@ -289,6 +298,8 @@ user/instance.
 
     Wait for reception of _string_ after establishing the the remote
     connection before continuing.
+
+
 
 ## File deployment phase
 
@@ -342,8 +353,9 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - \--on, --off
 
-    Switch on/off the target machine and exit. If script (if any) is
-    completely ignored. Currently works only with __\--iprelay__.
+    Switch on/off the target machine and exit. The script (if any) is
+    completely ignored. Currently it works only with __\--iprelay__ or
+    __\--amt__.
 
 - \-Q, --qemu\[=_qemu-binary_\]
 

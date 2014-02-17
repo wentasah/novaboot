@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my (@append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -126,6 +126,7 @@ sub handle_send
 Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
 %opt_spec = (
+    "amt=s" 	     => \$amt,
     "append|a=s"     => \@append,
     "bender|b"       => \$bender,
     "build-dir=s"    => sub { my ($n, $v) = @_; $builddir = File::Spec->rel2abs($v); },
@@ -544,6 +545,104 @@ elsif ($serial) {
 } elsif ($remote_cmd) {
     print "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
+} elsif (defined $amt) {
+    use LWP::UserAgent;
+    use LWP::Authen::Digest;
+
+    sub genXML {
+        my ($host, $username, $password, $schema, $className, $pstate) = @_;
+	#AMT numbers for PowerStateChange (MNI => bluescreen on windows;-)
+	my %pstates = ("on"	   => 2,
+		       "standby"   => 4,
+		       "hibernate" => 7,
+		       "off"	   => 8,
+		       "reset"	   => 10,
+		       "MNI"	   => 11);
+        return <<END;
+		<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+		<s:Header><a:To>http://$host:16992/wsman</a:To>
+		<w:ResourceURI s:mustUnderstand="true">$schema</w:ResourceURI>
+		<a:ReplyTo><a:Address s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address></a:ReplyTo>
+		<a:Action s:mustUnderstand="true">$schema$className</a:Action>
+		<w:MaxEnvelopeSize s:mustUnderstand="true">153600</w:MaxEnvelopeSize>
+		<a:MessageID>uuid:709072C9-609C-4B43-B301-075004043C7C</a:MessageID>
+		<w:Locale xml:lang="en-US" s:mustUnderstand="false" />
+		<w:OperationTimeout>PT60.000S</w:OperationTimeout>
+		<w:SelectorSet><w:Selector Name="Name">Intel(r) AMT Power Management Service</w:Selector></w:SelectorSet>
+		</s:Header><s:Body>
+		<p:RequestPowerStateChange_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService">
+		<p:PowerState>$pstates{$pstate}</p:PowerState>
+		<p:ManagedElement><a:Address>http://$host:16992/wsman</a:Address>
+		<a:ReferenceParameters><w:ResourceURI>http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ComputerSystem</w:ResourceURI>
+		<w:SelectorSet><w:Selector Name="Name">ManagedSystem</w:Selector></w:SelectorSet>
+		</a:ReferenceParameters></p:ManagedElement>
+		</p:RequestPowerStateChange_INPUT>
+		</s:Body></s:Envelope>
+END
+    }
+
+    sub sendPOST {
+        my ($host, $username, $password, $content) = @_;
+
+        my $ua = LWP::UserAgent->new();
+        $ua->agent("novaboot");
+
+	my $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
+        my $res = $ua->request($req);
+        die ("Unexpected AMT response: " . $res->status_line) unless $res->code == 401;
+
+        my ($realm) = $res->header("WWW-Authenticate") =~ /Digest realm="(.*?)"/;
+        $ua->credentials("$host:16992", $realm, $username => $password);
+
+        # Create a request
+        $req = HTTP::Request->new(POST => "http://$host:16992/wsman");
+        $req->content_type('application/x-www-form-urlencoded');
+        $req->content($content);
+        $res = $ua->request($req);
+        die ("AMT power change request failed: " . $res->status_line) unless $res->is_success;
+        $res->content() =~ /<g:ReturnValue>(\d+)<\/g:ReturnValue>/;
+        return $1;
+    }
+
+    sub powerChange  {
+        my ($host, $username, $password, $pstate)=@_;
+        my $schema="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService";
+        my $className="/RequestPowerStateChange";
+        my $content = genXML($host, $username, $password ,$schema, $className, $pstate);
+        return sendPOST($host, $username, $password, $content);
+    }
+
+    my ($user,$amt_password,$host,$port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
+    $user ||= "admin";
+    $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
+    $host || die "AMT host not specified";
+    $port ||= 16994;
+
+    $target_power_off = sub {
+	my $result = powerChange($host,$user,$amt_password, "off");
+	die "AMT power off failed (ReturnValue $result)" if $result != 0;
+    };
+
+    $target_power_on = sub {
+	my $result = powerChange($host,$user,$amt_password, "on");
+	die "AMT power on failed (ReturnValue $result)" if $result != 0;
+    };
+
+    $target_reset = sub {
+	my $result = powerChange($host,$user,$amt_password, "reset");
+	if ($result != 0) {
+	    print STDERR "Warning: Cannot reset $host, trying power on. ";
+	    $result = powerChange($host,$user,$amt_password, "on");
+	}
+	die "AMT reset failed (ReturnValue $result)" if $result != 0;
+
+	sleep(2); # Without pause, connection to AMT machine is
+		  # initiated before reset and fails after restart
+
+	# amtterm must be run here because AMT doesn't allow to
+	# reset/on/off computer when somebody is connected
+	$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port");
+    };
 }
 
 if ($remote_expect) {
@@ -1133,6 +1232,15 @@ user/instance.
 
 =over 8
 
+=item --amt=I<"[user[:password]@]host[:port]>
+
+Use Intel AMT technology to control the target machine. WS management
+is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+The hostname or (IP address) is given by the I<host> parameter. If
+I<password> is not specified, environment variable AMT_PASSWORD is
+used. The I<port> specifies a TCP port for SOL. If not specified, the
+default is 16992. Default I<user> is admin.
+
 =item --iprelay=I<addr[:port]>
 
 Use TCP/IP relay and serial port to access the target's serial port
@@ -1164,6 +1272,7 @@ example C<ssh server 'cu -l /dev/ttyS0'>.
 
 Wait for reception of I<string> after establishing the the remote
 connection before continuing.
+
 
 =back
 
@@ -1225,8 +1334,9 @@ copying files as a result of I<--server> option.
 
 =item --on, --off
 
-Switch on/off the target machine and exit. If script (if any) is
-completely ignored. Currently works only with B<--iprelay>.
+Switch on/off the target machine and exit. The script (if any) is
+completely ignored. Currently it works only with B<--iprelay> or
+B<--amt>.
 
 =item -Q, --qemu[=I<qemu-binary>]
 

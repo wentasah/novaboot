@@ -637,14 +637,12 @@ END
 	    $result = powerChange($host,$user,$amt_password, "on");
 	}
 	die "AMT reset failed (ReturnValue $result)" if $result != 0;
-
-	sleep(2); # Without pause, connection to AMT machine is
-		  # initiated before reset and fails after restart
-
-	# amtterm must be run here because AMT doesn't allow to
-	# reset/on/off computer when somebody is connected
-	$exp = Expect->spawn("amtterm -u $user -p $amt_password $host $port");
     };
+
+    my $cmd = "amtterm -u $user -p $amt_password $host $port";
+    print "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
+    $exp = Expect->spawn($cmd);
+    $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
 }
 
 if ($remote_expect) {

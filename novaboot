@@ -621,6 +621,7 @@ END
     $port ||= 16994;
 
     $target_power_off = sub {
+	$exp->close();
 	my $result = powerChange($host,$user,$amt_password, "off");
 	die "AMT power off failed (ReturnValue $result)" if $result != 0;
     };

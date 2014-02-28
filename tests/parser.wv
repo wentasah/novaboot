@@ -85,3 +85,7 @@ load <<XXX
 inside heredoc
 XXX
 EOF
+
+WVSTART Run keyword
+WVPASS bash -c "echo run echo ahoj|novaboot -t '' > output"
+WVPASS grep "^ahoj$" output

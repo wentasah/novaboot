@@ -229,8 +229,9 @@ running `scons` or `make`.
 
 - \--no-file-gen
 
-    Do not generate files on the fly (i.e. "<" syntax) except for the
-    files generated via "<<WORD" syntax.
+    Do not run external commands to generate files (i.e. "<" syntax and
+    `run` keyword). This switch does not influence generation of files
+    specified with "<<WORD" syntax.
 
 - \-p, --pulsar\[=mac\]
 
@@ -476,10 +477,17 @@ that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
 
+Lines starting with `run` keyword contain shell commands that are run
+during file generation phase. This is the same as the "< CMD" syntax
+for `load` keyboard except that the command's output is not
+redirected to a file. The ordering of commands is the same as they
+appear in the novaboot script.
+
 Example (Linux):
 
     #!/usr/bin/env novaboot
     load bzImage console=ttyS0,115200
+    run  make -C buildroot
     load rootfs.cpio < gen_cpio buildroot/images/rootfs.cpio "myapp->/etc/init.d/S99myapp"
 
 Example (NOVA User Land - NUL):

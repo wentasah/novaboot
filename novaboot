@@ -288,6 +288,10 @@ while (!$skip_reading && ($_ = <>)) {
 	push @$modules, $_;
 	next;
     }
+    if (/^run (.*)/) {		# run line
+	push @$generated, {command => $1};
+	next;
+    }
 
     die("novaboot: Cannot parse script '$last_fn' line $.. Didn't you forget 'load' keyword?\n");
 }
@@ -339,7 +343,11 @@ sub generate_configs($$$) {
 	print "novaboot: Created $fn\n";
       } elsif (exists $$g{command} && ! $no_file_gen) {
 	$ENV{SRCDIR} = dirname(File::Spec->rel2abs( $filename, $invocation_dir ));
-	system_verbose("( $$g{command} ) > $$g{filename}");
+	if (exists $$g{filename}) {
+	    system_verbose("( $$g{command} ) > $$g{filename}");
+	} else {
+	    system_verbose($$g{command});
+	}
       }
     }
 }
@@ -707,7 +715,7 @@ foreach my $script (@scripts) {
     {
 	my @files = map({ ($file) = m/([^ ]*)/; $file; } @$modules);
 	# Filter-out generated files
-	my @to_build = grep({ my $file = $_; !scalar(grep($file eq $$_{filename}, @$generated)) } @files);
+	my @to_build = grep({ my $file = $_; !scalar(grep($file eq ($$_{filename} || ''), @$generated)) } @files);
 
 	system_verbose($scons || $CFG::scons." ".join(" ", @to_build)) if (defined $scons);
 	system_verbose($make  || $CFG::make ." ".join(" ", @to_build)) if (defined $make);
@@ -1202,8 +1210,9 @@ server directory where the boot files are copied to.
 
 =item --no-file-gen
 
-Do not generate files on the fly (i.e. "<" syntax) except for the
-files generated via "<<WORD" syntax.
+Do not run external commands to generate files (i.e. "<" syntax and
+C<run> keyword). This switch does not influence generation of files
+specified with "<<WORD" syntax.
 
 =item -p, --pulsar[=mac]
 
@@ -1470,10 +1479,17 @@ that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
 
+Lines starting with C<run> keyword contain shell commands that are run
+during file generation phase. This is the same as the "< CMD" syntax
+for C<load> keyboard except that the command's output is not
+redirected to a file. The ordering of commands is the same as they
+appear in the novaboot script.
+
 Example (Linux):
 
   #!/usr/bin/env novaboot
   load bzImage console=ttyS0,115200
+  run  make -C buildroot
   load rootfs.cpio < gen_cpio buildroot/images/rootfs.cpio "myapp->/etc/init.d/S99myapp"
 
 Example (NOVA User Land - NUL):

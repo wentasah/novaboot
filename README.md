@@ -26,7 +26,7 @@ target host. Finally, target host's serial output is redirected to
 standard output if that is possible.
 
 Typical way of using novaboot is to make the novaboot script
-executable and set its first line to _\#!/usr/bin/env novaboot_. Then,
+executable and set its first line to _#!/usr/bin/env novaboot_. Then,
 booting a particular OS configuration becomes the same as executing a
 local program - the novaboot script.
 
@@ -63,7 +63,7 @@ host from it. E.g.
     configurations.
 
 Note that the options needed for a specific target can be stored in a
-["CONFIGURATION FILE"](#configuration-file). Then it is sufficient to use only the __\-t__
+["CONFIGURATION FILE"](#configuration-file). Then it is sufficient to use only the __-t__
 option to specify the name of the target.
 
 # PHASES AND OPTIONS
@@ -89,22 +89,22 @@ and options precede the script name, as in the example ["4."](#4) above.
 In this case the current working directory is used as a starting point
 for configuration file search.
 
-- \-c, --config=_filename_
+- -c, --config=_filename_
 
     Use the specified configuration file instead of the default one(s).
 
 ## Command line processing phase
 
-- \--dump-config
+- --dump-config
 
     Dump the current configuration to stdout end exits. Useful as an
     initial template for a configuration file.
 
-- \-h, --help
+- -h, --help
 
-    Print short (__\-h__) or long (__\--help__) help.
+    Print short (__-h__) or long (__--help__) help.
 
-- \-t, --target=_target_
+- -t, --target=_target_
 
     This option serves as a user configurable shortcut for other novaboot
     options. The effect of this option is the same as the options stored
@@ -116,39 +116,39 @@ for configuration file search.
 This phases allows to modify the parsed novaboot script before it is
 used in the later phases.
 
-- \-a, --append=_parameters_
+- -a, --append=_parameters_
 
     Append a string to the first `load` line in the novaboot script. This
     can be used to append parameters to the kernel's or root task's
     command line. Can appear multiple times.
 
-- \-b, --bender
+- -b, --bender
 
     Use `bender` chainloader. Bender scans the PCI bus for PCI serial
     ports and stores the information about them in the BIOS data area for
     use by the kernel.
 
-- \--chainloader=_chainloader_
+- --chainloader=_chainloader_
 
     Chainloader that is loaded before the kernel and other files specified
     in the novaboot script. E.g. 'bin/boot/bender promisc'.
 
-- \--dump
+- --dump
 
     Print the modules to boot and their parameters after this phase
     finishes. Then exit. This is useful for seeing the effect of other
     options in this section.
 
-- \-k, --kernel=`file`
+- -k, --kernel=`file`
 
     Replace the first word on the first `load` line in the novaboot
     script with `file`.
 
-- \--scriptmod=_perl expression_
+- --scriptmod=_perl expression_
 
     When novaboot script is read, _perl expression_ is executed for every
     line (in $\_ variable). For example, `novaboot
-    --scriptmod=s/sigma0/omega6/g` replaces every occurrence of _sigma0_
+    \--scriptmod=s/sigma0/omega6/g` replaces every occurrence of _sigma0_
     in the script with _omega6_.
 
     When this option is present, it overrides _$script\_modifier_ variable
@@ -165,7 +165,7 @@ possible to generate other files using _heredoc_ or _"<"_ syntax in
 novaboot scripts. Finally, binaries can be generated in this phases by
 running `scons` or `make`.
 
-- \--build-dir=_directory_
+- --build-dir=_directory_
 
     Overrides the default build directory location.
 
@@ -176,32 +176,32 @@ running `scons` or `make`.
 
     See also ["BUILDDIR"](#builddir) variable.
 
-- \-g, --grub\[=_filename_\]
+- -g, --grub\[=_filename_\]
 
     Generates grub bootloader menu file. If the _filename_ is not
     specified, `menu.lst` is used. The _filename_ is relative to the
-    build directory (see __\--build-dir__).
+    build directory (see __--build-dir__).
 
-- \--grub-preamble=_prefix_
+- --grub-preamble=_prefix_
 
     Specifies the _preable_ that is at the beginning of the generated
     GRUB or GRUB2 config files. This is useful for specifying GRUB's
     timeout.
 
-- \--grub-prefix=_prefix_
+- --grub-prefix=_prefix_
 
     Specifies _prefix_ that is put in front of every file name in GRUB's
     `menu.lst`. The default value is the absolute path to the build directory.
 
     If the _prefix_ contains string $NAME, it will be replaced with the
-    name of the novaboot script (see also __\--name__).
+    name of the novaboot script (see also __--name__).
 
-- \--grub2\[=_filename_\]
+- --grub2\[=_filename_\]
 
     Generate GRUB2 menuentry in _filename_. If _filename_ is not
     specified `grub.cfg` is used. The content of the menuentry can be
-    customized with __\--grub-preable__, __\--grub2-prolog__ or
-    __\--grub\_prefix__ options.
+    customized with __--grub-preable__, __--grub2-prolog__ or
+    __--grub\_prefix__ options.
 
     In order to use the the generated menuentry on your development
     machine that uses GRUB2, append the following snippet to
@@ -212,43 +212,44 @@ running `scons` or `make`.
           source /path/to/nul/build/grub.cfg
         fi
 
-- \--grub2-prolog=_prolog_
+- --grub2-prolog=_prolog_
 
     Specifies text _preable_ that is put at the beginning of the entry
     GRUB2 entry.
 
-- \-m, --make\[=make command\]
+- -m, --make\[=make command\]
 
     Runs `make` to build files that are not generated by novaboot itself.
 
-- \--name=_string_
+- --name=_string_
 
     Use the name _string_ instead of the name of the novaboot script.
     This name is used for things like a title of grub menu or for the
     server directory where the boot files are copied to.
 
-- \--no-file-gen
+- --no-file-gen
 
-    Do not generate files on the fly (i.e. "<" syntax) except for the
-    files generated via "<<WORD" syntax.
+    Do not run external commands to generate files (i.e. "<" syntax and
+    `run` keyword). This switch does not influence generation of files
+    specified with "<<WORD" syntax.
 
-- \-p, --pulsar\[=mac\]
+- -p, --pulsar\[=mac\]
 
     Generates pulsar bootloader configuration file named `config-_mac_`
     The _mac_ string is typically a MAC address and defaults to
     _novaboot_.
 
-- \--scons\[=scons command\]
+- --scons\[=scons command\]
 
     Runs `scons` to build files that are not generated by novaboot
     itself.
 
-- \--strip-rom
+- --strip-rom
 
     Strip _rom://_ prefix from command lines and generated config files.
     The _rom://_ prefix is used by NUL. For NRE, it has to be stripped.
 
-- \--gen-only
+- --gen-only
 
     Exit novaboot after file generation phase.
 
@@ -258,7 +259,16 @@ If supported by the target, the connection to it is made and it is
 checked whether the target is not occupied by another novaboot
 user/instance.
 
-- \--iprelay=_addr\[:port\]_
+- --amt=_"\[user\[:password\]@\]host\[:port\]_
+
+    Use Intel AMT technology to control the target machine. WS management
+    is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+    The hostname or (IP address) is given by the _host_ parameter. If
+    _password_ is not specified, environment variable AMT\_PASSWORD is
+    used. The _port_ specifies a TCP port for SOL. If not specified, the
+    default is 16992. Default _user_ is admin.
+
+- --iprelay=_addr\[:port\]_
 
     Use TCP/IP relay and serial port to access the target's serial port
     and powercycle it. The IP address of the relay is given by _addr_
@@ -266,7 +276,7 @@ user/instance.
 
     Note: This option is supposed to work with HWG-ER02a IP relays.
 
-- \-s, --serial\[=device\]
+- -s, --serial\[=device\]
 
     Target's serial line is connected to host's serial line (device). The
     default value for device is `/dev/ttyUSB0`.
@@ -274,18 +284,18 @@ user/instance.
     The value of this option is exported in NB\_NOVABOOT environment
     variable to all subprocesses run by `novaboot`.
 
-- \--stty=_settings_
+- --stty=_settings_
 
     Specifies settings passed to `stty` invoked on the serial line
-    specified with __\--serial__ option. If this option is not given,
+    specified with __--serial__ option. If this option is not given,
     `stty` is called with `raw -crtscts -onlcr 115200` settings.
 
-- \--remote-cmd=_cmd_
+- --remote-cmd=_cmd_
 
     Command that mediates connection to the target's serial line. For
     example `ssh server 'cu -l /dev/ttyS0'`.
 
-- \--remote-expect=_string_
+- --remote-expect=_string_
 
     Wait for reception of _string_ after establishing the the remote
     connection before continuing.
@@ -296,7 +306,7 @@ In some setups, it is necessary to copy the files needed for booting
 to a particular location, e.g. to a TFTP boot server or to the
 `/boot` partition.
 
-- \-d, --dhcp-tftp
+- -d, --dhcp-tftp
 
     Turns your workstation into a DHCP and TFTP server so that the OS can
     be booted via PXE BIOS (or similar mechanism) on the test machine
@@ -310,70 +320,71 @@ to a particular location, e.g. to a TFTP boot server or to the
         Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
         your_login ALL=NOPASSWD: NOVABOOT
 
-- \--iso\[=filename\]
+- --iso\[=filename\]
 
     Generates the ISO image that boots NOVA system via GRUB. If no filename
     is given, the image is stored under _NAME_.iso, where _NAME_ is the name
-    of the novaboot script (see also __\--name__).
+    of the novaboot script (see also __--name__).
 
-- \--server\[=\[\[user@\]server:\]path\]
+- --server\[=\[\[user@\]server:\]path\]
 
-    Copy all files needed for booting to another location (implies __\-g__
-    unless __\--grub2__ is given). The files will be copied (by __rsync__
+    Copy all files needed for booting to another location (implies __-g__
+    unless __--grub2__ is given). The files will be copied (by __rsync__
     tool) to the directory _path_. If the _path_ contains string $NAME,
     it will be replaced with the name of the novaboot script (see also
-    __\--name__).
+    __--name__).
 
-- \--concat
+- --concat
 
-    If __\--server__ is used and its value ends with $NAME, then after
+    If __--server__ is used and its value ends with $NAME, then after
     copying the files, a new bootloader configuration file (e.g. menu.lst)
-    is created at _path-wo-name_, i.e. the path specified by __\--server__
+    is created at _path-wo-name_, i.e. the path specified by __--server__
     with $NAME part removed. The content of the file is created by
     concatenating all files of the same name from all subdirectories of
     _path-wo-name_ found on the "server".
 
-- \--rsync-flags=_flags_
+- --rsync-flags=_flags_
 
     Specifies which _flags_ are appended to `rsync` command line when
-    copying files as a result of _\--server_ option.
+    copying files as a result of _--server_ option.
 
 ## Target power-on and reset phase
 
-- \--on, --off
+- --on, --off
 
-    Switch on/off the target machine. Currently works only with
-    __\--iprelay__.
+    Switch on/off the target machine and exit. The script (if any) is
+    completely ignored. Currently it works only with __--iprelay__ or
+    __--amt__.
 
-- \-Q, --qemu\[=_qemu-binary_\]
+- -Q, --qemu\[=_qemu-binary_\]
 
     Boot the configuration in qemu. Optionally, the name of qemu binary
     can be specified as a parameter.
 
-- \--qemu-append=_flags_
+- --qemu-append=_flags_
 
     Append _flags_ to the default qemu flags (QEMU\_FLAGS variable or
     `-cpu coreduo -smp 2`).
 
-- \-q, --qemu-flags=_flags_
+- -q, --qemu-flags=_flags_
 
     Replace the default qemu flags (QEMU\_FLAGS variable or `-cpu coreduo
-    -smp 2`) with _flags_ specified here.
+    \-smp 2`) with _flags_ specified here.
 
-- \--reset-cmd=_cmd_
+- --reset-cmd=_cmd_
 
     Command that resets the target.
 
 ## Interaction with the bootloader on the target
 
-- \--uboot
+- --uboot
 
     Interact with uBoot bootloader to boot the thing described in the
     novaboot script. Implementation of this option is currently tied to a
     particular board that we use. It may be subject to changes in the
     future!
 
-- \--uboot-init
+- --uboot-init
 
     Command(s) to send the U-Boot bootloader before loading the images and
     booting them.
@@ -384,17 +395,17 @@ In this phase, target's serial output is redirected to stdout and if
 stdin is a TTY, it is redirected to the target's serial input allowing
 interactive work with the target.
 
-- \--exiton=_string_
+- --exiton=_string_
 
     When _string_ is sent by the target, novaboot exits. This option can
     be specified multiple times.
 
-    If _string_ is `-re`, then the next __\--exiton__'s _string_ is
+    If _string_ is `-re`, then the next __--exiton__'s _string_ is
     treated as regular expression. For example:
 
         --exiton -re --exiton 'error:.*failed'
 
-- \-i, --interactive
+- -i, --interactive
 
     Setup things for interactive use of target. Your terminal will be
     switched to raw mode. In raw mode, your system does not process input
@@ -403,24 +414,24 @@ interactive work with the target.
     to the target and does no longer interrupt novaboot. Use "~~."
     sequence to exit novaboot.
 
-- \--expect=_string_
+- --expect=_string_
 
     When _string_ is received from the target, send the string specified
-    with the subsequent __\--send\*__ option to the target.
+    with the subsequent __--send\*__ option to the target.
 
-- \--expect-re=_regex_
+- --expect-re=_regex_
 
     When target's output matches regular expression _regex_, send the
-    string specified with the subsequent __\--send\*__ option to the target.
+    string specified with the subsequent __--send\*__ option to the target.
 
-- \--expect-raw=_perl-code_
+- --expect-raw=_perl-code_
 
     Provides direct control over Perl's Expect module.
 
-- \--send=_string_
+- --send=_string_
 
     Send _string_ to the target after the previously specified
-    __\--expect\*__ was matched in the target's output. The _string_ may
+    __--expect\*__ was matched in the target's output. The _string_ may
     contain escape sequences such as "\\n".
 
     Note that _string_ is actually interpreted by Perl, so it can contain
@@ -429,9 +440,9 @@ interactive work with the target.
 
     Example: `--expect='login: ' --send='root\n'`
 
-- \--sendcont=_string_
+- --sendcont=_string_
 
-    Similar to __\--send__ but continue expecting more input.
+    Similar to __--send__ but continue expecting more input.
 
     Example: `--expect='Continue?' --sendcont='yes\n'`
 
@@ -440,7 +451,7 @@ interactive work with the target.
 The syntax tries to mimic POSIX shell syntax. The syntax is defined
 with the following rules.
 
-Lines starting with "\#" and empty lines are ignored.
+Lines starting with "#" and empty lines are ignored.
 
 Lines that end with "\\" are concatenated with the following line after
 removal of the final "\\" and leading whitespace of the following line.
@@ -451,7 +462,7 @@ section.
 
 Lines starting with `load` keyword represent modules to boot. The
 word after `load` is a file name (relative to the build directory
-(see __\--build-dir__) of the module to load and the remaining words are
+(see __--build-dir__) of the module to load and the remaining words are
 passed to it as the command line parameters.
 
 When the `load` line ends with "<<WORD" then the subsequent lines
@@ -464,10 +475,17 @@ that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
 
+Lines starting with `run` keyword contain shell commands that are run
+during file generation phase. This is the same as the "< CMD" syntax
+for `load` keyboard except that the command's output is not
+redirected to a file. The ordering of commands is the same as they
+appear in the novaboot script.
+
 Example (Linux):
 
     #!/usr/bin/env novaboot
     load bzImage console=ttyS0,115200
+    run  make -C buildroot
     load rootfs.cpio < gen_cpio buildroot/images/rootfs.cpio "myapp->/etc/init.d/S99myapp"
 
 Example (NOVA User Land - NUL):
@@ -517,14 +535,14 @@ The following variables are interpreted in the novaboot script:
 
 - QEMU
 
-    Use a specific qemu binary (can be overridden with __\-Q__) and flags
+    Use a specific qemu binary (can be overridden with __-Q__) and flags
     when booting this script under qemu. If QEMU\_FLAGS variable is also
     specified flags specified in QEMU variable are replaced by those in
     QEMU\_FLAGS.
 
 - QEMU\_FLAGS
 
-    Use specific qemu flags (can be overridden with __\-q__).
+    Use specific qemu flags (can be overridden with __-q__).
 
 - WVDESC
 
@@ -542,10 +560,10 @@ The following variables are interpreted in the novaboot script:
 Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named `.novaboot` as described in
 ["Configuration reading phase"](#configuration-reading-phase). Alternatively, its location can be
-specified with the __\-c__ switch or with the NOVABOOT\_CONFIG
+specified with the __-c__ switch or with the NOVABOOT\_CONFIG
 environment variable. The configuration file has perl syntax and
 should set values of certain Perl variables. The current configuration
-can be dumped with the __\--dump-config__ switch. Some configuration
+can be dumped with the __--dump-config__ switch. Some configuration
 variables can be overridden by environment variables (see below) or by
 command line switches.
 
@@ -559,11 +577,11 @@ Supported configuration variables include:
 - $default\_target
 
     Default target (see below) to use when no target is explicitly
-    specified on command line with the __\--target__ option.
+    specified on command line with the __--target__ option.
 
 - %targets
 
-    Hash of shortcuts to be used with the __\--target__ option. If the hash
+    Hash of shortcuts to be used with the __--target__ option. If the hash
     contains, for instance, the following pair of values
 
         'mybox' => '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
@@ -587,7 +605,7 @@ override the environment variables.
 
 - NOVABOOT\_BENDER
 
-    Defining this variable has the same meaning as __\--bender__ option.
+    Defining this variable has the same meaning as __--bender__ option.
 
 # AUTHORS
 

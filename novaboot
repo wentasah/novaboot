@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, @ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -145,6 +145,7 @@ my %opt_spec;
     "grub-prefix=s"  => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
+    "ider=s{2}"         => \@ider,		
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
     "kernel|k=s"     => \$kernel_opt,
@@ -627,7 +628,8 @@ END
     $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
     $host || die "AMT host not specified";
     $port ||= 16994;
-
+    
+    
     $target_power_off = sub {
 	$exp->close();
 	my $result = powerChange($host,$user,$amt_password, "off");
@@ -647,12 +649,22 @@ END
 	}
 	die "AMT reset failed (ReturnValue $result)" if $result != 0;
     };
-
+    
+    if (@ider) {
+        die "Option ider requies two arguments" unless ($ider[0] && $ider[1]);
+		my $ider_cmd= "ider -f $ider[0] -c $ider[1] -u $user -p $amt_password $host $port"  ; 
+		print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r;
+		my $exp2 = Expect->spawn("$ider_cmd");
+		$exp2->expect(10, "RUN_IDER") || die "Expect for 'RUN_IDER' timed out";
+    }
+    
     my $cmd = "amtterm -u $user -p $amt_password $host $port";
     print "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
     $exp = Expect->spawn($cmd);
     $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
+    
 }
+
 
 if ($remote_expect) {
     $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
@@ -1252,6 +1264,12 @@ The hostname or (IP address) is given by the I<host> parameter. If
 I<password> is not specified, environment variable AMT_PASSWORD is
 used. The I<port> specifies a TCP port for SOL. If not specified, the
 default is 16992. Default I<user> is admin.
+
+=item --ider=I<FD CD>
+
+Use Intel AMT technology to redirect image of FD and CD to target machine.
+Requires path to raw image of floppy disk and iso image of CD. Can be
+used only with --amt parametr. Uses same autorization as --amt parametr.
 
 =item --iprelay=I<addr[:port]>
 

@@ -589,8 +589,8 @@ elsif ($remote_cmd) {
     $exp = Expect->spawn($remote_cmd);
 }
 elsif (defined $amt) {
-    use LWP::UserAgent;
-    use LWP::Authen::Digest;
+    require LWP::UserAgent;
+    require LWP::Authen::Digest;
 
     sub genXML {
         my ($host, $username, $password, $schema, $className, $pstate) = @_;

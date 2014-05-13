@@ -377,6 +377,29 @@ sub generate_grub_config($$$$;$)
     return $filename;
 }
 
+sub generate_syslinux_config($$$$)
+{
+    my ($filename, $title, $base, $modules_ref) = @_;
+    if ($base && $base !~ /\/$/) { $base = "$base/"; };
+    open(my $fg, '>', $filename) or die "$filename: $!";
+    print $fg "LABEL $title\n";
+    #TODO print $fg "MENU LABEL $human_readable_title\n";
+    print $fg "KERNEL mboot.c32\n";
+
+    my @append;
+    foreach (@$modules_ref) {
+	s|\brom://([^ ]*)|$rom_prefix$base$1|g; # Translate rom:// files - needed for vdisk parameter of sigma0
+	push @append, "$base$_";
+    }
+    print $fg "APPEND ".join(' --- ', @append)."\n";
+    #TODO print $fg "TEXT HELP\n";
+    #TODO print $fg "some help here\n";
+    #TODO print $fg "ENDTEXT\n";
+    close($fg);
+    print("novaboot: Created $builddir/$filename\n");
+    return $filename;
+}
+
 sub generate_grub2_config($$$$;$$)
 {
     my ($filename, $title, $base, $modules_ref, $preamble, $prolog) = @_;
@@ -745,7 +768,7 @@ foreach my $script (@scripts) {
     if (defined $iso_image) {
 	generate_configs("(cd)", $generated, $filename);
 	my $menu;
-	generate_grub_config(\$menu, $config_name, "(cd)", $modules);
+	generate_syslinux_config(\$menu, $config_name, "/", $modules);
 	$menu_iso .= "$menu\n";
 	map { ($file,undef) = split; $files_iso{$file} = 1; } @$modules;
     }
@@ -753,12 +776,26 @@ foreach my $script (@scripts) {
 
 ## Generate ISO image
 if (defined $iso_image) {
-    open(my $fh, ">menu-iso.lst");
-    print $fh "timeout 5\n\n$menu_iso";
+    system_verbose("mkdir -p isolinux");
+    system_verbose('cp /usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/mboot.c32 /usr/lib/syslinux/menu.c32 isolinux');
+    open(my $fh, ">isolinux/isolinux.cfg");
+    if ($#scripts) {
+	print $fh "TIMEOUT 50\n";
+	print $fh "DEFAULT menu\n";
+    } else {
+	print $fh "DEFAULT $config_name\n";
+    }
+    print $fh "$menu_iso";
     close($fh);
-    my $files = "boot/grub/menu.lst=menu-iso.lst " . join(" ", map("$_=$_", keys(%files_iso)));
+
+    my $files = join(" ", map("$_=$_", (keys(%files_iso), 'isolinux/isolinux.bin', 'isolinux/isolinux.cfg', 'isolinux/mboot.c32', 'isolinux/menu.c32')));
     $iso_image ||= "$config_name.iso";
-    system_verbose("$CFG::genisoimage -R -b stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -J -joliet-long -o $iso_image -graft-points bin/boot/grub/ $files");
+
+    # Note: We use -U flag below to "Allow 'untranslated' filenames,
+    # completely violating the ISO9660 standards". Without this
+    # option, isolinux is not able to read files names for example
+    # bzImage-3.0.
+    system_verbose("$CFG::genisoimage -R -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -U -o $iso_image -graft-points $files");
     print("ISO image created: $builddir/$iso_image\n");
 }
 

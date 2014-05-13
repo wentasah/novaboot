@@ -831,7 +831,7 @@ if (defined $qemu) {
 
     if (defined $iso_image) {
 	# Boot NOVA with grub (and test the iso image)
-	push(@qemu_flags, ('-cdrom', "$config_name.iso"));
+	push(@qemu_flags, ('-cdrom', $iso_image));
     } else {
 	# Boot NOVA without GRUB
 

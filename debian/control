@@ -11,10 +11,9 @@ Vcs-Browser: https://github.com/wentasah/novaboot
 Package: novaboot
 Architecture: all
 Depends: perl, libexpect-perl, ${misc:Depends}
-Recommends: perl-doc, rsync, qemu-system-x86, openssh-client,
- syslinux, genisoimage, amtterm, libwww-perl, tftpd-hpa,
- isc-dhcp-server, procps, sudo, iproute2, file
-Suggests: scons, make
+Recommends: perl-doc, rsync, qemu-system, openssh-client,
+ syslinux, genisoimage, amtterm, libwww-perl, procps, sudo, file
+Suggests: scons, make, isc-dhcp-server, tftpd-hpa, iproute | iproute2
 Description: Tool for booting operating systems on remote hardware
  This program makes booting of an operating system (e.g. Linux or
  NOVA) as simple as running a local program. It facilitates booting on

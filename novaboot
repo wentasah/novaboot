@@ -384,14 +384,24 @@ sub generate_syslinux_config($$$$)
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "LABEL $title\n";
     #TODO print $fg "MENU LABEL $human_readable_title\n";
-    print $fg "KERNEL mboot.c32\n";
 
-    my @append;
-    foreach (@$modules_ref) {
-	s|\brom://([^ ]*)|$rom_prefix$base$1|g; # Translate rom:// files - needed for vdisk parameter of sigma0
-	push @append, "$base$_";
+    my ($kbin, $kcmd) = split(' ', @$modules_ref[0], 2);
+
+    if (system("file $kbin|grep 'Linux kernel'") == 0) {
+	my $initrd = @$modules_ref[1];
+	die('To many "load" lines for Linux kernel') if (scalar @$modules_ref > 2);
+	print $fg "LINUX $base$kbin\n";
+	print $fg "APPEND $kcmd\n";
+	print $fg "INITRD $base$initrd\n";
+    } else {
+	print $fg "KERNEL mboot.c32\n";
+	my @append;
+	foreach (@$modules_ref) {
+	    s|\brom://([^ ]*)|$rom_prefix$base$1|g; # Translate rom:// files - needed for vdisk parameter of sigma0
+	    push @append, "$base$_";
+	    print $fg "APPEND ".join(' --- ', @append)."\n";
+	}
     }
-    print $fg "APPEND ".join(' --- ', @append)."\n";
     #TODO print $fg "TEXT HELP\n";
     #TODO print $fg "some help here\n";
     #TODO print $fg "ENDTEXT\n";

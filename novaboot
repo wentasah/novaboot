@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -145,6 +145,7 @@ my %opt_spec;
     "grub-prefix=s"  => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
+    "ider"           => \$ider,		
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
     "kernel|k=s"     => \$kernel_opt,
@@ -660,7 +661,8 @@ END
     $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
     $host || die "AMT host not specified";
     $port ||= 16994;
-
+    
+    
     $target_power_off = sub {
 	$exp->close();
 	my $result = powerChange($host,$user,$amt_password, "off");
@@ -673,6 +675,15 @@ END
     };
 
     $target_reset = sub {
+	if (defined $ider) {
+		print "novaboot: Generating image of FD.\n";
+		system_verbose("dd if=/dev/zero of=fd.img bs=512 count=200");
+		my $ider_cmd= "amtider -f fd.img -c ider.iso -u $user -p $amt_password $host $port"  ; 
+		my $ider_pid = fork();
+		print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r if ($ider_pid == 0);
+		exec($ider_cmd) if ($ider_pid == 0);
+		die "IDE redirection failed" if ($ider_pid == 0);
+    }
 	my $result = powerChange($host,$user,$amt_password, "reset");
 	if ($result != 0) {
 	    print STDERR "Warning: Cannot reset $host, trying power on. ";
@@ -680,12 +691,18 @@ END
 	}
 	die "AMT reset failed (ReturnValue $result)" if $result != 0;
     };
-
+    
+    if (defined $ider) {
+		$iso_image="ider.iso";
+    }
+    
     my $cmd = "amtterm -u $user -p $amt_password $host $port";
     print "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
     $exp = Expect->spawn($cmd);
     $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
+    
 }
+
 
 if ($remote_expect) {
     $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
@@ -1299,6 +1316,11 @@ The hostname or (IP address) is given by the I<host> parameter. If
 I<password> is not specified, environment variable AMT_PASSWORD is
 used. The I<port> specifies a TCP port for SOL. If not specified, the
 default is 16992. Default I<user> is admin.
+
+=item --ider
+
+Use Intel AMT technology to redirect image of FD and CD to target machine.
+Generates iso image using novaboot and blank image of FD. 
 
 =item --iprelay=I<addr[:port]>
 

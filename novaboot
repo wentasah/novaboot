@@ -40,7 +40,7 @@ my $invocation_dir = $ENV{PWD} || getcwd();
 $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
-$CFG::qemu = 'qemu -cpu coreduo -smp 2';
+$CFG::qemu = 'qemu-system-i386 -cpu coreduo -smp 2';
 $CFG::default_target = 'qemu';
 %CFG::targets = (
     'qemu' => '--qemu',
@@ -378,6 +378,39 @@ sub generate_grub_config($$$$;$)
     return $filename;
 }
 
+sub generate_syslinux_config($$$$)
+{
+    my ($filename, $title, $base, $modules_ref) = @_;
+    if ($base && $base !~ /\/$/) { $base = "$base/"; };
+    open(my $fg, '>', $filename) or die "$filename: $!";
+    print $fg "LABEL $title\n";
+    #TODO print $fg "MENU LABEL $human_readable_title\n";
+
+    my ($kbin, $kcmd) = split(' ', @$modules_ref[0], 2);
+
+    if (system("file $kbin|grep 'Linux kernel'") == 0) {
+	my $initrd = @$modules_ref[1];
+	die('To many "load" lines for Linux kernel') if (scalar @$modules_ref > 2);
+	print $fg "LINUX $base$kbin\n";
+	print $fg "APPEND $kcmd\n";
+	print $fg "INITRD $base$initrd\n";
+    } else {
+	print $fg "KERNEL mboot.c32\n";
+	my @append;
+	foreach (@$modules_ref) {
+	    s|\brom://([^ ]*)|$rom_prefix$base$1|g; # Translate rom:// files - needed for vdisk parameter of sigma0
+	    push @append, "$base$_";
+	    print $fg "APPEND ".join(' --- ', @append)."\n";
+	}
+    }
+    #TODO print $fg "TEXT HELP\n";
+    #TODO print $fg "some help here\n";
+    #TODO print $fg "ENDTEXT\n";
+    close($fg);
+    print("novaboot: Created $builddir/$filename\n");
+    return $filename;
+}
+
 sub generate_grub2_config($$$$;$$)
 {
     my ($filename, $title, $base, $modules_ref, $preamble, $prolog) = @_;
@@ -557,8 +590,8 @@ elsif ($remote_cmd) {
     $exp = Expect->spawn($remote_cmd);
 }
 elsif (defined $amt) {
-    use LWP::UserAgent;
-    use LWP::Authen::Digest;
+    require LWP::UserAgent;
+    require LWP::Authen::Digest;
 
     sub genXML {
         my ($host, $username, $password, $schema, $className, $pstate) = @_;
@@ -761,7 +794,7 @@ foreach my $script (@scripts) {
     if (defined $iso_image) {
 	generate_configs("(cd)", $generated, $filename);
 	my $menu;
-	generate_grub_config(\$menu, $config_name, "(cd)", $modules);
+	generate_syslinux_config(\$menu, $config_name, "/", $modules);
 	$menu_iso .= "$menu\n";
 	map { ($file,undef) = split; $files_iso{$file} = 1; } @$modules;
     }
@@ -769,12 +802,26 @@ foreach my $script (@scripts) {
 
 ## Generate ISO image
 if (defined $iso_image) {
-    open(my $fh, ">menu-iso.lst");
-    print $fh "timeout 5\n\n$menu_iso";
+    system_verbose("mkdir -p isolinux");
+    system_verbose('cp /usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/mboot.c32 /usr/lib/syslinux/menu.c32 isolinux');
+    open(my $fh, ">isolinux/isolinux.cfg");
+    if ($#scripts) {
+	print $fh "TIMEOUT 50\n";
+	print $fh "DEFAULT menu\n";
+    } else {
+	print $fh "DEFAULT $config_name\n";
+    }
+    print $fh "$menu_iso";
     close($fh);
-    my $files = "boot/grub/menu.lst=menu-iso.lst " . join(" ", map("$_=$_", keys(%files_iso)));
+
+    my $files = join(" ", map("$_=$_", (keys(%files_iso), 'isolinux/isolinux.bin', 'isolinux/isolinux.cfg', 'isolinux/mboot.c32', 'isolinux/menu.c32')));
     $iso_image ||= "$config_name.iso";
-    system_verbose("$CFG::genisoimage -R -b stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -J -joliet-long -o $iso_image -graft-points bin/boot/grub/ $files");
+
+    # Note: We use -U flag below to "Allow 'untranslated' filenames,
+    # completely violating the ISO9660 standards". Without this
+    # option, isolinux is not able to read files names for example
+    # bzImage-3.0.
+    system_verbose("$CFG::genisoimage -R -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -hide-rr-moved -U -o $iso_image -graft-points $files");
     print("ISO image created: $builddir/$iso_image\n");
 }
 
@@ -810,7 +857,7 @@ if (defined $qemu) {
 
     if (defined $iso_image) {
 	# Boot NOVA with grub (and test the iso image)
-	push(@qemu_flags, ('-cdrom', "$config_name.iso"));
+	push(@qemu_flags, ('-cdrom', $iso_image));
     } else {
 	# Boot NOVA without GRUB
 

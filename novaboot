@@ -675,6 +675,15 @@ END
     };
 
     $target_reset = sub {
+	if (defined $ider) {
+		print "novaboot: Generating image of FD.\n";
+		system_verbose("dd if=/dev/zero of=fd.img bs=512 count=200");
+		my $ider_cmd= "amtider -f fd.img -c ider.iso -u $user -p $amt_password $host $port"  ; 
+		my $ider_pid = fork();
+		print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r if ($ider_pid == 0);
+		exec($ider_cmd) if ($ider_pid == 0);
+		die "IDE redirection failed" if ($ider_pid == 0);
+    }
 	my $result = powerChange($host,$user,$amt_password, "reset");
 	if ($result != 0) {
 	    print STDERR "Warning: Cannot reset $host, trying power on. ";
@@ -684,15 +693,7 @@ END
     };
     
     if (defined $ider) {
-		print "novaboot: Generating images.\n";
-		system_verbose("dd if=/dev/zero of=fd.img bs=512 count=200");
-		system_verbose("$ARGV --iso ider.iso");
-		my $ider_cmd= "ider -f fd.img -c ider.iso -u $user -p $amt_password $host $port"  ; 
-		my $ider_pid = fork();
-		print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r if ($ider_pid == 0);
-		exec($ider_cmd) if ($ider_pid == 0);
-		die "IDE redirection failed" if ($ider_pid == 0);
-
+		$iso_image="ider.iso";
     }
     
     my $cmd = "amtterm -u $user -p $amt_password $host $port";

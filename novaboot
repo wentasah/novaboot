@@ -800,7 +800,8 @@ foreach my $script (@scripts) {
 ## Generate ISO image
 if (defined $iso_image) {
     system_verbose("mkdir -p isolinux");
-    system_verbose('cp /usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/mboot.c32 /usr/lib/syslinux/menu.c32 isolinux');
+    # FIXME: Does somebody need support for older syslinux (without ldlinux etc.)?
+    system_verbose('cp /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/modules/bios/mboot.c32 /usr/lib/syslinux/modules/bios/menu.c32 /usr/lib/syslinux/modules/bios/ldlinux.c32 isolinux');
     open(my $fh, ">isolinux/isolinux.cfg");
     if ($#scripts) {
 	print $fh "TIMEOUT 50\n";
@@ -811,7 +812,7 @@ if (defined $iso_image) {
     print $fh "$menu_iso";
     close($fh);
 
-    my $files = join(" ", map("$_=$_", (keys(%files_iso), 'isolinux/isolinux.bin', 'isolinux/isolinux.cfg', 'isolinux/mboot.c32', 'isolinux/menu.c32')));
+    my $files = join(" ", map("$_=$_", (keys(%files_iso), 'isolinux/isolinux.bin', 'isolinux/isolinux.cfg', 'isolinux/mboot.c32', 'isolinux/ldlinux.c32', 'isolinux/menu.c32')));
     $iso_image ||= "$config_name.iso";
 
     # Note: We use -U flag below to "Allow 'untranslated' filenames,

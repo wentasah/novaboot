@@ -268,6 +268,14 @@ user/instance.
     used. The _port_ specifies a TCP port for SOL. If not specified, the
     default is 16992. Default _user_ is admin.
 
+- --ider
+
+    Use Intel AMT technology for IDE redirection. This allows the target
+    machine to boot from nonvaboot created ISO image.
+
+    The experimental _amtider_ utility needed by this option can be
+    obtained from https://github.com/wentasah/amtterm.
+
 - --iprelay=_addr\[:port\]_
 
     Use TCP/IP relay and serial port to access the target's serial port

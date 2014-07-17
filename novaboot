@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -145,6 +145,7 @@ my %opt_spec;
     "grub-prefix=s"  => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
+    "ider"           => \$ider,
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
     "kernel|k=s"     => \$kernel_opt,
@@ -216,6 +217,11 @@ if ($interactive && !-t STDIN) {
 }
 
 if (defined $config_name_opt && scalar(@ARGV) > 1) { die "You cannot use --name with multiple scripts"; }
+
+if ($ider) {
+    $iso_image //= ''; # IDE-R needs an ISO image
+    if (!defined $amt) { die "Error: --ider requires --amt"; }
+}
 
 # Default options
 if (defined $serial) {
@@ -508,6 +514,7 @@ if (exists $variables->{WVDESC}) {
 my $exp; # Expect object to communicate with the target over serial line
 
 my ($target_reset, $target_power_on, $target_power_off);
+my ($amt_user, $amt_password, $amt_host, $amt_port);
 
 if (defined $iprelay) {
     my $IPRELAY;
@@ -658,37 +665,40 @@ END
         return sendPOST($host, $username, $password, $content);
     }
 
-    my ($user,$amt_password,$host,$port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
-    $user ||= "admin";
+    ($amt_user,$amt_password,$amt_host,$amt_port) = ($amt =~ /(?:(.*?)(?::(.*))?@)?([^:]*)(?::([0-9]*))?/);;
+    $amt_user ||= "admin";
     $amt_password ||= $ENV{'AMT_PASSWORD'} || die "AMT password not specified";
-    $host || die "AMT host not specified";
-    $port ||= 16994;
+    $amt_host || die "AMT host not specified";
+    $amt_port ||= 16994;
+
 
     $target_power_off = sub {
 	$exp->close();
-	my $result = powerChange($host,$user,$amt_password, "off");
+	my $result = powerChange($amt_host,$amt_user,$amt_password, "off");
 	die "AMT power off failed (ReturnValue $result)" if $result != 0;
     };
 
     $target_power_on = sub {
-	my $result = powerChange($host,$user,$amt_password, "on");
+	my $result = powerChange($amt_host,$amt_user,$amt_password, "on");
 	die "AMT power on failed (ReturnValue $result)" if $result != 0;
     };
 
     $target_reset = sub {
-	my $result = powerChange($host,$user,$amt_password, "reset");
+	my $result = powerChange($amt_host,$amt_user,$amt_password, "reset");
 	if ($result != 0) {
-	    print STDERR "Warning: Cannot reset $host, trying power on. ";
-	    $result = powerChange($host,$user,$amt_password, "on");
+	    print STDERR "Warning: Cannot reset $amt_host, trying power on. ";
+	    $result = powerChange($amt_host,$amt_user,$amt_password, "on");
 	}
 	die "AMT reset failed (ReturnValue $result)" if $result != 0;
     };
 
-    my $cmd = "amtterm -u $user -p $amt_password $host $port";
+    my $cmd = "amtterm -u $amt_user -p $amt_password $amt_host $amt_port";
     print "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
     $exp = Expect->spawn($cmd);
     $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
+
 }
+
 
 if ($remote_expect) {
     $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
@@ -917,6 +927,20 @@ if (defined $dhcp_tftp || defined $tftp) {
 
     # We have to kill tftpd explicitely, because it is not in our process group
     $SIG{INT} = sub { system_verbose('sudo pkill --pidfile=tftpd.pid'); exit(0); };
+}
+
+### AMT IDE-R
+if (defined $ider) {
+    my $ider_cmd= "amtider -c $iso_image -u $amt_user -p $amt_password $amt_host $amt_port"  ;
+    print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r;
+    my $ider_pid = fork();
+    if ($ider_pid == 0) {
+	exec($ider_cmd);
+	die "IDE redirection failed";
+    }
+    # FIXME: This collides with --tftp option. Hopefully, nobody needs
+    # to use both simultaneously.
+    $SIG{__DIE__} = sub { system_verbose('kill $ider_pid'); };
 }
 
 ### Reset target (IP relay, AMT, ...)
@@ -1320,6 +1344,14 @@ The hostname or (IP address) is given by the I<host> parameter. If
 I<password> is not specified, environment variable AMT_PASSWORD is
 used. The I<port> specifies a TCP port for SOL. If not specified, the
 default is 16992. Default I<user> is admin.
+
+=item --ider
+
+Use Intel AMT technology for IDE redirection. This allows the target
+machine to boot from nonvaboot created ISO image.
+
+The experimental I<amtider> utility needed by this option can be
+obtained from https://github.com/wentasah/amtterm.
 
 =item --iprelay=I<addr[:port]>
 

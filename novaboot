@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $uboot, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -172,8 +172,8 @@ my %opt_spec;
     "strip-rom"	     => sub { $rom_prefix = ''; },
     "stty=s"	     => \$stty,
     "tftp"	     => \$tftp,
-    "uboot"	     => \$uboot,
-    "uboot-init=s"   => \$uboot_init,
+    "uboot:s"	     => \$uboot,
+    "uboot-init=s"   => \@uboot_init,
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
@@ -921,46 +921,53 @@ if (defined $target_reset) {
 
 ### U-boot conversation
 if (defined $uboot) {
+    my $uboot_prompt = $uboot || '=> ';
     print "novaboot: Waiting for uBoot prompt...\n";
     $exp->log_stdout(1);
     #$exp->exp_internal(1);
     $exp->expect(20,
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
-		 '=> ') || die "No uBoot prompt deteceted";
-    $exp->send("$uboot_init\n") if $uboot_init;
-    $exp->expect(10, '=> ') || die "uBoot prompt timeout";
+		 $uboot_prompt) || die "No uBoot prompt deteceted";
+    while (@uboot_init) {
+	my $cmd = shift @uboot_init;
+	$exp->send("$cmd\n");
+	$exp->expect(10, $uboot_prompt) || die "uBoot prompt timeout";
+    }
 
-    my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
-    my $dtb;
-    @$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
-    my $initrd = shift @$modules;
+    # Boot the system if there are some load lines in the script
+    if (scalar(@$modules) > 0) {
+	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
+	my $dtb;
+	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
+	my $initrd = shift @$modules;
 
-    my $kern_addr = '800000';
-    my $initrd_addr = '-';
-    my $dtb_addr = '';
+	my $kern_addr = '800000';
+	my $initrd_addr = '-';
+	my $dtb_addr = '';
 
-    $exp->send("tftp $kern_addr $kbin\n");
-    $exp->expect(10,
-		 [qr/#/, sub { exp_continue; }],
-		 '=> ') || die "Kernel load failed";
-    if (defined $dtb) {
-	$dtb_addr = '7f0000';
-	$exp->send("tftp $dtb_addr $dtb\n");
+	$exp->send("tftp $kern_addr $kbin\n");
 	$exp->expect(10,
 		     [qr/#/, sub { exp_continue; }],
-		     '=> ') || die "Device tree load failed";
+		     $uboot_prompt) || die "Kernel load failed";
+	if (defined $dtb) {
+	    $dtb_addr = '7f0000';
+	    $exp->send("tftp $dtb_addr $dtb\n");
+	    $exp->expect(10,
+			 [qr/#/, sub { exp_continue; }],
+			 $uboot_prompt) || die "Device tree load failed";
+	}
+	if (defined $initrd) {
+	    $initrd_addr = 'b00000';
+	    $exp->send("tftp $initrd_addr $initrd\n");
+	    $exp->expect(10,
+			 [qr/#/, sub { exp_continue; }],
+			 $uboot_prompt) || die "Initrd load failed";
+	}
+	$exp->send("set bootargs '$kcmd'\n");
+	$exp->expect(5, $uboot_prompt)  || die "uBoot prompt timeout";
+	$exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
+	$exp->expect(5, "\n")  || die "uBoot command timeout";
     }
-    if (defined $initrd) {
-	$initrd_addr = 'b00000';
-	$exp->send("tftp $initrd_addr $initrd\n");
-	$exp->expect(10,
-		     [qr/#/, sub { exp_continue; }],
-		     '=> ') || die "Initrd load failed";
-    }
-    $exp->send("set bootargs '$kcmd'\n");
-    $exp->expect(5, '=> ')  || die "uBoot prompt timeout";
-    $exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
-    $exp->expect(5, "\n")  || die "uBoot command timeout";
 }
 
 ### Serial line interaction
@@ -1440,17 +1447,19 @@ Command that resets the target.
 
 =over 8
 
-=item --uboot
+=item --uboot[=I<prompt>]
 
 Interact with uBoot bootloader to boot the thing described in the
-novaboot script. Implementation of this option is currently tied to a
-particular board that we use. It may be subject to changes in the
-future!
+novaboot script. I<prompt> specifies the U-Boot's prompt (default is
+"=> ", other common prompts are "U-Boot> " or "U-Boot# ").
+Implementation of this option is currently tied to a particular board
+that we use. It may be subject to changes in the future!
 
 =item --uboot-init
 
 Command(s) to send the U-Boot bootloader before loading the images and
-booting them.
+booting them. This option can be given multiple times. After sending
+commands from each option novaboot waits for U-Boot I<prompt>.
 
 =back
 

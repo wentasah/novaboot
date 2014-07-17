@@ -390,17 +390,19 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 ## Interaction with the bootloader on the target
 
-- --uboot
+- --uboot\[=_prompt_\]
 
     Interact with uBoot bootloader to boot the thing described in the
-    novaboot script. Implementation of this option is currently tied to a
-    particular board that we use. It may be subject to changes in the
-    future!
+    novaboot script. _prompt_ specifies the U-Boot's prompt (default is
+    "=> ", other common prompts are "U-Boot> " or "U-Boot# ").
+    Implementation of this option is currently tied to a particular board
+    that we use. It may be subject to changes in the future!
 
 - --uboot-init
 
     Command(s) to send the U-Boot bootloader before loading the images and
-    booting them.
+    booting them. This option can be given multiple times. After sending
+    commands from each option novaboot waits for U-Boot _prompt_.
 
 ## Target interaction phase
 

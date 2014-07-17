@@ -16,7 +16,7 @@
 use strict;
 use warnings;
 use warnings (exists $ENV{NOVABOOT_TEST} ? (FATAL => 'all') : ());
-use Getopt::Long qw(GetOptionsFromString);
+use Getopt::Long qw(GetOptionsFromString GetOptionsFromArray);
 use Pod::Usage;
 use File::Basename;
 use File::Spec;
@@ -123,7 +123,6 @@ sub handle_send
     @expect_seen = ();
 }
 
-Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
 my %opt_spec;
 %opt_spec = (
     "amt=s" 	     => \$amt,
@@ -183,10 +182,19 @@ my %opt_spec;
 # First process target options
 {
     my $t = defined($explicit_target) ? $explicit_target : $CFG::default_target;
-    if ($t) {
+    my @target_expanded;
+    Getopt::Long::Configure(qw/no_ignore_case pass_through/);
+    while ($t) {
 	exists $CFG::targets{$t} or die("Unknown target '$t' (valid targets are: ".join(", ", sort keys(%CFG::targets)).")");
-	GetOptionsFromString($CFG::targets{$t}, %opt_spec);
+
+	undef $explicit_target;
+	my ($ret, $remaining_args) = GetOptionsFromString ($CFG::targets{$t}, ("target|t=s" => \$explicit_target));
+	if (!$ret) { die "Error parsing target $t option"; }
+	push(@target_expanded, @$remaining_args);
+	$t = $explicit_target;
     }
+    Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
+    GetOptionsFromArray(\@target_expanded, %opt_spec) or die ("Error in target definition");
 }
 
 # Then process other command line options - some of them may override

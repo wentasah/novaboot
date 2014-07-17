@@ -70,4 +70,24 @@ WVSTART ISO image generation
 create_dummy
 WVPASS ./script --iso --target ''
 
+WVSTART Recursive target definition
+create_dummy
+cat > .novaboot <<EOF
+%targets = (
+    't1' => '--reset-cmd="echo MyResetCmd"',
+    't2' => '--target t1',
+);
+EOF
+WVPASS sh -c "./script --target=t2|tee output"
+WVPASS grep -q ^MyResetCmd output
+
+WVSTART Wrong target definition
+create_dummy
+cat > .novaboot <<EOF
+%targets = ('t1' => '--nonsense');
+EOF
+WVPASS sh -c "./script --target=t1 2>&1 |tee output"
+WVPASS grep -q "Error in target definition" output
+
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

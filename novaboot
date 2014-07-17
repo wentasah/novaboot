@@ -903,12 +903,14 @@ host server {
 }
 
 if (defined $dhcp_tftp || defined $tftp) {
-    $tftpd_pid = fork();
-    exec_verbose("sudo in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid $builddir") if ($tftpd_pid == 0);
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid $builddir");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
 			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
+
+    # We have to kill tftpd explicitely, because it is not in our process group
+    $SIG{INT} = sub { system_verbose('sudo pkill --pidfile=tftpd.pid'); exit(0); };
 }
 
 ### Reset target (IP relay, AMT, ...)
@@ -1366,7 +1368,7 @@ uses C<sudo> command to obtain those. You can put the following to
 I</etc/sudoers> to allow running the necessary commands without
 asking for password.
 
- Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
+ Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
 
 =item --tftp
@@ -1379,7 +1381,7 @@ port and C<novaboot> uses C<sudo> command to obtain those. You can put
 the following to I</etc/sudoers> to allow running the necessary
 commands without asking for password.
 
- Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
+ Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
 
 =item --iso[=filename]

@@ -12,7 +12,7 @@ Package: novaboot
 Architecture: all
 Depends: perl, libexpect-perl, ${misc:Depends}
 Recommends: perl-doc, rsync, qemu-system, openssh-client,
- isolinux, syslinux-utils, genisoimage, amtterm, libwww-perl, procps,
+ isolinux, syslinux-common, genisoimage, amtterm, libwww-perl, procps,
  sudo, file
 Suggests: scons, make, isc-dhcp-server, tftpd-hpa, iproute | iproute2
 Description: Tool for booting operating systems on remote hardware

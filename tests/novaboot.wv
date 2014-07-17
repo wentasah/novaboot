@@ -65,11 +65,9 @@ echo '$hypervisor="HYP";' > .novaboot
 WVPASS ./script --gen-only --pulsar
 WVPASS grep "exec HYP" config-novaboot
 
-exit 0
-
 # Broken
 WVSTART ISO image generation
 create_dummy
-WVPASS ./script --iso
+WVPASS ./script --iso --target ''
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

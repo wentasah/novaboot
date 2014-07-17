@@ -1,0 +1,9 @@
+# Recommended sudo configuration for novaboot
+
+# Uncomment the following lines to enable --dhcp-tftp option
+# Cmnd_Alias NOVABOOT_DHCP = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid
+# your_login ALL=NOPASSWD: NOVABOOT_DHCP
+
+# Uncomment the following lines to enable --dhcp-tftp and --tftp options
+# Cmnd_Alias NOVABOOT_TFTP =  /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
+# your_login ALL=NOPASSWD: NOVABOOT_TFTP

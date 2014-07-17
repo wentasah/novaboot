@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $uboot, $uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $uboot, $uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -171,6 +171,7 @@ my %opt_spec;
     "server:s" 	     => \$server,
     "strip-rom"	     => sub { $rom_prefix = ''; },
     "stty=s"	     => \$stty,
+    "tftp"	     => \$tftp,
     "uboot"	     => \$uboot,
     "uboot-init=s"   => \$uboot_init,
     "h" 	     => \$help,
@@ -474,6 +475,7 @@ sub exec_verbose(@)
 {
     print "novaboot: Running: ".shell_cmd_string(@_)."\n";
     exec(@_);
+    exit(1); # should not be reached
 }
 
 sub system_verbose($)
@@ -898,11 +900,14 @@ host server {
     # process group (e.g. Ctrl-C on terminal).
     $dhcpd_pid = fork();
     exec_verbose("sudo dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid") if ($dhcpd_pid == 0);
+}
+
+if (defined $dhcp_tftp || defined $tftp) {
     $tftpd_pid = fork();
     exec_verbose("sudo in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid $builddir") if ($tftpd_pid == 0);
 
     # Kill server when we die
-    $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid');
+    $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
 			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
 }
 
@@ -993,7 +998,7 @@ if (defined $exp) {
 }
 
 ## Kill dhcpc or tftpd
-if (defined $dhcp_tftp) {
+if (defined $dhcp_tftp || defined $tftp) {
     die("novaboot: This should kill servers on background\n");
 }
 
@@ -1355,6 +1360,19 @@ I</etc/sudoers> to allow running the necessary commands without
 asking for password.
 
  Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
+ your_login ALL=NOPASSWD: NOVABOOT
+
+=item --tftp
+
+Starts a TFTP server on your workstation. This is similar to
+B<--dhcp-tftp> except that DHCP server is not started.
+
+The TFTP server require root privileges in order to listen on TFTP
+port and C<novaboot> uses C<sudo> command to obtain those. You can put
+the following to I</etc/sudoers> to allow running the necessary
+commands without asking for password.
+
+ Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --foreground --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
 
 =item --iso[=filename]

@@ -99,7 +99,7 @@ read_config($_) foreach $cfg or reverse @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $uboot, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -172,6 +172,7 @@ my %opt_spec;
     "strip-rom"	     => sub { $rom_prefix = ''; },
     "stty=s"	     => \$stty,
     "tftp"	     => \$tftp,
+    "tftp-port=i"    => \$tftp_port,
     "uboot:s"	     => \$uboot,
     "uboot-init=s"   => \@uboot_init,
     "h" 	     => \$help,
@@ -873,6 +874,8 @@ if (defined $qemu) {
 
 my ($dhcpd_pid, $tftpd_pid);
 
+$tftp=1 if $tftp_port;
+
 if (defined $dhcp_tftp)
 {
     generate_configs("(nd)", $generated, $filename);
@@ -903,7 +906,10 @@ host server {
 }
 
 if (defined $dhcp_tftp || defined $tftp) {
-    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid $builddir");
+    $tftp_port ||= 69;
+    # Unfortunately, tftpd requires root privileges even with
+    # non-privileged (>1023) port due to initgroups().
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid  --address :$tftp_port $builddir");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
@@ -1364,10 +1370,10 @@ Turns your workstation into a DHCP and TFTP server so that the OS can
 be booted via PXE BIOS (or similar mechanism) on the test machine
 directly connected by a plain Ethernet cable to your workstation.
 
-The DHCP and TFTP servers require root privileges and C<novaboot>
+The DHCP and TFTP servers requires root privileges and C<novaboot>
 uses C<sudo> command to obtain those. You can put the following to
-I</etc/sudoers> to allow running the necessary commands without
-asking for password.
+I</etc/sudoers> to allow running the necessary commands without asking
+for password.
 
  Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
@@ -1377,13 +1383,16 @@ asking for password.
 Starts a TFTP server on your workstation. This is similar to
 B<--dhcp-tftp> except that DHCP server is not started.
 
-The TFTP server require root privileges in order to listen on TFTP
-port and C<novaboot> uses C<sudo> command to obtain those. You can put
-the following to I</etc/sudoers> to allow running the necessary
-commands without asking for password.
+The TFTP server require root privileges and C<novaboot> uses C<sudo>
+command to obtain those. You can put the following to I</etc/sudoers>
+to allow running the necessary commands without asking for password.
 
  Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
  your_login ALL=NOPASSWD: NOVABOOT
+
+=item --tftp-port=I<port>
+
+Port to run the TFTP server on. Implies B<--tftp>.
 
 =item --iso[=filename]
 

@@ -312,10 +312,10 @@ to a particular location, e.g. to a TFTP boot server or to the
     be booted via PXE BIOS (or similar mechanism) on the test machine
     directly connected by a plain Ethernet cable to your workstation.
 
-    The DHCP and TFTP servers require root privileges and `novaboot`
+    The DHCP and TFTP servers requires root privileges and `novaboot`
     uses `sudo` command to obtain those. You can put the following to
-    _/etc/sudoers_ to allow running the necessary commands without
-    asking for password.
+    _/etc/sudoers_ to allow running the necessary commands without asking
+    for password.
 
         Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
         your_login ALL=NOPASSWD: NOVABOOT
@@ -325,13 +325,16 @@ to a particular location, e.g. to a TFTP boot server or to the
     Starts a TFTP server on your workstation. This is similar to
     **--dhcp-tftp** except that DHCP server is not started.
 
-    The TFTP server require root privileges in order to listen on TFTP
-    port and `novaboot` uses `sudo` command to obtain those. You can put
-    the following to _/etc/sudoers_ to allow running the necessary
-    commands without asking for password.
+    The TFTP server require root privileges and `novaboot` uses `sudo`
+    command to obtain those. You can put the following to _/etc/sudoers_
+    to allow running the necessary commands without asking for password.
 
         Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
         your_login ALL=NOPASSWD: NOVABOOT
+
+- --tftp-port=_port_
+
+    Port to run the TFTP server on. Implies **--tftp**.
 
 - --iso\[=filename\]
 

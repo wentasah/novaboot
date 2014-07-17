@@ -979,7 +979,8 @@ if (defined $exp) {
     if ($interactive && !@exiton) {
 	$interrupt = '"~~."';
     }
-    print "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
+    my $note = (-t STDIN) ? '' : '- only target->host ';
+    print "novaboot: Serial line interaction $note(press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect(undef, @expect_raw, @exiton);

@@ -75,19 +75,32 @@ follow.
 
 ## Configuration reading phase
 
-After starting, novaboot reads configuration files. By default, it
-searches for files named `.novaboot` starting from the directory of
-the novaboot script (or working directory, see bellow) and continuing
-upwards up to the root directory. The configuration files are read in
-order from the root directory downwards with latter files overriding
-settings from the former ones.
+After starting, novaboot reads configuration files. Their content is
+described in ["CONFIGURATION FILE"](#configuration-file). By default, configuration is
+read from two locations. First from the configuration directory and
+second from `.novaboot` files along the path to the current
+directory. The later read files override settings from the former
+ones.
+
+Configuration directory is determined by the content of
+NOVABOOT\_CONFIG\_DIR environment variable defaulting to
+`/etc/novaboot.d`. Files in this directory with names consisting
+solely from English letters, numbers, dashes '-' and underscores '\_'
+(note that dot '.' is not included) are read in alphabetical order.
+
+Then novaboot searches for files named `.novaboot` starting
+from the directory of the novaboot script (or working directory, see
+bellow) and continuing upwards up to the root directory. The found
+configuration files are then read in order from the root directory
+downwards.
 
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
 read from the standard input or when novaboot is invoked explicitly
 and options precede the script name, as in the example ["4."](#4) above.
 In this case the current working directory is used as a starting point
-for configuration file search.
+for configuration file search instead of the novaboot script
+directory.
 
 - -c, --config=_filename_
 
@@ -585,13 +598,13 @@ The following variables are interpreted in the novaboot script:
 
 Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named `.novaboot` as described in
-["Configuration reading phase"](#configuration-reading-phase). Alternatively, its location can be
-specified with the **-c** switch or with the NOVABOOT\_CONFIG
-environment variable. The configuration file has perl syntax and
-should set values of certain Perl variables. The current configuration
-can be dumped with the **--dump-config** switch. Some configuration
-variables can be overridden by environment variables (see below) or by
-command line switches.
+["Configuration reading phase"](#configuration-reading-phase). Alternatively, configuration file
+location can be specified with the **-c** switch or with the
+NOVABOOT\_CONFIG environment variable. The configuration file has perl
+syntax and should set values of certain Perl variables. The current
+configuration can be dumped with the **--dump-config** switch. Some
+configuration variables can be overridden by environment variables
+(see below) or by command line switches.
 
 Supported configuration variables include:
 
@@ -607,10 +620,11 @@ Supported configuration variables include:
 
 - %targets
 
-    Hash of shortcuts to be used with the **--target** option. If the hash
-    contains, for instance, the following pair of values
+    Hash of target definitions to be used with the **--target** option. The
+    key is the identifier of the target, the value is the string with
+    command line options. For instance, if the configuration file contains:
 
-        'mybox' => '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+        $targets{'mybox'} = '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
 
     then the following two commands are equivalent:
 
@@ -628,6 +642,11 @@ override the environment variables.
 
     Name of the novaboot configuration file to use instead of the default
     one(s).
+
+- NOVABOOT\_CONFIG\_DIR
+
+    Name of the novaboot configuration directory. When not specified
+    `/etc/novaboot.d` is used.
 
 - NOVABOOT\_BENDER
 

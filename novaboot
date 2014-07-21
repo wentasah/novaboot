@@ -88,11 +88,19 @@ my @cfgs;
 	my @dirs = File::Spec->splitdir($dir);
 	$dir = File::Spec->catdir(@dirs[0..$#dirs-1]);
     }
+    @cfgs = reverse @cfgs;
+    $dir = $ENV{'NOVABOOT_CONFIG_DIR'} || '/etc/novaboot.d';
+    if (opendir(my $dh, $dir)) {
+	my @etccfg = map { "$dir/$_" } grep { /^[-_a-zA-Z0-9]+$/ && -f "$dir/$_" } readdir($dh);
+	closedir $dh;
+	@etccfg = sort(@etccfg);
+	@cfgs = ( @etccfg, @cfgs );
+    }
 }
 my $cfg = $ENV{'NOVABOOT_CONFIG'};
 Getopt::Long::Configure(qw/no_ignore_case pass_through/);
 GetOptions ("config|c=s" => \$cfg);
-read_config($_) foreach $cfg or reverse @cfgs;
+read_config($_) foreach $cfg or @cfgs;
 
 ## Command line handling
 
@@ -1143,19 +1151,32 @@ follow.
 
 =head2 Configuration reading phase
 
-After starting, novaboot reads configuration files. By default, it
-searches for files named F<.novaboot> starting from the directory of
-the novaboot script (or working directory, see bellow) and continuing
-upwards up to the root directory. The configuration files are read in
-order from the root directory downwards with latter files overriding
-settings from the former ones.
+After starting, novaboot reads configuration files. Their content is
+described in L</"CONFIGURATION FILE">. By default, configuration is
+read from two locations. First from the configuration directory and
+second from F<.novaboot> files along the path to the current
+directory. The later read files override settings from the former
+ones.
+
+Configuration directory is determined by the content of
+NOVABOOT_CONFIG_DIR environment variable defaulting to
+F</etc/novaboot.d>. Files in this directory with names consisting
+solely from English letters, numbers, dashes '-' and underscores '_'
+(note that dot '.' is not included) are read in alphabetical order.
+
+Then novaboot searches for files named F<.novaboot> starting
+from the directory of the novaboot script (or working directory, see
+bellow) and continuing upwards up to the root directory. The found
+configuration files are then read in order from the root directory
+downwards.
 
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
 read from the standard input or when novaboot is invoked explicitly
 and options precede the script name, as in the example L</"4."> above.
 In this case the current working directory is used as a starting point
-for configuration file search.
+for configuration file search instead of the novaboot script
+directory.
 
 =over 8
 
@@ -1694,13 +1715,13 @@ intermediate output.
 
 Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named F<.novaboot> as described in
-L</Configuration reading phase>. Alternatively, its location can be
-specified with the B<-c> switch or with the NOVABOOT_CONFIG
-environment variable. The configuration file has perl syntax and
-should set values of certain Perl variables. The current configuration
-can be dumped with the B<--dump-config> switch. Some configuration
-variables can be overridden by environment variables (see below) or by
-command line switches.
+L</Configuration reading phase>. Alternatively, configuration file
+location can be specified with the B<-c> switch or with the
+NOVABOOT_CONFIG environment variable. The configuration file has perl
+syntax and should set values of certain Perl variables. The current
+configuration can be dumped with the B<--dump-config> switch. Some
+configuration variables can be overridden by environment variables
+(see below) or by command line switches.
 
 Supported configuration variables include:
 
@@ -1718,10 +1739,11 @@ specified on command line with the B<--target> option.
 
 =item %targets
 
-Hash of shortcuts to be used with the B<--target> option. If the hash
-contains, for instance, the following pair of values
+Hash of target definitions to be used with the B<--target> option. The
+key is the identifier of the target, the value is the string with
+command line options. For instance, if the configuration file contains:
 
- 'mybox' => '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+ $targets{'mybox'} = '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
 
 then the following two commands are equivalent:
 
@@ -1743,6 +1765,11 @@ override the environment variables.
 
 Name of the novaboot configuration file to use instead of the default
 one(s).
+
+=item NOVABOOT_CONFIG_DIR
+
+Name of the novaboot configuration directory. When not specified
+F</etc/novaboot.d> is used.
 
 =item NOVABOOT_BENDER
 

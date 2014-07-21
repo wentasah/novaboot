@@ -13,6 +13,8 @@ install:
 	pod2man novaboot $(DESTDIR)$(PREFIX)/share/man/man1/novaboot.1
 	install -d $(DESTDIR)/etc/sudoers.d
 	install -m 440 sudoers.novaboot $(DESTDIR)/etc/sudoers.d/novaboot
+	install -d $(DESTDIR)/etc/novaboot.d
+	install etc.novaboot.txt $(DESTDIR)/etc/novaboot.d/README.txt
 
 test:
 	$(MAKE) -C tests

@@ -1,0 +1,3 @@
+Files in this directory with names consisting solely from English
+letters, numbers, dashes '-' and underscores '_' (note that dot '.' is
+not included) are read by novaboot on startup in alphabetical order.

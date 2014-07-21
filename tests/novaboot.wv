@@ -46,6 +46,19 @@ EOF
 WVPASS ./script --gen-only
 WVPASS test -f build/file
 
+WVSTART Configuration directory
+mkdir -p dir
+echo '$test_a = 1;' > dir/a
+echo '$test_c = 2;' > dir/c
+echo '$test_c = 1;' > dir/b	# Overriden by the 'c' file
+echo '$test_ign=1;' > dir/b.txt	# Ignored
+WVPASS sh -c 'NOVABOOT_CONFIG_DIR=dir novaboot --dump-config > config'
+WVPASS sh -c 'grep \$test config > test'
+WVPASS diff -u - test <<'EOF'
+$test_a = 1;
+$test_c = 2;
+EOF
+
 WVSTART Fail with unknown target
 create_dummy
 WVFAIL sh -c "./script --gen-only -t non-existing-target"

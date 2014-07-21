@@ -80,7 +80,7 @@ WVPASS grep "exec HYP" config-novaboot
 
 WVSTART ISO image generation
 create_dummy
-WVPASS ./script --iso --target ''
+WVPASS ./script --iso --gen-only
 
 WVSTART Recursive target definition
 create_dummy

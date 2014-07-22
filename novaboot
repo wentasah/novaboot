@@ -986,6 +986,7 @@ if (defined $uboot) {
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
 		 $uboot_prompt) || die "No uBoot prompt deteceted";
     foreach my $cmd (@uboot_init) {
+	chomp($cmd);
 	$exp->send("$cmd\n");
 	$exp->expect(10, $uboot_prompt) || die "uBoot prompt timeout";
     }

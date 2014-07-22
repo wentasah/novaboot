@@ -740,6 +740,8 @@ $builddir ||= dirname(File::Spec->rel2abs( ${$scripts[0]}{filename})) if scalar 
 if (defined $builddir) {
     chdir($builddir) or die "Can't change directory to $builddir: $!";
     print "novaboot: Entering directory `$builddir'\n";
+} else {
+    $builddir = $invocation_dir;
 }
 
 ## File generation phase

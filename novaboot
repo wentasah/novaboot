@@ -1006,8 +1006,8 @@ if (defined $uboot) {
 
 	$exp->send("tftp $kern_addr $kbin\n");
 	$exp->expect(10,
-		     [qr/#/, sub { exp_continue; }],
-		     $uboot_prompt) || die "Kernel load failed";
+		     [qr/##/, sub { exp_continue; }],
+		     $uboot_prompt) || die "No U-Boot prompt deteceted";
 	if (defined $dtb) {
 	    $dtb_addr = '7f0000';
 	    $exp->send("tftp $dtb_addr $dtb\n");

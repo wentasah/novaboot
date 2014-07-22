@@ -988,6 +988,11 @@ if (defined $uboot) {
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
 		 $uboot_prompt) || die "No uBoot prompt deteceted";
     foreach my $cmd (@uboot_init) {
+	if ($cmd =~ /\$NB_MYIP/) {
+	    my $ip = (grep /inet /, `ip addr show eth0`)[0] || die "Problem determining our IP address";
+	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;
+	    $cmd =~ s/\$NB_MYIP/$ip/g;
+	}
 	chomp($cmd);
 	$exp->send("$cmd\n");
 	$exp->expect(10, $uboot_prompt) || die "uBoot prompt timeout";
@@ -1544,6 +1549,9 @@ that we use. It may be subject to changes in the future!
 Command(s) to send the U-Boot bootloader before loading the images and
 booting them. This option can be given multiple times. After sending
 commands from each option novaboot waits for U-Boot I<prompt>.
+
+If the command contains string I<$NB_MYIP> then this string is
+replaced by IPv4 address of eth0 interface.
 
 =back
 

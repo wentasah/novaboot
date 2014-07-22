@@ -428,6 +428,9 @@ to a particular location, e.g. to a TFTP boot server or to the
     booting them. This option can be given multiple times. After sending
     commands from each option novaboot waits for U-Boot _prompt_.
 
+    If the command contains string _$NB\_MYIP_ then this string is
+    replaced by IPv4 address of eth0 interface.
+
 ## Target interaction phase
 
 In this phase, target's serial output is redirected to stdout and if

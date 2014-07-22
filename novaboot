@@ -252,7 +252,7 @@ my @scripts;
 my $file;
 my $EOF;
 my $last_fn = '';
-my ($modules, $variables, $generated, $continuation);
+my ($modules, $variables, $generated, $continuation) = ([], {}, []);
 my $skip_reading = defined($on_opt) || defined($off_opt);
 while (!$skip_reading && ($_ = <>)) {
     if ($ARGV ne $last_fn) { # New script

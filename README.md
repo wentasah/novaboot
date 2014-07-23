@@ -201,13 +201,21 @@ running `scons` or `make`.
     GRUB or GRUB2 config files. This is useful for specifying GRUB's
     timeout.
 
-- --grub-prefix=_prefix_
+- --prefix=_prefix_
 
-    Specifies _prefix_ that is put in front of every file name in GRUB's
-    `menu.lst`. The default value is the absolute path to the build directory.
+    Specifies _prefix_ (e.g. `/srv/tftp`) that is put in front of every
+    file name in generated bootloader configuration files (or in U-Boot
+    commands).
 
     If the _prefix_ contains string $NAME, it will be replaced with the
     name of the novaboot script (see also **--name**).
+
+    If the _prefix_ contains string $BUILDDIR, it will be replaced with
+    the build directory (see also **--build-dir**).
+
+- --grub-prefix
+
+    Alias for **--prefix**.
 
 - --grub2\[=_filename_\]
 

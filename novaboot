@@ -149,7 +149,7 @@ my %opt_spec;
     "gen-only"	     => \$gen_only,
     "grub|g:s" 	     => \$grub_config,
     "grub-preamble=s"=> \$grub_preamble,
-    "grub-prefix=s"  => \$grub_prefix,
+    "prefix|grub-prefix=s" => \$grub_prefix,
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
     "ider"           => \$ider,
@@ -747,6 +747,7 @@ if (defined $builddir) {
 ## File generation phase
 my (%files_iso, $menu_iso, $filename);
 my $config_name = '';
+my $prefix = '';
 
 foreach my $script (@scripts) {
     $filename = $$script{filename};
@@ -763,9 +764,11 @@ foreach my $script (@scripts) {
 	print "novaboot: Entering directory `$builddir'\n";
     }
 
-    my $prefix;
-    ($prefix = $grub_prefix) =~ s/\$NAME/$config_name/ if defined $grub_prefix;
-    $prefix ||= $builddir;
+    if ($grub_prefix) {
+	$prefix = $grub_prefix;
+	$prefix =~ s/\$NAME/$config_name/;
+	$prefix =~ s/\$BUILDDIR/$builddir/;
+    }
     # TODO: use $grub_prefix as first parameter if some switch is given
     generate_configs('', $generated, $filename);
 
@@ -1306,13 +1309,21 @@ Specifies the I<preable> that is at the beginning of the generated
 GRUB or GRUB2 config files. This is useful for specifying GRUB's
 timeout.
 
-=item --grub-prefix=I<prefix>
+=item --prefix=I<prefix>
 
-Specifies I<prefix> that is put in front of every file name in GRUB's
-F<menu.lst>. The default value is the absolute path to the build directory.
+Specifies I<prefix> (e.g. F</srv/tftp>) that is put in front of every
+file name in generated bootloader configuration files (or in U-Boot
+commands).
 
 If the I<prefix> contains string $NAME, it will be replaced with the
 name of the novaboot script (see also B<--name>).
+
+If the I<prefix> contains string $BUILDDIR, it will be replaced with
+the build directory (see also B<--build-dir>).
+
+=item --grub-prefix
+
+Alias for B<--prefix>.
 
 =item --grub2[=I<filename>]
 

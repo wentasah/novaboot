@@ -439,6 +439,12 @@ to a particular location, e.g. to a TFTP boot server or to the
     If the command contains string _$NB\_MYIP_ then this string is
     replaced by IPv4 address of eth0 interface.
 
+- --uboot-addr _name_=_address_
+
+    Load address of U-Boot's `tftpboot` command for loading _name_,
+    where name is one of _kernel_, _ramdisk_ or _fdt_ (flattened device
+    tree).
+
 ## Target interaction phase
 
 In this phase, target's serial output is redirected to stdout and if

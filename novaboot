@@ -47,9 +47,8 @@ $CFG::default_target = 'qemu';
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.86.92:2324',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
-    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --remote-cmd="ssh -tt pc-sojkam.felk.cvut.cz \"sterm -d -s 115200 /dev/ttyUSB0\""',
+    "ryuglab" => '--server=pc-sojkam.felk.cvut.cz:/srv/tftp --uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --uboot-addr kernel=800000 --uboot-addr ramdisk=b00000 --uboot-addr fdt=7f0000 --remote-cmd="ssh -tt pc-sojkam.felk.cvut.cz \"sterm -d -s 115200 /dev/ttyUSB0\""',
     "ryulocal" => '--dhcp-tftp --serial --uboot --uboot-init="dhcp; mw f0000b00 \${psc_cfg}; sleep 1" --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
-
     );
 chomp(my $nproc = `nproc`);
 $CFG::scons = "scons -j$nproc";
@@ -107,7 +106,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -182,6 +181,7 @@ my %opt_spec;
     "tftp"	     => \$tftp,
     "tftp-port=i"    => \$tftp_port,
     "uboot:s"	     => \$uboot,
+    "uboot-addr=s"   => \%uboot_addr,
     "uboot-init=s"   => \@uboot_init,
     "h" 	     => \$help,
     "help" 	     => \$man,
@@ -1008,31 +1008,32 @@ if (defined $uboot) {
 	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
 	my $initrd = shift @$modules;
 
-	my $kern_addr = '800000';
-	my $initrd_addr = '-';
-	my $dtb_addr = '';
+	my ($ramdisk_addr, $fdt_addr) = ('-', '');
 
-	$exp->send("tftp $kern_addr $kbin\n");
+	die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
+	$exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
 	$exp->expect(10,
 		     [qr/##/, sub { exp_continue; }],
 		     $uboot_prompt) || die "No U-Boot prompt deteceted";
 	if (defined $dtb) {
-	    $dtb_addr = '7f0000';
-	    $exp->send("tftp $dtb_addr $dtb\n");
+	    die "No '--uboot-addr fdt' given" unless $uboot_addr{fdt};
+	    $fdt_addr = $uboot_addr{fdt};
+	    $exp->send("tftpboot $fdt_addr $prefix$dtb\n");
 	    $exp->expect(10,
-			 [qr/#/, sub { exp_continue; }],
+			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Device tree load failed";
 	}
 	if (defined $initrd) {
-	    $initrd_addr = 'b00000';
-	    $exp->send("tftp $initrd_addr $initrd\n");
+	    die "No '--uboot-addr ramdisk' given" unless $uboot_addr{ramdisk};
+	    $ramdisk_addr = $uboot_addr{ramdisk};
+	    $exp->send("tftpboot $ramdisk_addr $prefix$initrd\n");
 	    $exp->expect(10,
 			 [qr/#/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Initrd load failed";
 	}
-	$exp->send("set bootargs '$kcmd'\n");
+	$exp->send("setenv bootargs $kcmd\n");
 	$exp->expect(5, $uboot_prompt)  || die "uBoot prompt timeout";
-	$exp->send("bootm $kern_addr $initrd_addr $dtb_addr\n");
+	$exp->send("bootm $uboot_addr{kernel} $ramdisk_addr $fdt_addr\n");
 	$exp->expect(5, "\n")  || die "uBoot command timeout";
     }
 }
@@ -1563,6 +1564,12 @@ commands from each option novaboot waits for U-Boot I<prompt>.
 
 If the command contains string I<$NB_MYIP> then this string is
 replaced by IPv4 address of eth0 interface.
+
+=item --uboot-addr I<name>=I<address>
+
+Load address of U-Boot's C<tftpboot> command for loading I<name>,
+where name is one of I<kernel>, I<ramdisk> or I<fdt> (flattened device
+tree).
 
 =back
 

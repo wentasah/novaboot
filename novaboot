@@ -512,7 +512,7 @@ sub system_verbose($)
     if ($ret) { die("Command failure $ret"); }
 }
 
-## WvTest handline
+## WvTest headline
 
 if (exists $variables->{WVDESC}) {
     print "Testing \"$variables->{WVDESC}\" in $last_fn:\n";
@@ -985,12 +985,12 @@ if (defined $target_reset) {
 ### U-boot conversation
 if (defined $uboot) {
     my $uboot_prompt = $uboot || '=> ';
-    print "novaboot: Waiting for uBoot prompt...\n";
+    print "novaboot: Waiting for U-Boot prompt...\n";
     $exp->log_stdout(1);
     #$exp->exp_internal(1);
     $exp->expect(20,
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
-		 $uboot_prompt) || die "No uBoot prompt deteceted";
+		 $uboot_prompt) || die "No U-Boot prompt deteceted";
     foreach my $cmd (@uboot_init) {
 	if ($cmd =~ /\$NB_MYIP/) {
 	    my $ip = (grep /inet /, `ip addr show eth0`)[0] || die "Problem determining our IP address";
@@ -999,7 +999,7 @@ if (defined $uboot) {
 	}
 	chomp($cmd);
 	$exp->send("$cmd\n");
-	$exp->expect(10, $uboot_prompt) || die "uBoot prompt timeout";
+	$exp->expect(10, $uboot_prompt) || die "U-Boot prompt timeout";
     }
 
     # Boot the system if there are some load lines in the script
@@ -1033,9 +1033,9 @@ if (defined $uboot) {
 			 $uboot_prompt) || die "Initrd load failed";
 	}
 	$exp->send("setenv bootargs $kcmd\n");
-	$exp->expect(5, $uboot_prompt)  || die "uBoot prompt timeout";
+	$exp->expect(5, $uboot_prompt)  || die "U-Boot prompt timeout";
 	$exp->send("bootm $uboot_addr{kernel} $ramdisk_addr $fdt_addr\n");
-	$exp->expect(5, "\n")  || die "uBoot command timeout";
+	$exp->expect(5, "\n")  || die "U-Boot command timeout";
     }
 }
 
@@ -1127,8 +1127,8 @@ configuration specified in the F<script>.
 =item 2.
 
 Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2, Pulsar and U-Boot) and copy it with all
-other files needed for booting to a remote boot server.
+bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar and U-Boot) and copy it
+with all other files needed for booting to a remote boot server.
 
  ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
@@ -1139,12 +1139,12 @@ serial output.
 =item 3.
 
 Run DHCP and TFTP server on developer's machine to PXE-boot the target
-host from it. E.g.
+machine from it. E.g.
 
  ./script --dhcp-tftp
 
 When a PXE-bootable machine is connected via Ethernet to developer's
-machine, it will boot the configuration described in I<script>.
+machine, it will boot the configuration described in the I<script>.
 
 =item 4.
 
@@ -1152,7 +1152,7 @@ Create bootable ISO images. E.g.
 
  novaboot --iso -- script1 script2
 
-The created ISO image will have GRUB bootloader installed on it and
+The created ISO image will use ISOLINUX bootloader installed on it and
 the boot menu will allow selecting between I<script1> and I<script2>
 configurations.
 
@@ -1165,18 +1165,18 @@ option to specify the name of the target.
 =head1 PHASES AND OPTIONS
 
 Novaboot performs its work in several phases. Each phase can be
-influenced by several options, certain phases can be skipped. The list
-of phases (in the execution order) and the corresponding options
-follow.
+influenced by several command line options, certain phases can be
+skipped. The list of phases (in the execution order) and the
+corresponding options follow.
 
 =head2 Configuration reading phase
 
 After starting, novaboot reads configuration files. Their content is
-described in L</"CONFIGURATION FILE">. By default, configuration is
-read from two locations. First from the configuration directory and
-second from F<.novaboot> files along the path to the current
-directory. The later read files override settings from the former
-ones.
+described in section L</"CONFIGURATION FILE">. By default,
+configuration is read from two locations. First from the configuration
+directory and second from F<.novaboot> files along the path to the
+current directory. The later read files override settings from the
+former ones.
 
 Configuration directory is determined by the content of
 NOVABOOT_CONFIG_DIR environment variable defaulting to
@@ -1184,19 +1184,20 @@ F</etc/novaboot.d>. Files in this directory with names consisting
 solely from English letters, numbers, dashes '-' and underscores '_'
 (note that dot '.' is not included) are read in alphabetical order.
 
-Then novaboot searches for files named F<.novaboot> starting
-from the directory of the novaboot script (or working directory, see
-bellow) and continuing upwards up to the root directory. The found
-configuration files are then read in order from the root directory
-downwards.
+Then novaboot searches for files named F<.novaboot> starting from the
+directory of the novaboot script (or working directory, see bellow)
+and continuing upwards up to the root directory. The found
+configuration files are then read in the opposite order (i.e. from the
+root directory downwards). This allows to have, for example, user
+specific configuration in F<~/.novaboot> and project specific one in
+F<~/project/.novaboot>.
 
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
-read from the standard input or when novaboot is invoked explicitly
-and options precede the script name, as in the example L</"4."> above.
-In this case the current working directory is used as a starting point
-for configuration file search instead of the novaboot script
-directory.
+read from the standard input or when novaboot is invoked explicitly as
+in the example L</"4."> above. In this case the current working
+directory is used as a starting point for configuration file search
+instead of the novaboot script directory.
 
 =over 8
 
@@ -1239,7 +1240,7 @@ used in the later phases.
 
 Append a string to the first C<load> line in the novaboot script. This
 can be used to append parameters to the kernel's or root task's
-command line. Can appear multiple times.
+command line. This option can appear multiple times.
 
 =item -b, --bender
 
@@ -1249,8 +1250,9 @@ use by the kernel.
 
 =item --chainloader=I<chainloader>
 
-Chainloader that is loaded before the kernel and other files specified
-in the novaboot script. E.g. 'bin/boot/bender promisc'.
+Specifies a chainloader that is loaded before the kernel and other
+files specified in the novaboot script. E.g. 'bin/boot/bender
+promisc'.
 
 =item --dump
 
@@ -1329,12 +1331,12 @@ Alias for B<--prefix>.
 
 =item --grub2[=I<filename>]
 
-Generate GRUB2 menuentry in I<filename>. If I<filename> is not
-specified F<grub.cfg> is used. The content of the menuentry can be
-customized with B<--grub-preable>, B<--grub2-prolog> or
+Generate GRUB2 menu entry in I<filename>. If I<filename> is not
+specified F<grub.cfg> is used. The content of the menu entry can be
+customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
 
-In order to use the the generated menuentry on your development
+In order to use the the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to
 F</etc/grub.d/40_custom> file and regenerate your grub configuration,
 i.e. run update-grub on Debian/Ubuntu.
@@ -1345,8 +1347,7 @@ i.e. run update-grub on Debian/Ubuntu.
 
 =item --grub2-prolog=I<prolog>
 
-Specifies text I<preable> that is put at the beginning of the entry
-GRUB2 entry.
+Specifies text that is put at the beginning of the GRUB2 menu entry.
 
 =item -m, --make[=make command]
 
@@ -1402,14 +1403,6 @@ The hostname or (IP address) is given by the I<host> parameter. If
 I<password> is not specified, environment variable AMT_PASSWORD is
 used. The I<port> specifies a TCP port for SOL. If not specified, the
 default is 16992. Default I<user> is admin.
-
-=item --ider
-
-Use Intel AMT technology for IDE redirection. This allows the target
-machine to boot from nonvaboot created ISO image.
-
-The experimental I<amtider> utility needed by this option can be
-obtained from https://github.com/wentasah/amtterm.
 
 =item --iprelay=I<addr[:port]>
 
@@ -1492,11 +1485,15 @@ of the novaboot script (see also B<--name>).
 
 =item --server[=[[user@]server:]path]
 
-Copy all files needed for booting to another location (implies B<-g>
-unless B<--grub2> is given). The files will be copied (by B<rsync>
-tool) to the directory I<path>. If the I<path> contains string $NAME,
-it will be replaced with the name of the novaboot script (see also
-B<--name>).
+Copy all files needed for booting to another location. The files will
+be copied (by B<rsync> tool) to the directory I<path>. If the I<path>
+contains string $NAME, it will be replaced with the name of the
+novaboot script (see also B<--name>).
+
+=item --rsync-flags=I<flags>
+
+Specifies which I<flags> are appended to F<rsync> command line when
+copying files as a result of I<--server> option.
 
 =item --concat
 
@@ -1507,14 +1504,22 @@ with $NAME part removed. The content of the file is created by
 concatenating all files of the same name from all subdirectories of
 I<path-wo-name> found on the "server".
 
-=item --rsync-flags=I<flags>
+=item --ider
 
-Specifies which I<flags> are appended to F<rsync> command line when
-copying files as a result of I<--server> option.
+Use Intel AMT technology for IDE redirection. This allows the target
+machine to boot from novaboot created ISO image. Implies B<--iso>.
+
+The experimental C<amtider> utility needed by this option can be
+obtained from https://github.com/wentasah/amtterm.
 
 =back
 
 =head2 Target power-on and reset phase
+
+At this point, the target is reset (or switched on/off). There is
+several ways how this can be accomplished. Resetting a physical target
+can currently be accomplished by the following options: B<--amt>,
+B<--iprelay>, B<--reset-cmd>.
 
 =over 8
 
@@ -1551,7 +1556,7 @@ Command that resets the target.
 
 =item --uboot[=I<prompt>]
 
-Interact with uBoot bootloader to boot the thing described in the
+Interact with U-Boot bootloader to boot the thing described in the
 novaboot script. I<prompt> specifies the U-Boot's prompt (default is
 "=> ", other common prompts are "U-Boot> " or "U-Boot# ").
 Implementation of this option is currently tied to a particular board
@@ -1737,7 +1742,7 @@ Use specific qemu flags (can be overridden with B<-q>).
 
 =item WVDESC
 
-Description of the wvtest-compliant program.
+Description of the WvTest-compliant program.
 
 =item WVTEST_TIMEOUT
 
@@ -1754,7 +1759,7 @@ Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named F<.novaboot> as described in
 L</Configuration reading phase>. Alternatively, configuration file
 location can be specified with the B<-c> switch or with the
-NOVABOOT_CONFIG environment variable. The configuration file has perl
+NOVABOOT_CONFIG environment variable. The configuration file has Perl
 syntax and should set values of certain Perl variables. The current
 configuration can be dumped with the B<--dump-config> switch. Some
 configuration variables can be overridden by environment variables
@@ -1817,3 +1822,10 @@ Defining this variable has the same meaning as B<--bender> option.
 =head1 AUTHORS
 
 Michal Sojka <sojka@os.inf.tu-dresden.de>
+
+=cut
+
+# LocalWords:  novaboot Novaboot NOVABOOT TFTP PXE DHCP filename stty
+# LocalWords:  chainloader stdout Qemu qemu preprocessing ISOLINUX bootable
+# LocalWords:  config subprocesses sudo sudoers tftp dhcp IDE stdin
+# LocalWords:  subdirectories TTY whitespace heredoc POSIX WvTest

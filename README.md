@@ -37,8 +37,8 @@ specified by command line switches. Thus running `novaboot ./script`
 (or `./script` as described above) will run Qemu and make it boot the
 configuration specified in the `script`.
 2. Create a bootloader configuration file (currently supported
-bootloaders are GRUB, GRUB2, Pulsar and U-Boot) and copy it with all
-other files needed for booting to a remote boot server.
+bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar and U-Boot) and copy it
+with all other files needed for booting to a remote boot server.
 
         ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
@@ -47,18 +47,18 @@ other files needed for booting to a remote boot server.
     serial output.
 
 3. Run DHCP and TFTP server on developer's machine to PXE-boot the target
-host from it. E.g.
+machine from it. E.g.
 
         ./script --dhcp-tftp
 
     When a PXE-bootable machine is connected via Ethernet to developer's
-    machine, it will boot the configuration described in _script_.
+    machine, it will boot the configuration described in the _script_.
 
 4. Create bootable ISO images. E.g.
 
         novaboot --iso -- script1 script2
 
-    The created ISO image will have GRUB bootloader installed on it and
+    The created ISO image will use ISOLINUX bootloader installed on it and
     the boot menu will allow selecting between _script1_ and _script2_
     configurations.
 
@@ -69,18 +69,18 @@ option to specify the name of the target.
 # PHASES AND OPTIONS
 
 Novaboot performs its work in several phases. Each phase can be
-influenced by several options, certain phases can be skipped. The list
-of phases (in the execution order) and the corresponding options
-follow.
+influenced by several command line options, certain phases can be
+skipped. The list of phases (in the execution order) and the
+corresponding options follow.
 
 ## Configuration reading phase
 
 After starting, novaboot reads configuration files. Their content is
-described in ["CONFIGURATION FILE"](#configuration-file). By default, configuration is
-read from two locations. First from the configuration directory and
-second from `.novaboot` files along the path to the current
-directory. The later read files override settings from the former
-ones.
+described in section ["CONFIGURATION FILE"](#configuration-file). By default,
+configuration is read from two locations. First from the configuration
+directory and second from `.novaboot` files along the path to the
+current directory. The later read files override settings from the
+former ones.
 
 Configuration directory is determined by the content of
 NOVABOOT\_CONFIG\_DIR environment variable defaulting to
@@ -88,19 +88,20 @@ NOVABOOT\_CONFIG\_DIR environment variable defaulting to
 solely from English letters, numbers, dashes '-' and underscores '\_'
 (note that dot '.' is not included) are read in alphabetical order.
 
-Then novaboot searches for files named `.novaboot` starting
-from the directory of the novaboot script (or working directory, see
-bellow) and continuing upwards up to the root directory. The found
-configuration files are then read in order from the root directory
-downwards.
+Then novaboot searches for files named `.novaboot` starting from the
+directory of the novaboot script (or working directory, see bellow)
+and continuing upwards up to the root directory. The found
+configuration files are then read in the opposite order (i.e. from the
+root directory downwards). This allows to have, for example, user
+specific configuration in `~/.novaboot` and project specific one in
+`~/project/.novaboot`.
 
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
-read from the standard input or when novaboot is invoked explicitly
-and options precede the script name, as in the example ["4."](#4) above.
-In this case the current working directory is used as a starting point
-for configuration file search instead of the novaboot script
-directory.
+read from the standard input or when novaboot is invoked explicitly as
+in the example ["4."](#4) above. In this case the current working
+directory is used as a starting point for configuration file search
+instead of the novaboot script directory.
 
 - -c, --config=_filename_
 
@@ -133,7 +134,7 @@ used in the later phases.
 
     Append a string to the first `load` line in the novaboot script. This
     can be used to append parameters to the kernel's or root task's
-    command line. Can appear multiple times.
+    command line. This option can appear multiple times.
 
 - -b, --bender
 
@@ -143,8 +144,9 @@ used in the later phases.
 
 - --chainloader=_chainloader_
 
-    Chainloader that is loaded before the kernel and other files specified
-    in the novaboot script. E.g. 'bin/boot/bender promisc'.
+    Specifies a chainloader that is loaded before the kernel and other
+    files specified in the novaboot script. E.g. 'bin/boot/bender
+    promisc'.
 
 - --dump
 
@@ -219,12 +221,12 @@ running `scons` or `make`.
 
 - --grub2\[=_filename_\]
 
-    Generate GRUB2 menuentry in _filename_. If _filename_ is not
-    specified `grub.cfg` is used. The content of the menuentry can be
-    customized with **--grub-preable**, **--grub2-prolog** or
+    Generate GRUB2 menu entry in _filename_. If _filename_ is not
+    specified `grub.cfg` is used. The content of the menu entry can be
+    customized with **--grub-preamble**, **--grub2-prolog** or
     **--grub\_prefix** options.
 
-    In order to use the the generated menuentry on your development
+    In order to use the the generated menu entry on your development
     machine that uses GRUB2, append the following snippet to
     `/etc/grub.d/40_custom` file and regenerate your grub configuration,
     i.e. run update-grub on Debian/Ubuntu.
@@ -235,8 +237,7 @@ running `scons` or `make`.
 
 - --grub2-prolog=_prolog_
 
-    Specifies text _preable_ that is put at the beginning of the entry
-    GRUB2 entry.
+    Specifies text that is put at the beginning of the GRUB2 menu entry.
 
 - -m, --make\[=make command\]
 
@@ -288,14 +289,6 @@ user/instance.
     _password_ is not specified, environment variable AMT\_PASSWORD is
     used. The _port_ specifies a TCP port for SOL. If not specified, the
     default is 16992. Default _user_ is admin.
-
-- --ider
-
-    Use Intel AMT technology for IDE redirection. This allows the target
-    machine to boot from nonvaboot created ISO image.
-
-    The experimental _amtider_ utility needed by this option can be
-    obtained from https://github.com/wentasah/amtterm.
 
 - --iprelay=_addr\[:port\]_
 
@@ -373,11 +366,15 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - --server\[=\[\[user@\]server:\]path\]
 
-    Copy all files needed for booting to another location (implies **-g**
-    unless **--grub2** is given). The files will be copied (by **rsync**
-    tool) to the directory _path_. If the _path_ contains string $NAME,
-    it will be replaced with the name of the novaboot script (see also
-    **--name**).
+    Copy all files needed for booting to another location. The files will
+    be copied (by **rsync** tool) to the directory _path_. If the _path_
+    contains string $NAME, it will be replaced with the name of the
+    novaboot script (see also **--name**).
+
+- --rsync-flags=_flags_
+
+    Specifies which _flags_ are appended to `rsync` command line when
+    copying files as a result of _--server_ option.
 
 - --concat
 
@@ -388,12 +385,20 @@ to a particular location, e.g. to a TFTP boot server or to the
     concatenating all files of the same name from all subdirectories of
     _path-wo-name_ found on the "server".
 
-- --rsync-flags=_flags_
+- --ider
 
-    Specifies which _flags_ are appended to `rsync` command line when
-    copying files as a result of _--server_ option.
+    Use Intel AMT technology for IDE redirection. This allows the target
+    machine to boot from novaboot created ISO image. Implies **--iso**.
+
+    The experimental `amtider` utility needed by this option can be
+    obtained from https://github.com/wentasah/amtterm.
 
 ## Target power-on and reset phase
+
+At this point, the target is reset (or switched on/off). There is
+several ways how this can be accomplished. Resetting a physical target
+can currently be accomplished by the following options: **--amt**,
+**--iprelay**, **--reset-cmd**.
 
 - --on, --off
 
@@ -424,7 +429,7 @@ to a particular location, e.g. to a TFTP boot server or to the
 
 - --uboot\[=_prompt_\]
 
-    Interact with uBoot bootloader to boot the thing described in the
+    Interact with U-Boot bootloader to boot the thing described in the
     novaboot script. _prompt_ specifies the U-Boot's prompt (default is
     "=> ", other common prompts are "U-Boot> " or "U-Boot# ").
     Implementation of this option is currently tied to a particular board
@@ -602,7 +607,7 @@ The following variables are interpreted in the novaboot script:
 
 - WVDESC
 
-    Description of the wvtest-compliant program.
+    Description of the WvTest-compliant program.
 
 - WVTEST\_TIMEOUT
 
@@ -617,7 +622,7 @@ Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files named `.novaboot` as described in
 ["Configuration reading phase"](#configuration-reading-phase). Alternatively, configuration file
 location can be specified with the **-c** switch or with the
-NOVABOOT\_CONFIG environment variable. The configuration file has perl
+NOVABOOT\_CONFIG environment variable. The configuration file has Perl
 syntax and should set values of certain Perl variables. The current
 configuration can be dumped with the **--dump-config** switch. Some
 configuration variables can be overridden by environment variables

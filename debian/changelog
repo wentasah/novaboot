@@ -1,3 +1,25 @@
+novaboot (20140723) unstable; urgency=medium
+
+  * Add sudoers template
+  * Add --tftp option
+  * Add --tftp-port option
+  * Detect errors when starting tftpd
+  * Improve U-Boot support
+  * Improve detection of U-Boot prompt after tftpboot command
+  * Add support for $NB_MYIP in --uboot-init
+  * Add --uboot-addr, i.e. generic way to specify U-Boot load addresses
+  * Inform the user that the interaction is only onedirectional
+  * Add experimental support for AMT IDE-R
+  * Support new version of syslinux
+  * Add support for recursive target definitions
+  * Use recursive target definition for ryu boards
+  * Add support for configuration directory (/etc/novaboot.d)
+  * Set $builddir to invocation dir if it is not specified by other means
+  * Initialize some variables even if /dev/null is passed as novaboot script
+  * Add --prefix - a more generic variant of --grub-prefix
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Wed, 23 Jul 2014 12:24:31 +0200
+
 novaboot (20140513) unstable; urgency=low
 
   * Initial Release.

@@ -1032,7 +1032,14 @@ if (defined $uboot) {
 			 [qr/#/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Initrd load failed";
 	}
-	$exp->send("setenv bootargs $kcmd\n");
+	$exp->send("echo $kcmd\n");
+	$exp->expect(1, '-re', qr{echo .*\n(.*)\n$uboot_prompt})  || die "Command line test timeout";
+	my $args = ($exp->matchlist)[0];
+	if ($args =~ /^setenv\s+bootargs/) {
+	    $exp->send("$args\n");
+	} else {
+	    $exp->send("setenv bootargs $kcmd\n");
+	}
 	$exp->expect(5, $uboot_prompt)  || die "U-Boot prompt timeout";
 	$exp->send("bootm $uboot_addr{kernel} $ramdisk_addr $fdt_addr\n");
 	$exp->expect(5, "\n")  || die "U-Boot command timeout";

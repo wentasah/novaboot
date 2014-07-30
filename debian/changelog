@@ -1,3 +1,10 @@
+novaboot (20140730) unstable; urgency=medium
+
+  * Improve documentation and fix some types in code
+  * U-Boot: Extend kernel command line handling
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Wed, 30 Jul 2014 16:38:12 +0200
+
 novaboot (20140723) unstable; urgency=medium
 
   * Add sudoers template

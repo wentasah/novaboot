@@ -1015,14 +1015,14 @@ if (defined $uboot) {
 	$exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
 	$exp->expect(10,
 		     [qr/##/, sub { exp_continue; }],
-		     $uboot_prompt) || die "No U-Boot prompt deteceted";
+		     $uboot_prompt) || die "Kernel load timeout";
 	if (defined $dtb) {
 	    die "No '--uboot-addr fdt' given" unless $uboot_addr{fdt};
 	    $fdt_addr = $uboot_addr{fdt};
 	    $exp->send("tftpboot $fdt_addr $prefix$dtb\n");
 	    $exp->expect(10,
 			 [qr/##/, sub { exp_continue; }],
-			 $uboot_prompt) || die "Device tree load failed";
+			 $uboot_prompt) || die "Device tree load timeout";
 	}
 	if (defined $initrd) {
 	    die "No '--uboot-addr ramdisk' given" unless $uboot_addr{ramdisk};
@@ -1030,7 +1030,7 @@ if (defined $uboot) {
 	    $exp->send("tftpboot $ramdisk_addr $prefix$initrd\n");
 	    $exp->expect(10,
 			 [qr/#/, sub { exp_continue; }],
-			 $uboot_prompt) || die "Initrd load failed";
+			 $uboot_prompt) || die "Initrd load timeout";
 	}
 	$exp->send("echo $kcmd\n");
 	$exp->expect(1, '-re', qr{echo .*\n(.*)\n$uboot_prompt})  || die "Command line test timeout";

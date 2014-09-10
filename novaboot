@@ -107,11 +107,12 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
 $stty = 'raw -crtscts -onlcr 115200';
+$reset = 1;			# Reset target by default
 
 my @expect_seen = ();
 sub handle_expect
@@ -169,6 +170,7 @@ my %opt_spec;
     "qemu-flags|q=s" => \$qemu_flags_cmd,
     "remote-cmd=s"   => \$remote_cmd,
     "remote-expect=s"=> \$remote_expect,
+    "reset!"         => \$reset,
     "reset-cmd=s"    => \$reset_cmd,
     "rsync-flags=s"  => \$rsync_flags,
     "scons:s"	     => \$scons,
@@ -976,7 +978,7 @@ if (defined $ider) {
 
 ### Reset target (IP relay, AMT, ...)
 
-if (defined $target_reset) {
+if (defined $target_reset && $reset) {
     print "novaboot: Reseting the test box... ";
     &$target_reset();
     print "done\n";
@@ -1554,6 +1556,10 @@ Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
 =item --reset-cmd=I<cmd>
 
 Command that resets the target.
+
+=item --no-reset, --reset
+
+Disable/enable reseting of the target.
 
 =back
 

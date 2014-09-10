@@ -425,6 +425,10 @@ can currently be accomplished by the following options: **--amt**,
 
     Command that resets the target.
 
+- --no-reset, --reset
+
+    Disable/enable reseting of the target.
+
 ## Interaction with the bootloader on the target
 
 - --uboot\[=_prompt_\]

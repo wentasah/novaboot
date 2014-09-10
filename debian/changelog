@@ -1,3 +1,13 @@
+novaboot (20140910) unstable; urgency=medium
+
+  * Improve U-Boot-related error messages
+  * Add an option to disable reseting of the target
+  * Add support for uboot keyword in novaboot scripts
+  * Expand $NB_PREFIX in U-Boot commands
+  * Add NO_BOOT variable
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Wed, 10 Sep 2014 13:40:31 +0200
+
 novaboot (20140730) unstable; urgency=medium
 
   * Improve documentation and fix some types in code

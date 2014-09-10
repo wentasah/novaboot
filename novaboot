@@ -319,10 +319,15 @@ while (!$skip_reading && ($_ = <>)) {
 	push @$generated, {command => $1};
 	next;
     }
-    if (/^uboot (.*)/) {	# uboot line
+    if (/^uboot(?::([0-9]+)s)? (.*)/) {	# uboot line
 	# TODO: If U-Boot supports some interactive menu, it might
 	# make sense to store uboot lines per novaboot script.
-	push @uboot_init, $1;
+	if ($1) {		# Command with explicit timeout
+	    push @uboot_init, { command => $2,
+				timeout => $1 };
+	} else {		# Command without explicit timeout
+	    push @uboot_init, $2;
+	}
 	next;
     }
 
@@ -999,7 +1004,15 @@ if (defined $uboot) {
     $exp->expect(20,
 		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
 		 $uboot_prompt) || die "No U-Boot prompt deteceted";
-    foreach my $cmd (@uboot_init) {
+    foreach my $cmdspec (@uboot_init) {
+	my ($cmd, $timeout);
+	if (ref($cmdspec) eq "HASH") {
+	    $cmd = $cmdspec->{command};
+	    $timeout = $cmdspec->{timeout};
+	} else {
+	    $cmd = $cmdspec;
+	    $timeout = 10;
+	}
 	if ($cmd =~ /\$NB_MYIP/) {
 	    my $ip = (grep /inet /, `ip addr show eth0`)[0] || die "Problem determining our IP address";
 	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;
@@ -1012,7 +1025,7 @@ if (defined $uboot) {
 	}
 	chomp($cmd);
 	$exp->send("$cmd\n");
-	$exp->expect(10, $uboot_prompt) || die "U-Boot prompt timeout";
+	$exp->expect($timeout, $uboot_prompt) || die "U-Boot prompt timeout";
     }
 
     # Boot the system if there are some load lines in the script
@@ -1705,7 +1718,11 @@ appear in the novaboot script.
 Lines starting with C<uboot> represent U-Boot commands that are sent
 to the target if B<--uboot> option is given. Having a U-Boot line in
 the novaboot script is the same as passing an equivalent
-B<--uboot-init> option to novaboot.
+B<--uboot-init> option to novaboot. The C<uboot> keyword can be
+suffixed with timeout specification. The syntax is C<uboot:Ns>, where
+C<N> is the whole number of seconds. If the U-Boot command prompt does
+not appear before the timeout, novaboot fails. The default timeout is
+10 seconds.
 
 Example (Linux):
 

@@ -552,7 +552,11 @@ appear in the novaboot script.
 Lines starting with `uboot` represent U-Boot commands that are sent
 to the target if **--uboot** option is given. Having a U-Boot line in
 the novaboot script is the same as passing an equivalent
-**--uboot-init** option to novaboot.
+**--uboot-init** option to novaboot. The `uboot` keyword can be
+suffixed with timeout specification. The syntax is `uboot:Ns`, where
+`N` is the whole number of seconds. If the U-Boot command prompt does
+not appear before the timeout, novaboot fails. The default timeout is
+10 seconds.
 
 Example (Linux):
 

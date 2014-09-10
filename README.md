@@ -446,7 +446,8 @@ can currently be accomplished by the following options: **--amt**,
     commands from each option novaboot waits for U-Boot _prompt_.
 
     If the command contains string _$NB\_MYIP_ then this string is
-    replaced by IPv4 address of eth0 interface.
+    replaced by IPv4 address of eth0 interface. Similarly _$NB\_PREFIX_ is
+    replaced with prefix given by **--prefix**.
 
     See also `uboot` keyword in ["NOVABOOT SCRIPT SYNTAX"](#novaboot-script-syntax)).
 

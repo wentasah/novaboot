@@ -1005,6 +1005,11 @@ if (defined $uboot) {
 	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;
 	    $cmd =~ s/\$NB_MYIP/$ip/g;
 	}
+	if ($cmd =~ /\$NB_PREFIX/) {
+	    my $p = $prefix;
+	    $p =~ s|/*$||;
+	    $cmd =~ s/\$NB_PREFIX/$p/g;
+	}
 	chomp($cmd);
 	$exp->send("$cmd\n");
 	$exp->expect(10, $uboot_prompt) || die "U-Boot prompt timeout";
@@ -1588,7 +1593,8 @@ booting them. This option can be given multiple times. After sending
 commands from each option novaboot waits for U-Boot I<prompt>.
 
 If the command contains string I<$NB_MYIP> then this string is
-replaced by IPv4 address of eth0 interface.
+replaced by IPv4 address of eth0 interface. Similarly I<$NB_PREFIX> is
+replaced with prefix given by B<--prefix>.
 
 See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
 

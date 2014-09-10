@@ -1,3 +1,9 @@
+novaboot (20140910-1) unstable; urgency=medium
+
+  * Allow specifying timeout for U-Boot commands
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Wed, 10 Sep 2014 15:42:27 +0200
+
 novaboot (20140910) unstable; urgency=medium
 
   * Improve U-Boot-related error messages

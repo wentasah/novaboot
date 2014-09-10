@@ -606,6 +606,13 @@ The following variables are interpreted in the novaboot script:
     parameters. If this variable is defined and non-empty, the variable
     HYPERVISOR\_PARAMS is not used.
 
+- NO\_BOOT
+
+    If this variable is 1, the system is not booted. This is currently
+    only implemented for U-Boot bootloader where it is useful for
+    interacting with the bootloader without booting the system - e.g. for
+    flashing.
+
 - QEMU
 
     Use a specific qemu binary (can be overridden with **-Q**) and flags

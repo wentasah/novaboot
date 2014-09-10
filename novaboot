@@ -1016,7 +1016,7 @@ if (defined $uboot) {
     }
 
     # Boot the system if there are some load lines in the script
-    if (scalar(@$modules) > 0) {
+    if (scalar(@$modules) > 0 && !$variables->{NO_BOOT}) {
 	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
 	my $dtb;
 	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
@@ -1760,6 +1760,13 @@ configuration file with the C<$hypervisor> variable. The value should
 contain the name of the kernel image as well as its command line
 parameters. If this variable is defined and non-empty, the variable
 HYPERVISOR_PARAMS is not used.
+
+=item NO_BOOT
+
+If this variable is 1, the system is not booted. This is currently
+only implemented for U-Boot bootloader where it is useful for
+interacting with the bootloader without booting the system - e.g. for
+flashing.
 
 =item QEMU
 

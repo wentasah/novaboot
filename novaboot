@@ -320,7 +320,7 @@ while (!$skip_reading && ($_ = <>)) {
 	next;
     }
     if (/^uboot (.*)/) {	# uboot line
-	# TODO: If U-Boot supports some interactive menud, it might
+	# TODO: If U-Boot supports some interactive menu, it might
 	# make sense to store uboot lines per novaboot script.
 	push @uboot_init, $1;
 	next;

@@ -448,6 +448,8 @@ can currently be accomplished by the following options: **--amt**,
     If the command contains string _$NB\_MYIP_ then this string is
     replaced by IPv4 address of eth0 interface.
 
+    See also `uboot` keyword in ["NOVABOOT SCRIPT SYNTAX"](#novaboot-script-syntax)).
+
 - --uboot-addr _name_=_address_
 
     Load address of U-Boot's `tftpboot` command for loading _name_,
@@ -545,6 +547,11 @@ during file generation phase. This is the same as the "< CMD" syntax
 for `load` keyboard except that the command's output is not
 redirected to a file. The ordering of commands is the same as they
 appear in the novaboot script.
+
+Lines starting with `uboot` represent U-Boot commands that are sent
+to the target if **--uboot** option is given. Having a U-Boot line in
+the novaboot script is the same as passing an equivalent
+**--uboot-init** option to novaboot.
 
 Example (Linux):
 

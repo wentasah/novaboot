@@ -319,6 +319,12 @@ while (!$skip_reading && ($_ = <>)) {
 	push @$generated, {command => $1};
 	next;
     }
+    if (/^uboot (.*)/) {	# uboot line
+	# TODO: If U-Boot supports some interactive menud, it might
+	# make sense to store uboot lines per novaboot script.
+	push @uboot_init, $1;
+	next;
+    }
 
     die("novaboot: Cannot parse script '$last_fn' line $.. Didn't you forget 'load' keyword?\n");
 }
@@ -1584,6 +1590,8 @@ commands from each option novaboot waits for U-Boot I<prompt>.
 If the command contains string I<$NB_MYIP> then this string is
 replaced by IPv4 address of eth0 interface.
 
+See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
+
 =item --uboot-addr I<name>=I<address>
 
 Load address of U-Boot's C<tftpboot> command for loading I<name>,
@@ -1687,6 +1695,11 @@ during file generation phase. This is the same as the "< CMD" syntax
 for C<load> keyboard except that the command's output is not
 redirected to a file. The ordering of commands is the same as they
 appear in the novaboot script.
+
+Lines starting with C<uboot> represent U-Boot commands that are sent
+to the target if B<--uboot> option is given. Having a U-Boot line in
+the novaboot script is the same as passing an equivalent
+B<--uboot-init> option to novaboot.
 
 Example (Linux):
 

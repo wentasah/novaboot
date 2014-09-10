@@ -49,7 +49,7 @@
      (2 font-lock-function-name-face))
     ("^load\\>.*?< \\(.*\\)"
      (1 font-lock-string-face))
-    ("^run\\>" . font-lock-keyword-face)
+    ("^\\(run\\|uboot\\)\\>" . font-lock-keyword-face)
     ("^\\([A-Z_]+\\)=" (1 font-lock-variable-name-face))
     ))
 

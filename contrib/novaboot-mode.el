@@ -38,7 +38,8 @@
       (modify-syntax-entry (pop list) (pop list) table))
     table))
 
-(defvar novaboot-mode-font-lock-keywords
+(defvar novaboot-mode-font-lock-keywords)
+(setq novaboot-mode-font-lock-keywords
   `(("^#.*" . font-lock-comment-face)
     ("^load\\>.*\\(<<EOF\\)\n\\(\\(?:.*\n\\)*?\\)\\(EOF\\)\n"
      (1 font-lock-preprocessor-face)
@@ -51,6 +52,7 @@
      (1 font-lock-string-face))
     ("^\\(run\\|uboot\\)\\>" . font-lock-keyword-face)
     ("^\\([A-Z_]+\\)=" (1 font-lock-variable-name-face))
+    ("\\$\\(NB_\\(MYIP\\|PREFIX\\)\\)\\>" (1 font-lock-variable-name-face))
     ))
 
 (defun novaboot-font-lock-extend-region ()
@@ -78,6 +80,8 @@
   (set (make-local-variable 'font-lock-defaults)
        '(novaboot-mode-font-lock-keywords t))
   (set (make-local-variable 'font-lock-verbose) t)
+  (set (make-local-variable 'comment-start) "# ")
+  (set (make-local-variable 'comment-end) "")
   (setq font-lock-multiline t)
   (add-hook 'font-lock-extend-region-functions 'novaboot-font-lock-extend-region)
   (add-hook 'post-self-insert-hook 'novaboot-post-self-insert))

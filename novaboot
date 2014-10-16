@@ -731,6 +731,7 @@ END
 
 
 if ($remote_expect) {
+    $exp || die("No serial line connection");
     $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
 }
 
@@ -999,6 +1000,7 @@ if (defined $target_reset && $reset) {
 if (defined $uboot) {
     my $uboot_prompt = $uboot || '=> ';
     print "novaboot: Waiting for U-Boot prompt...\n";
+    $exp || die("No serial line connection");
     $exp->log_stdout(1);
     #$exp->exp_internal(1);
     $exp->expect(20,

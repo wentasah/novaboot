@@ -146,6 +146,7 @@ WVSTART()
 
 WV_BASE_DIR="$PWD"
 export NOVABOOT_TEST=1
+export NOVABOOT_CONFIG_DIR=/dev/null # Do not read config from /etc/novaboot.d
 
 PATH=$(dirname $PWD):$PATH # Find our version of novaboot first
 

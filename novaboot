@@ -1633,7 +1633,8 @@ interactive work with the target.
 =item --exiton=I<string>
 
 When I<string> is sent by the target, novaboot exits. This option can
-be specified multiple times.
+be specified multiple times, in which case novaboot exits whenever
+either of the specified strings is sent.
 
 If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
 treated as regular expression. For example:

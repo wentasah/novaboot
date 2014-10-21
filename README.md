@@ -466,7 +466,8 @@ interactive work with the target.
 - --exiton=_string_
 
     When _string_ is sent by the target, novaboot exits. This option can
-    be specified multiple times.
+    be specified multiple times, in which case novaboot exits whenever
+    either of the specified strings is sent.
 
     If _string_ is `-re`, then the next **--exiton**'s _string_ is
     treated as regular expression. For example:

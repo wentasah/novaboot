@@ -732,7 +732,7 @@ END
 
 if ($remote_expect) {
     $exp || die("No serial line connection");
-    $exp->expect(10, $remote_expect) || die "Expect for '$remote_expect' timed out";
+    $exp->expect(180, $remote_expect) || die "Expect for '$remote_expect' timed out";
 }
 
 if (defined $reset_cmd) {

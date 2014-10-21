@@ -473,6 +473,10 @@ interactive work with the target.
 
         --exiton -re --exiton 'error:.*failed'
 
+- --exiton-re=_regex_
+
+    The same as --exiton -re --exiton _regex_.
+
 - -i, --interactive
 
     Setup things for interactive use of target. Your terminal will be

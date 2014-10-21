@@ -144,6 +144,7 @@ my %opt_spec;
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
     "exiton=s"       => \@exiton,
+    "exiton-re=s"    => sub { my ($n, $v) = @_; push(@exiton, '-re', $v); },
     "expect=s"	     => \&handle_expect,
     "expect-re=s"    => \&handle_expect,
     "expect-raw=s"   => sub { my ($n, $v) = @_; unshift(@expect_raw, eval($v)); },
@@ -1638,6 +1639,10 @@ If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
 treated as regular expression. For example:
 
     --exiton -re --exiton 'error:.*failed'
+
+=item --exiton-re=I<regex>
+
+The same as --exiton -re --exiton I<regex>.
 
 =item -i, --interactive
 

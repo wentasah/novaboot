@@ -107,7 +107,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, @uboot_init);
 
 $rsync_flags = '';
 $rom_prefix = 'rom://';
@@ -144,6 +144,7 @@ my %opt_spec;
     "dump"	     => \$dump_opt,
     "dump-config"    => \$dump_config,
     "exiton=s"       => \@exiton,
+    "exiton-timeout=i"=> \$exiton_timeout,
     "exiton-re=s"    => sub { my ($n, $v) = @_; push(@exiton, '-re', $v); },
     "expect=s"	     => \&handle_expect,
     "expect-re=s"    => \&handle_expect,
@@ -1086,7 +1087,7 @@ if (defined $exp) {
     print "novaboot: Serial line interaction $note(press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
-	$exp->expect(undef, @expect_raw, @exiton);
+	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
     } else {
 	my @inputs = ($exp);
 	if (-t STDIN) { # Set up bi-directional communication if we run on terminal
@@ -1644,6 +1645,12 @@ treated as regular expression. For example:
 =item --exiton-re=I<regex>
 
 The same as --exiton -re --exiton I<regex>.
+
+=item --exiton-timeout=I<seconds>
+
+By default B<--exiton> waits for the string match forever. When this
+option is specified, "exiton" timeouts after the specifies number of
+seconds and novaboot returns non-zero exit code.
 
 =item -i, --interactive
 

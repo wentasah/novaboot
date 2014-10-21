@@ -478,6 +478,12 @@ interactive work with the target.
 
     The same as --exiton -re --exiton _regex_.
 
+- --exiton-timeout=_seconds_
+
+    By default **--exiton** waits for the string match forever. When this
+    option is specified, "exiton" timeouts after the specifies number of
+    seconds and novaboot returns non-zero exit code.
+
 - -i, --interactive
 
     Setup things for interactive use of target. Your terminal will be

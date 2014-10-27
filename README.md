@@ -1,6 +1,7 @@
 # NAME
 
-novaboot - A tool for booting various operating systems on various hardware or in qemu
+novaboot - Boots a locally compiled operating system on a remote
+target or in qemu
 
 # SYNOPSIS
 
@@ -12,66 +13,66 @@ novaboot - A tool for booting various operating systems on various hardware or i
 
 # DESCRIPTION
 
-This program makes booting of an operating system (e.g. NOVA or Linux)
-as simple as running a local program. It facilitates booting on local
-or remote hosts or in emulators such as qemu. Novaboot operation is
-controlled by command line options and by a so called novaboot script,
-which can be thought as a generalization of bootloader configuration
-files (see ["NOVABOOT SCRIPT SYNTAX"](#novaboot-script-syntax)). Based on this input,
-novaboot setups everything for the target host to boot the desired
-configuration, i.e. it generates the bootloader configuration file in
-the proper format, deploy the binaries and other needed files to
-required locations, perhaps on a remote boot server and reset the
-target host. Finally, target host's serial output is redirected to
-standard output if that is possible.
+This program makes booting of a locally compiled operating system (OS)
+(e.g. NOVA or Linux) on remote targets as simple as running a program
+locally. It automates things like copying OS images to a TFTP server,
+generation of bootloader configuration files, resetting of target
+hardware or redirection of target's serial line to stdin/out. Novaboot
+is highly configurable and it makes it easy to boot a single image on
+different targets or different images on a single target.
 
+Novaboot operation is controlled by command line options and by a so
+called novaboot script, which can be thought as a generalization of
+bootloader configuration files (see ["NOVABOOT SCRIPT SYNTAX"](#novaboot-script-syntax)).
 Typical way of using novaboot is to make the novaboot script
 executable and set its first line to _#!/usr/bin/env novaboot_. Then,
 booting a particular OS configuration becomes the same as executing a
 local program - the novaboot script.
 
-For example, with `novaboot` you can:
+Novaboot uses configuration files to, among other things, define
+command line options needed for different targets. Users typically use
+only the **-t**/**--target** command line option to select the target.
+Internally, this option expands to the pre-configured options.
+Configuration files are searched at multiple places, which allows to
+have per-system, per-user or per-project configurations. Configuration
+file syntax is described in section ["CONFIGURATION FILE"](#configuration-file).
+
+Simple examples of using `novaboot`:
 
 1. Run an OS in Qemu. This is the default action when no other action is
-specified by command line switches. Thus running `novaboot ./script`
-(or `./script` as described above) will run Qemu and make it boot the
-configuration specified in the `script`.
+specified by command line switches. Thus running `novaboot myos` (or
+`./myos` as described above) will run Qemu and make it boot the
+configuration specified in the `myos` script.
 2. Create a bootloader configuration file (currently supported
 bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar and U-Boot) and copy it
-with all other files needed for booting to a remote boot server.
+with all other files needed for booting to a remote boot server. Then
+use a TCP/IP-controlled relay/serial-to-TCP converter to reset the
+target and receive its serial output.
 
-        ./script --server=192.168.1.1:/tftp --iprelay=192.168.1.2
+        ./myos --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
-    This command copies files to the TFTP server and uses
-    TCP/IP-controlled relay to reset the target host and receive its
-    serial output.
+3. Run DHCP and TFTP server on developer's machine to boot the target
+from it.
 
-3. Run DHCP and TFTP server on developer's machine to PXE-boot the target
-machine from it. E.g.
+        ./myos --dhcp-tftp
 
-        ./script --dhcp-tftp
+    This is useful when no network infrastructure is in place and
+    the target is connected directly to developer's box.
 
-    When a PXE-bootable machine is connected via Ethernet to developer's
-    machine, it will boot the configuration described in the _script_.
-
-4. Create bootable ISO images. E.g.
+4. Create bootable ISO image.
 
         novaboot --iso -- script1 script2
 
-    The created ISO image will use ISOLINUX bootloader installed on it and
-    the boot menu will allow selecting between _script1_ and _script2_
-    configurations.
-
-Note that the options needed for a specific target can be stored in a
-["CONFIGURATION FILE"](#configuration-file). Then it is sufficient to use only the **-t**
-option to specify the name of the target.
+    The created ISO image will have ISOLINUX bootloader installed on it
+    and the boot menu will allow selecting between _script1_ and
+    _script2_ configurations.
 
 # PHASES AND OPTIONS
 
 Novaboot performs its work in several phases. Each phase can be
 influenced by several command line options, certain phases can be
 skipped. The list of phases (in the execution order) and the
-corresponding options follow.
+corresponding options follows.
 
 ## Configuration reading phase
 
@@ -79,13 +80,13 @@ After starting, novaboot reads configuration files. Their content is
 described in section ["CONFIGURATION FILE"](#configuration-file). By default,
 configuration is read from two locations. First from the configuration
 directory and second from `.novaboot` files along the path to the
-current directory. The later read files override settings from the
+current directory. The latter read files override settings from the
 former ones.
 
 Configuration directory is determined by the content of
-NOVABOOT\_CONFIG\_DIR environment variable defaulting to
+NOVABOOT\_CONFIG\_DIR environment variable and defaults to
 `/etc/novaboot.d`. Files in this directory with names consisting
-solely from English letters, numbers, dashes '-' and underscores '\_'
+solely of English letters, numbers, dashes '-' and underscores '\_'
 (note that dot '.' is not included) are read in alphabetical order.
 
 Then novaboot searches for files named `.novaboot` starting from the
@@ -111,7 +112,7 @@ instead of the novaboot script directory.
 
 - --dump-config
 
-    Dump the current configuration to stdout end exits. Useful as an
+    Dump the current configuration to stdout end exit. Useful as an
     initial template for a configuration file.
 
 - -h, --help
@@ -684,8 +685,8 @@ Supported configuration variables include:
 
     then the following two commands are equivalent:
 
-        ./script --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
-        ./script -t mybox
+        ./myos --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
+        ./myos -t mybox
 
 # ENVIRONMENT VARIABLES
 

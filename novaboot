@@ -1829,14 +1829,15 @@ intermediate output.
 =head1 CONFIGURATION FILE
 
 Novaboot can read its configuration from one or more files. By
-default, novaboot looks for files named F<.novaboot> as described in
-L</Configuration reading phase>. Alternatively, configuration file
-location can be specified with the B<-c> switch or with the
-NOVABOOT_CONFIG environment variable. The configuration file has Perl
-syntax and should set values of certain Perl variables. The current
-configuration can be dumped with the B<--dump-config> switch. Some
-configuration variables can be overridden by environment variables
-(see below) or by command line switches.
+default, novaboot looks for files in F</etc/novaboot.d> and files
+named F<.novaboot> as described in L</Configuration reading phase>.
+Alternatively, configuration file location can be specified with the
+B<-c> switch or with the NOVABOOT_CONFIG environment variable. The
+configuration file has Perl syntax (i.e. it is better to put C<1;> as
+a last line) and should set values of certain Perl variables. The
+current configuration can be dumped with the B<--dump-config> switch.
+Some configuration variables can be overridden by environment
+variables (see below) or by command line switches.
 
 Supported configuration variables include:
 

@@ -654,14 +654,15 @@ The following variables are interpreted in the novaboot script:
 # CONFIGURATION FILE
 
 Novaboot can read its configuration from one or more files. By
-default, novaboot looks for files named `.novaboot` as described in
-["Configuration reading phase"](#configuration-reading-phase). Alternatively, configuration file
-location can be specified with the **-c** switch or with the
-NOVABOOT\_CONFIG environment variable. The configuration file has Perl
-syntax and should set values of certain Perl variables. The current
-configuration can be dumped with the **--dump-config** switch. Some
-configuration variables can be overridden by environment variables
-(see below) or by command line switches.
+default, novaboot looks for files in `/etc/novaboot.d` and files
+named `.novaboot` as described in ["Configuration reading phase"](#configuration-reading-phase).
+Alternatively, configuration file location can be specified with the
+**-c** switch or with the NOVABOOT\_CONFIG environment variable. The
+configuration file has Perl syntax (i.e. it is better to put `1;` as
+a last line) and should set values of certain Perl variables. The
+current configuration can be dumped with the **--dump-config** switch.
+Some configuration variables can be overridden by environment
+variables (see below) or by command line switches.
 
 Supported configuration variables include:
 

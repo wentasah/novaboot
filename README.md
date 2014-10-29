@@ -458,6 +458,18 @@ can currently be accomplished by the following options: **--amt**,
     where name is one of _kernel_, _ramdisk_ or _fdt_ (flattened device
     tree).
 
+- --uboot-cmd=_command_
+
+    Specifies U-Boot command used to execute the OS. If the command
+    contains strings `$kernel_addr`, `$ramdisk_addr`, `$fdt_addr`,
+    these are replaced with the addresses configured with **--uboot-addr**.
+
+    The default value is
+
+        bootm $kernel_addr $ramdisk_addr $fdt_addr
+
+    or the `UBOOT_CMD` variable if defined in the novaboot script.
+
 ## Target interaction phase
 
 In this phase, target's serial output is redirected to stdout and if
@@ -639,6 +651,10 @@ The following variables are interpreted in the novaboot script:
 - QEMU\_FLAGS
 
     Use specific qemu flags (can be overridden with **-q**).
+
+- UBOOT\_CMD
+
+    See ["--uboot-cmd"](#uboot-cmd).
 
 - WVDESC
 

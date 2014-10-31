@@ -458,6 +458,9 @@ can currently be accomplished by the following options: **--amt**,
     where name is one of _kernel_, _ramdisk_ or _fdt_ (flattened device
     tree).
 
+    The default addresses are ${_name_\_addr\_r}, i.e. U-Boot environment
+    variables used by convention for this purpose.
+
 - --uboot-cmd=_command_
 
     Specifies U-Boot command used to execute the OS. If the command

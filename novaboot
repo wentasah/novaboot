@@ -110,6 +110,12 @@ GetOptions ("target|t=s" => \$explicit_target);
 
 my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
 
+%uboot_addr = (
+    'kernel'  => '${kernel_addr_r}',
+    'ramdisk' => '${ramdisk_addr_r}',
+    'fdt'     => '${fdt_addr_r}',
+    );
+
 $rsync_flags = '';
 $rom_prefix = 'rom://';
 $stty = 'raw -crtscts -onlcr 115200';
@@ -1627,6 +1633,9 @@ See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
 Load address of U-Boot's C<tftpboot> command for loading I<name>,
 where name is one of I<kernel>, I<ramdisk> or I<fdt> (flattened device
 tree).
+
+The default addresses are ${I<name>_addr_r}, i.e. U-Boot environment
+variables used by convention for this purpose.
 
 =item --uboot-cmd=I<command>
 

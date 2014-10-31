@@ -1057,7 +1057,7 @@ if (defined $uboot) {
 	    die "No '--uboot-addr ramdisk' given" unless $uboot_addr{ramdisk};
 	    $exp->send("tftpboot $uboot_addr{ramdisk} $prefix$initrd\n");
 	    $exp->expect(10,
-			 [qr/#/, sub { exp_continue; }],
+			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Initrd load timeout";
 	} else {
 	    $uboot_addr{ramdisk} = '-';

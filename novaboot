@@ -1594,7 +1594,7 @@ Command that resets the target.
 
 =item --no-reset, --reset
 
-Disable/enable reseting of the target.
+Disable/enable resetting of the target.
 
 =back
 

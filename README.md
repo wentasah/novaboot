@@ -428,7 +428,7 @@ can currently be accomplished by the following options: **--amt**,
 
 - --no-reset, --reset
 
-    Disable/enable reseting of the target.
+    Disable/enable resetting of the target.
 
 ## Interaction with the bootloader on the target
 

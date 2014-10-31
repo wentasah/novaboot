@@ -1,3 +1,18 @@
+novaboot (20141031) unstable; urgency=medium
+
+  * Print meaningful error message when serial connection is not established
+  * Increase timeout for --remote-expect
+  * Add --exiton-re option
+  * Improve --exiton doc
+  * Add --exiton-timeout option
+  * Improve initial part of documentation
+  * doc: Improve Configuration file section
+  * uboot: Make boot command configurable
+  * Fix ramdisk timeout in uboot
+  * uboot: Add default addresses for --uboot-addr
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Fri, 31 Oct 2014 10:05:07 +0100
+
 novaboot (20140910-1) unstable; urgency=medium
 
   * Allow specifying timeout for U-Boot commands

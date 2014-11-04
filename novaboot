@@ -1095,6 +1095,7 @@ if (defined $exp) {
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
+	print "\n";
     } else {
 	my @inputs = ($exp);
 	if (-t STDIN) { # Set up bi-directional communication if we run on terminal

@@ -208,6 +208,7 @@ class WvTestLog(list):
         else:
             if self.verbosity <= self.Verbosity.NORMAL:
                 self.currentTest.asWvCheckLine('ok').print()
+        sys.stdout.flush()
         self.clear()
 
     def _newTest(self, testing):

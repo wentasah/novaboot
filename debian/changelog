@@ -1,3 +1,10 @@
+novaboot (20141111) unstable; urgency=medium
+
+  * uboot: Do not analyze expanded kernel command line
+  * Print newline after --exiton triggered exit
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 11 Nov 2014 16:22:11 +0100
+
 novaboot (20141031) unstable; urgency=medium
 
   * Print meaningful error message when serial connection is not established

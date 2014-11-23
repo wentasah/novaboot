@@ -90,6 +90,10 @@ my @cfgs;
 	$dir = File::Spec->catdir(@dirs[0..$#dirs-1]);
     }
     @cfgs = reverse @cfgs;
+
+    my $xdg_config_home = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'}.'/.config';
+    unshift(@cfgs, "$xdg_config_home/novaboot") if -r "$xdg_config_home/novaboot";
+
     $dir = $ENV{'NOVABOOT_CONFIG_DIR'} || '/etc/novaboot.d';
     if (opendir(my $dh, $dir)) {
 	my @etccfg = map { "$dir/$_" } grep { /^[-_a-zA-Z0-9]+$/ && -f "$dir/$_" } readdir($dh);
@@ -1219,24 +1223,33 @@ corresponding options follows.
 
 After starting, novaboot reads configuration files. Their content is
 described in section L</"CONFIGURATION FILE">. By default,
-configuration is read from two locations. First from the configuration
-directory and second from F<.novaboot> files along the path to the
-current directory. The latter read files override settings from the
-former ones.
+configuration is read from multiple locations. First from the system
+configuration directory, second from the user configuration file and
+third from F<.novaboot> files along the path to the current directory.
+Alternatively, a single configuration file specified with the B<-c>
+switch or with the C<NOVABOOT_CONFIG> environment variable. The latter
+read files override settings from the former ones.
 
-Configuration directory is determined by the content of
+The system configuration directory is determined by the content of
 NOVABOOT_CONFIG_DIR environment variable and defaults to
 F</etc/novaboot.d>. Files in this directory with names consisting
 solely of English letters, numbers, dashes '-' and underscores '_'
 (note that dot '.' is not included) are read in alphabetical order.
 
-Then novaboot searches for files named F<.novaboot> starting from the
+Then, the user configuration file is read from
+F<$XDG_CONFIG_HOME/novaboot>. If C<$XDG_CONFIG_HOME> environemnt
+variable is not set F<~/.config/novaboot> is read instead.
+
+Finally, novaboot searches for files named F<.novaboot> starting from the
 directory of the novaboot script (or working directory, see bellow)
 and continuing upwards up to the root directory. The found
 configuration files are then read in the opposite order (i.e. from the
-root directory downwards). This allows to have, for example, user
-specific configuration in F<~/.novaboot> and project specific one in
-F<~/project/.novaboot>.
+root directory downwards). This allows to have, for example, a project
+specific configuration in F<~/project/.novaboot>.
+
+Note the difference between F<~/.config/novaboot> and F<~/.novaboot>.
+The former one is read always, whereas the latter only when novaboot
+script or working directory is under the C<$HOME> directory.
 
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
@@ -1855,15 +1868,16 @@ intermediate output.
 =head1 CONFIGURATION FILE
 
 Novaboot can read its configuration from one or more files. By
-default, novaboot looks for files in F</etc/novaboot.d> and files
-named F<.novaboot> as described in L</Configuration reading phase>.
-Alternatively, configuration file location can be specified with the
-B<-c> switch or with the NOVABOOT_CONFIG environment variable. The
-configuration file has Perl syntax (i.e. it is better to put C<1;> as
-a last line) and should set values of certain Perl variables. The
-current configuration can be dumped with the B<--dump-config> switch.
-Some configuration variables can be overridden by environment
-variables (see below) or by command line switches.
+default, novaboot looks for files in F</etc/novaboot.d>, file
+F<~/.config/novaboot> and files named F<.novaboot> as described in
+L</Configuration reading phase>. Alternatively, configuration file
+location can be specified with the B<-c> switch or with the
+NOVABOOT_CONFIG environment variable. The configuration file has Perl
+syntax (i.e. it is better to put C<1;> as the last line) and should set
+values of certain Perl variables. The current configuration can be
+dumped with the B<--dump-config> switch. Some configuration variables
+can be overridden by environment variables (see below) or by command
+line switches.
 
 Supported configuration variables include:
 

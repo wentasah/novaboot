@@ -1224,11 +1224,12 @@ corresponding options follows.
 After starting, novaboot reads configuration files. Their content is
 described in section L</"CONFIGURATION FILE">. By default,
 configuration is read from multiple locations. First from the system
-configuration directory, second from the user configuration file and
-third from F<.novaboot> files along the path to the current directory.
-Alternatively, a single configuration file specified with the B<-c>
-switch or with the C<NOVABOOT_CONFIG> environment variable. The latter
-read files override settings from the former ones.
+configuration directory (F</etc/novaboot.d/>), second from the user
+configuration file (F<~/.config/novaboot>) and third from F<.novaboot>
+files along the path to the current directory. Alternatively, a single
+configuration file specified with the B<-c> switch or with the
+C<NOVABOOT_CONFIG> environment variable is read. The latter read files
+override settings from the former ones.
 
 The system configuration directory is determined by the content of
 NOVABOOT_CONFIG_DIR environment variable and defaults to

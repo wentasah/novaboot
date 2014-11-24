@@ -256,6 +256,16 @@ if ($ider) {
     if (!defined $amt) { die "Error: --ider requires --amt"; }
 }
 
+{
+    my %input_opts = ('--iprelay'    => \$iprelay,
+		      '--serial'     => \$serial,
+		      '--remote-cmd' => \$remote_cmd,
+		      '--amt'	     => \$amt);
+    my @opts = grep(defined(${$input_opts{$_}}) , keys %input_opts);
+
+    print STDERR "novaboot: Warning: More than one target connection option: ".join(', ', @opts) if scalar @opts > 1;
+}
+
 # Default options
 if (defined $serial) {
     $serial ||= "/dev/ttyUSB0";

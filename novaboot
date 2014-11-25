@@ -263,7 +263,7 @@ if ($ider) {
 		      '--amt'	     => \$amt);
     my @opts = grep(defined(${$input_opts{$_}}) , keys %input_opts);
 
-    print STDERR "novaboot: Warning: More than one target connection option: ".join(', ', @opts) if scalar @opts > 1;
+    die("novaboot: More than one target connection option: ".join(', ', @opts)) if scalar @opts > 1;
 }
 
 # Default options

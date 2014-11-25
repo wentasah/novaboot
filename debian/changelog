@@ -1,3 +1,11 @@
+novaboot (20141125) unstable; urgency=medium
+
+  * Implement user configuration file
+  * doc: Be more explicit in the introduction to "Configuration reading phase"
+  * Fail when multiple target connection options are given
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 25 Nov 2014 12:10:27 +0100
+
 novaboot (20141111) unstable; urgency=medium
 
   * uboot: Do not analyze expanded kernel command line

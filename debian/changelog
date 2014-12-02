@@ -1,3 +1,12 @@
+novaboot (20141202) unstable; urgency=medium
+
+  * Add --no-uboot option
+  * Add --no-interaction option
+  * Print all novaboot messages to stderr
+  * Always use bi-directional communication with target
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 02 Dec 2014 16:52:17 +0100
+
 novaboot (20141125) unstable; urgency=medium
 
   * Implement user configuration file

@@ -1107,28 +1107,25 @@ if ($interaction && defined $exp) {
     if ($interactive && !@exiton) {
 	$interrupt = '"~~."';
     }
-    my $note = (-t STDIN) ? '' : '- only target->host ';
-    print STDERR "novaboot: Serial line interaction $note(press $interrupt to interrupt)...\n";
+    print STDERR "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
 	print STDERR "\n";
     } else {
 	my @inputs = ($exp);
-	if (-t STDIN) { # Set up bi-directional communication if we run on terminal
-	    my $infile = new IO::File;
-	    $infile->IO::File::fdopen(*STDIN,'r');
-	    my $in_object = Expect->exp_init($infile);
-	    $in_object->set_group($exp);
+	my $infile = new IO::File;
+	$infile->IO::File::fdopen(*STDIN,'r');
+	my $in_object = Expect->exp_init($infile);
+	$in_object->set_group($exp);
 
-	    if ($interactive) {
-		$in_object->set_seq('~~\.', sub { print STDERR "novaboot: Escape sequence detected\r\n"; undef; });
-		$in_object->manual_stty(0);	  # Use raw terminal mode
-	    } else {
-		$in_object->manual_stty(1);	  # Do not modify terminal settings
-	    }
-	    push(@inputs, $in_object);
+	if ($interactive) {
+	    $in_object->set_seq('~~\.', sub { print STDERR "novaboot: Escape sequence detected\r\n"; undef; });
+	    $in_object->manual_stty(0);	  # Use raw terminal mode
+	} else {
+	    $in_object->manual_stty(1);	  # Do not modify terminal settings
 	}
+	push(@inputs, $in_object);
 	#use Data::Dumper;
 	#print Dumper(\@expect_raw);
 	$exp->expect(undef, @expect_raw) if @expect_raw;

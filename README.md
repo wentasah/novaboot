@@ -523,6 +523,11 @@ interactive work with the target.
     to the target and does no longer interrupt novaboot. Use "~~."
     sequence to exit novaboot.
 
+- --no-interaction, --interaction
+
+    Skip resp. force target interaction phase. When skipped, novaboot exits
+    immediately when boot is initiated.
+
 - --expect=_string_
 
     When _string_ is received from the target, send the string specified

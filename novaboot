@@ -112,7 +112,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
 
 %uboot_addr = (
     'kernel'  => '${kernel_addr_r}',
@@ -124,6 +124,7 @@ $rsync_flags = '';
 $rom_prefix = 'rom://';
 $stty = 'raw -crtscts -onlcr 115200';
 $reset = 1;			# Reset target by default
+$interaction = 1;		# Perform target interaction by default
 
 my @expect_seen = ();
 sub handle_expect
@@ -167,6 +168,7 @@ my %opt_spec;
     "grub2:s" 	     => \$grub2_config,
     "grub2-prolog=s" => \$grub2_prolog,
     "ider"           => \$ider,
+    "interaction!"   => \$interaction,
     "iprelay=s"	     => \$iprelay,
     "iso:s" 	     => \$iso_image,
     "kernel|k=s"     => \$kernel_opt,
@@ -1099,7 +1101,7 @@ if (defined $uboot) {
 }
 
 ### Serial line interaction
-if (defined $exp) {
+if ($interaction && defined $exp) {
     # Serial line of the target is available
     my $interrupt = 'Ctrl-C';
     if ($interactive && !@exiton) {
@@ -1713,6 +1715,11 @@ in any way (no echoing of entered characters, no interpretation
 special characters). This, among others, means that Ctrl-C is passed
 to the target and does no longer interrupt novaboot. Use "~~."
 sequence to exit novaboot.
+
+=item --no-interaction, --interaction
+
+Skip resp. force target interaction phase. When skipped, novaboot exits
+immediately when boot is initiated.
 
 =item --expect=I<string>
 

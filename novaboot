@@ -405,7 +405,7 @@ sub generate_configs($$$) {
 	open(my $f, '>', $fn) || die("$fn: $!");
 	map { s|\brom://([^ ]*)|$rom_prefix$base$1|g; print $f "$_"; } @{$config};
 	close($f);
-	print "novaboot: Created $fn\n";
+	print STDERR "novaboot: Created $fn\n";
       } elsif (exists $$g{command} && ! $no_file_gen) {
 	$ENV{SRCDIR} = dirname(File::Spec->rel2abs( $filename, $invocation_dir ));
 	if (exists $$g{filename}) {
@@ -537,7 +537,7 @@ sub shell_cmd_string(@)
 
 sub exec_verbose(@)
 {
-    print "novaboot: Running: ".shell_cmd_string(@_)."\n";
+    print STDERR "novaboot: Running: ".shell_cmd_string(@_)."\n";
     exec(@_);
     exit(1); # should not be reached
 }
@@ -545,7 +545,7 @@ sub exec_verbose(@)
 sub system_verbose($)
 {
     my $cmd = shift;
-    print "novaboot: Running: $cmd\n";
+    print STDERR "novaboot: Running: $cmd\n";
     my $ret = system($cmd);
     if ($ret & 0x007f) { die("Command terminated by a signal"); }
     if ($ret & 0xff00) {die("Command exit with non-zero exit code"); }
@@ -555,9 +555,9 @@ sub system_verbose($)
 ## WvTest headline
 
 if (exists $variables->{WVDESC}) {
-    print "Testing \"$variables->{WVDESC}\" in $last_fn:\n";
+    print STDERR "Testing \"$variables->{WVDESC}\" in $last_fn:\n";
 } elsif ($last_fn =~ /\.wv$/) {
-    print "Testing \"all\" in $last_fn:\n";
+    print STDERR "Testing \"all\" in $last_fn:\n";
 }
 
 ## Connect to the target and check whether it is not occupied
@@ -581,9 +581,9 @@ if (defined $iprelay) {
     my $paddr   = sockaddr_in($port, inet_aton($addr));
     my $proto   = getprotobyname('tcp');
     socket($IPRELAY, PF_INET, SOCK_STREAM, $proto)  || die "socket: $!";
-    print "novaboot: Connecting to IP relay... ";
+    print STDERR "novaboot: Connecting to IP relay... ";
     connect($IPRELAY, $paddr)    || die "connect: $!";
-    print "done\n";
+    print STDERR "done\n";
     $exp = Expect->init(\*$IPRELAY);
     $exp->log_stdout(1);
 
@@ -652,7 +652,7 @@ elsif ($serial) {
     $exp = Expect->init(\*$CONN);
 }
 elsif ($remote_cmd) {
-    print "novaboot: Running: $remote_cmd\n";
+    print STDERR "novaboot: Running: $remote_cmd\n";
     $exp = Expect->spawn($remote_cmd);
 }
 elsif (defined $amt) {
@@ -750,7 +750,7 @@ END
     };
 
     my $cmd = "amtterm -u $amt_user -p $amt_password $amt_host $amt_port";
-    print "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
+    print STDERR "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
     $exp = Expect->spawn($cmd);
     $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
 
@@ -773,7 +773,7 @@ if (defined $on_opt && defined $target_power_on) {
     exit;
 }
 if (defined $off_opt && defined $target_power_off) {
-    print "novaboot: Switching the target off...\n";
+    print STDERR "novaboot: Switching the target off...\n";
     &$target_power_off();
     exit;
 }
@@ -781,7 +781,7 @@ if (defined $off_opt && defined $target_power_off) {
 $builddir ||= dirname(File::Spec->rel2abs( ${$scripts[0]}{filename})) if scalar @scripts;
 if (defined $builddir) {
     chdir($builddir) or die "Can't change directory to $builddir: $!";
-    print "novaboot: Entering directory `$builddir'\n";
+    print STDERR "novaboot: Entering directory `$builddir'\n";
 } else {
     $builddir = $invocation_dir;
 }
@@ -803,7 +803,7 @@ foreach my $script (@scripts) {
     if (exists $variables->{BUILDDIR}) {
 	$builddir = File::Spec->rel2abs($variables->{BUILDDIR});
 	chdir($builddir) or die "Can't change directory to $builddir: $!";
-	print "novaboot: Entering directory `$builddir'\n";
+	print STDERR "novaboot: Entering directory `$builddir'\n";
     }
 
     if ($grub_prefix) {
@@ -903,7 +903,7 @@ if (scalar(@scripts) > 1 && ( defined $dhcp_tftp || defined $serial || defined $
 }
 
 if ($variables->{WVTEST_TIMEOUT}) {
-    print "wvtest: timeout ", $variables->{WVTEST_TIMEOUT}, "\n";
+    print STDERR "wvtest: timeout ", $variables->{WVTEST_TIMEOUT}, "\n";
 }
 
 sub trim($) {
@@ -948,7 +948,7 @@ if (defined $qemu) {
     }
     push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
     unshift(@qemu_flags, ('-name', $config_name));
-    print "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
+    print STDERR "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
     $exp = Expect->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");
 }
 
@@ -1004,7 +1004,7 @@ if (defined $dhcp_tftp || defined $tftp) {
 ### AMT IDE-R
 if (defined $ider) {
     my $ider_cmd= "amtider -c $iso_image -u $amt_user -p $amt_password $amt_host $amt_port"  ;
-    print "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r;
+    print STDERR "novaboot: Running: $ider_cmd\n" =~ s/\Q$amt_password\E/???/r;
     my $ider_pid = fork();
     if ($ider_pid == 0) {
 	exec($ider_cmd);
@@ -1018,15 +1018,15 @@ if (defined $ider) {
 ### Reset target (IP relay, AMT, ...)
 
 if (defined $target_reset && $reset) {
-    print "novaboot: Reseting the test box... ";
+    print STDERR "novaboot: Reseting the test box... ";
     &$target_reset();
-    print "done\n";
+    print STDERR "done\n";
 }
 
 ### U-boot conversation
 if (defined $uboot) {
     my $uboot_prompt = $uboot || '=> ';
-    print "novaboot: Waiting for U-Boot prompt...\n";
+    print STDERR "novaboot: Waiting for U-Boot prompt...\n";
     $exp || die("No serial line connection");
     $exp->log_stdout(1);
     #$exp->exp_internal(1);
@@ -1108,11 +1108,11 @@ if ($interaction && defined $exp) {
 	$interrupt = '"~~."';
     }
     my $note = (-t STDIN) ? '' : '- only target->host ';
-    print "novaboot: Serial line interaction $note(press $interrupt to interrupt)...\n";
+    print STDERR "novaboot: Serial line interaction $note(press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
-	print "\n";
+	print STDERR "\n";
     } else {
 	my @inputs = ($exp);
 	if (-t STDIN) { # Set up bi-directional communication if we run on terminal
@@ -1122,7 +1122,7 @@ if ($interaction && defined $exp) {
 	    $in_object->set_group($exp);
 
 	    if ($interactive) {
-		$in_object->set_seq('~~\.', sub { print "novaboot: Escape sequence detected\r\n"; undef; });
+		$in_object->set_seq('~~\.', sub { print STDERR "novaboot: Escape sequence detected\r\n"; undef; });
 		$in_object->manual_stty(0);	  # Use raw terminal mode
 	    } else {
 		$in_object->manual_stty(1);	  # Do not modify terminal settings

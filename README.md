@@ -450,6 +450,10 @@ can currently be accomplished by the following options: **--amt**,
     Implementation of this option is currently tied to a particular board
     that we use. It may be subject to changes in the future!
 
+- --no-uboot
+
+    Disable U-Boot interaction previously enabled with **--uboot**.
+
 - --uboot-init
 
     Command(s) to send the U-Boot bootloader before loading the images and

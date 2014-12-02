@@ -197,6 +197,7 @@ my %opt_spec;
     "tftp"	     => \$tftp,
     "tftp-port=i"    => \$tftp_port,
     "uboot:s"	     => \$uboot,
+    "no-uboot"	     => sub { undef $uboot; },
     "uboot-addr=s"   => \%uboot_addr,
     "uboot-cmd=s"    => \$uboot_cmd,
     "uboot-init=s"   => \@uboot_init,
@@ -1635,6 +1636,10 @@ novaboot script. I<prompt> specifies the U-Boot's prompt (default is
 "=> ", other common prompts are "U-Boot> " or "U-Boot# ").
 Implementation of this option is currently tied to a particular board
 that we use. It may be subject to changes in the future!
+
+=item --no-uboot
+
+Disable U-Boot interaction previously enabled with B<--uboot>.
 
 =item --uboot-init
 

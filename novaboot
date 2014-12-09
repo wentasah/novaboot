@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## Initialization
+
 use strict;
 use warnings;
 use warnings (exists $ENV{NOVABOOT_TEST} ? (FATAL => 'all') : ());
@@ -552,6 +554,12 @@ sub system_verbose($)
     if ($ret) { die("Command failure $ret"); }
 }
 
+sub trim($) {
+    my ($str) = @_;
+    $str =~ s/^\s+|\s+$//g;
+    return $str
+}
+
 ## WvTest headline
 
 if (exists $variables->{WVDESC}) {
@@ -904,12 +912,6 @@ if (scalar(@scripts) > 1 && ( defined $dhcp_tftp || defined $serial || defined $
 
 if ($variables->{WVTEST_TIMEOUT}) {
     print STDERR "wvtest: timeout ", $variables->{WVTEST_TIMEOUT}, "\n";
-}
-
-sub trim($) {
-    my ($str) = @_;
-    $str =~ s/^\s+|\s+$//g;
-    return $str
 }
 
 ### Start in Qemu

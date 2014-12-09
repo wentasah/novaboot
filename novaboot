@@ -1023,6 +1023,20 @@ if (defined $target_reset && $reset) {
     print STDERR "novaboot: Reseting the test box... ";
     &$target_reset();
     print STDERR "done\n";
+    if (defined $exp) {
+	# We don't want to output anything printed by the target
+	# before reset so we clear the buffers now. This is, however,
+	# not ideal because we may loose some data that were sent
+	# after the reset. If this is a problem, one should reset and
+	# connect to serial line in atomic manner. For example, if
+	# supported by hardware, use --remote-cmd 'sterm -d ...' and
+	# do not use separate --reset-cmd.
+	my $log = $exp->log_stdout;
+	$exp->log_stdout(0);
+	$exp->expect(0); # Read data from target
+	$exp->clear_accum(); 	# Clear the read data
+	$exp->log_stdout($log);
+    }
 }
 
 ### U-boot conversation

@@ -1,3 +1,9 @@
+novaboot (20141209-1) unstable; urgency=medium
+
+  * Add --remote-expect-silent option
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 09 Dec 2014 13:21:43 +0100
+
 novaboot (20141209) unstable; urgency=medium
 
   * Flush serial line output after reset

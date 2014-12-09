@@ -114,7 +114,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target;
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
 
 %uboot_addr = (
     'kernel'  => '${kernel_addr_r}',
@@ -187,6 +187,7 @@ my %opt_spec;
     "qemu-flags|q=s" => \$qemu_flags_cmd,
     "remote-cmd=s"   => \$remote_cmd,
     "remote-expect=s"=> \$remote_expect,
+    "remote-expect-silent=s"=> sub { $remote_expect=$_[1]; $remote_expect_silent=1; },
     "reset!"         => \$reset,
     "reset-cmd=s"    => \$reset_cmd,
     "rsync-flags=s"  => \$rsync_flags,
@@ -767,7 +768,15 @@ END
 
 if ($remote_expect) {
     $exp || die("No serial line connection");
+    my $log = $exp->log_stdout;
+    if (defined $remote_expect_silent) {
+	$exp->log_stdout(0);
+    }
     $exp->expect(180, $remote_expect) || die "Expect for '$remote_expect' timed out";
+    if (defined $remote_expect_silent) {
+	$exp->log_stdout($log);
+	print $exp->after() if $log;
+    }
 }
 
 if (defined $reset_cmd) {
@@ -1519,9 +1528,15 @@ example C<ssh server 'cu -l /dev/ttyS0'>.
 
 =item --remote-expect=I<string>
 
-Wait for reception of I<string> after establishing the the remote
-connection before continuing.
+Wait for reception of I<string> after establishing the remote
+connection.
 
+=item --remote-expect-silent=I<string>
+
+The same as B<--remote-expect> except that the remote output is not
+echoed to stdout while waiting for the I<string>. Everything after the
+matched string is printed to stdout, so you may want to include line
+end characters in the I<string> as well.
 
 =back
 

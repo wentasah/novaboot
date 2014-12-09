@@ -330,8 +330,15 @@ user/instance.
 
 - --remote-expect=_string_
 
-    Wait for reception of _string_ after establishing the the remote
-    connection before continuing.
+    Wait for reception of _string_ after establishing the remote
+    connection.
+
+- --remote-expect-silent=_string_
+
+    The same as **--remote-expect** except that the remote output is not
+    echoed to stdout while waiting for the _string_. Everything after the
+    matched string is printed to stdout, so you may want to include line
+    end characters in the _string_ as well.
 
 ## File deployment phase
 

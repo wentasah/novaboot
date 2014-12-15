@@ -1139,7 +1139,6 @@ if ($interaction && defined $exp) {
     $exp->log_stdout(1);
     if (@exiton) {
 	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
-	print STDERR "\n";
     } else {
 	my @inputs = ($exp);
 	my $infile = new IO::File;
@@ -1165,6 +1164,9 @@ if ($interaction && defined $exp) {
 if (defined $dhcp_tftp || defined $tftp) {
     die("novaboot: This should kill servers on background\n");
 }
+
+# Always finish novaboot output with newline
+print "\n";
 
 ## Documentation
 

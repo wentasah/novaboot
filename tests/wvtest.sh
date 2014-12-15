@@ -68,6 +68,23 @@ WVPASS()
 	fi
 }
 
+# Use WVPASSSH instead of WVPASS when the command includes pipe or
+# output redirection. The whole command must be one argument - quote
+# it.
+WVPASSSH()
+{
+	TEXT="$1"
+
+	_wvfind_caller
+	if bash -o pipefail -c "$@"; then
+		_wvcheck 0 "$TEXT"
+		return 0
+	else
+		_wvcheck 1 "$TEXT"
+		# NOTREACHED
+		return 1
+	fi
+}
 
 WVFAIL()
 {

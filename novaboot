@@ -27,7 +27,7 @@ use Time::HiRes("usleep");
 use Socket;
 use FileHandle;
 use IPC::Open2;
-use POSIX qw(:errno_h);
+use POSIX qw(:errno_h sysconf);
 use Cwd qw(getcwd abs_path);
 use Expect;
 
@@ -53,9 +53,15 @@ $CFG::default_target = '';
     "ryuglab" => '--target ryu --server=pc-sojkam.felk.cvut.cz:/srv/tftp --remote-cmd="ssh -tt pc-sojkam.felk.cvut.cz \"sterm -d -s 115200 /dev/ttyUSB0\""',
     "ryulocal" => '--target ryu --dhcp-tftp --serial --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
     );
-chomp(my $nproc = `nproc`);
-$CFG::scons = "scons -j$nproc";
-$CFG::make = "make -j$nproc";
+
+{
+    my %const;
+    $const{linux}->{_SC_NPROCESSORS_CONF} = 83;
+    my $nproc = sysconf($const{$^O}->{_SC_NPROCESSORS_CONF});
+
+    $CFG::scons = "scons -j$nproc";
+    $CFG::make = "make -j$nproc";
+}
 
 my $builddir;
 

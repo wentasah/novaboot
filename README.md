@@ -39,10 +39,10 @@ file syntax is described in section ["CONFIGURATION FILE"](#configuration-file).
 
 Simple examples of using `novaboot`:
 
-1. Run an OS in Qemu. This is the default action when no other action is
-specified by command line switches. Thus running `novaboot myos` (or
-`./myos` as described above) will run Qemu and make it boot the
-configuration specified in the `myos` script.
+1. Run an OS in Qemu. This is can be specified with the **--qemu** option.
+Thus running `novaboot --qemu myos` (or `./myos --qemu` as described
+above) will run Qemu and make it boot the configuration specified in
+the `myos` script.
 2. Create a bootloader configuration file (currently supported
 bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar and U-Boot) and copy it
 with all other files needed for booting to a remote boot server. Then

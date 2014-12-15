@@ -43,7 +43,7 @@ $CFG::hypervisor = "";
 $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
 $CFG::qemu = 'qemu-system-i386 -cpu coreduo -smp 2';
-$CFG::default_target = 'qemu';
+$CFG::default_target = '';
 %CFG::targets = (
     'qemu' => '--qemu',
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
@@ -1215,10 +1215,10 @@ Simple examples of using C<novaboot>:
 
 =item 1.
 
-Run an OS in Qemu. This is the default action when no other action is
-specified by command line switches. Thus running C<novaboot myos> (or
-C<./myos> as described above) will run Qemu and make it boot the
-configuration specified in the F<myos> script.
+Run an OS in Qemu. This is can be specified with the B<--qemu> option.
+Thus running C<novaboot --qemu myos> (or C<./myos --qemu> as described
+above) will run Qemu and make it boot the configuration specified in
+the F<myos> script.
 
 =item 2.
 

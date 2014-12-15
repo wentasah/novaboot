@@ -132,9 +132,13 @@ instead of the novaboot script directory.
 - -t, --target=_target_
 
     This option serves as a user configurable shortcut for other novaboot
-    options. The effect of this option is the same as the options stored
-    in the `%targets` configuration variable under key _target_. See
-    also ["CONFIGURATION FILE"](#configuration-file).
+    options. The effect of this option is the same as specifying the
+    options stored in the `%targets` configuration variable under key
+    _target_. See also ["CONFIGURATION FILE"](#configuration-file).
+
+    When this option is not given, novaboot tries to determine the target
+    to use from either **NOVABOOT\_TARGET** environment variable or from
+    **$default\_target** configuration file variable.
 
 ## Script preprocessing phase
 
@@ -720,7 +724,8 @@ Supported configuration variables include:
 - $default\_target
 
     Default target (see below) to use when no target is explicitly
-    specified on command line with the **--target** option.
+    specified with the **--target** command line option or
+    **NOVABOOT\_TARGET** environment variable.
 
 - %targets
 
@@ -751,6 +756,12 @@ override the environment variables.
 
     Name of the novaboot configuration directory. When not specified
     `/etc/novaboot.d` is used.
+
+- NOVABOOT\_TARGET
+
+    Name of the novaboot target to use. This overrides the value of
+    **$default\_target** from the configuration file and can be overriden
+    with the **--target** command line option.
 
 - NOVABOOT\_BENDER
 

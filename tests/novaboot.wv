@@ -101,5 +101,19 @@ EOF
 WVPASS sh -c "./script --target=t1 2>&1 |tee output"
 WVPASS grep -q "Error in target definition" output
 
+WVSTART Different ways of specifying target
+cat > .novaboot <<'EOF'
+%targets = ('t1' => '--remote-cmd="echo Target1 > t"',
+            't2' => '--remote-cmd="echo Target2 > t"',
+            't3' => '--remote-cmd="echo Target3 > t"');
+$default_target = 't1';
+EOF
+WVPASSSH 'novaboot /dev/null'
+WVPASS test "$(cat t)" = Target1
+WVPASSSH 'NOVABOOT_TARGET=t2 novaboot /dev/null'
+WVPASS test "$(cat t)" = Target2
+WVPASSSH 'NOVABOOT_TARGET=t2 novaboot --target t3 /dev/null'
+WVPASS test "$(cat t)" = Target3
+
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

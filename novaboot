@@ -111,7 +111,7 @@ read_config($_) foreach $cfg or @cfgs;
 
 ## Command line handling
 
-my $explicit_target;
+my $explicit_target = $ENV{'NOVABOOT_TARGET'};
 GetOptions ("target|t=s" => \$explicit_target);
 
 my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
@@ -1323,9 +1323,13 @@ Print short (B<-h>) or long (B<--help>) help.
 =item -t, --target=I<target>
 
 This option serves as a user configurable shortcut for other novaboot
-options. The effect of this option is the same as the options stored
-in the C<%targets> configuration variable under key I<target>. See
-also L</"CONFIGURATION FILE">.
+options. The effect of this option is the same as specifying the
+options stored in the C<%targets> configuration variable under key
+I<target>. See also L</"CONFIGURATION FILE">.
+
+When this option is not given, novaboot tries to determine the target
+to use from either B<NOVABOOT_TARGET> environment variable or from
+B<$default_target> configuration file variable.
 
 =back
 
@@ -1947,7 +1951,8 @@ file.
 =item $default_target
 
 Default target (see below) to use when no target is explicitly
-specified on command line with the B<--target> option.
+specified with the B<--target> command line option or
+B<NOVABOOT_TARGET> environment variable.
 
 =item %targets
 
@@ -1982,6 +1987,12 @@ one(s).
 
 Name of the novaboot configuration directory. When not specified
 F</etc/novaboot.d> is used.
+
+=item NOVABOOT_TARGET
+
+Name of the novaboot target to use. This overrides the value of
+B<$default_target> from the configuration file and can be overriden
+with the B<--target> command line option.
 
 =item NOVABOOT_BENDER
 

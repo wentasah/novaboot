@@ -1083,17 +1083,20 @@ if (defined $uboot) {
     }
 
     # Boot the system if there are some load lines in the script
-    if (scalar(@$modules) > 0 && !$variables->{NO_BOOT}) {
+    if ((scalar(@$modules) > 0 && !$variables->{NO_BOOT}) ||
+	defined $uboot_cmd) {
 	my ($kbin, $kcmd) = split(' ', shift(@$modules), 2);
 	my $dtb;
 	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
 	my $initrd = shift @$modules;
 
-	die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
-	$exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
-	$exp->expect(10,
-		     [qr/##/, sub { exp_continue; }],
-		     $uboot_prompt) || die "Kernel load timeout";
+	if (defined $kbin) {
+	    die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
+	    $exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
+	    $exp->expect(10,
+			 [qr/##/, sub { exp_continue; }],
+			 $uboot_prompt) || die "Kernel load timeout";
+	}
 	if (defined $dtb) {
 	    die "No '--uboot-addr fdt' given" unless $uboot_addr{fdt};
 	    $exp->send("tftpboot $uboot_addr{fdt} $prefix$dtb\n");

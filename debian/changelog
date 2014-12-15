@@ -1,3 +1,12 @@
+novaboot (20141215) unstable; urgency=medium
+
+  * Execute --uboot-cmd even if there are no files to boot
+  * Always finish novaboot output with new line character
+  * Allow specifying target in NOVABOOT_TARGET environment variable
+  * qemu is no longer hardcoded as default target
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Mon, 15 Dec 2014 15:21:22 +0100
+
 novaboot (20141209-1) unstable; urgency=medium
 
   * Add --remote-expect-silent option

@@ -583,6 +583,14 @@ interactive work with the target.
 
     Example: `--expect='Continue?' --sendcont='yes\n'`
 
+- --final-eol, --no-final-eol
+
+    By default, **novaboot** always prints an end-of-line character at the
+    end of its execution in order to ensure that the output of programs
+    started after novaboot appears at the beginning of the line. When this
+    is not desired **--no-final-eol** option can be used to override this
+    behavior.
+
 # NOVABOOT SCRIPT SYNTAX
 
 The syntax tries to mimic POSIX shell syntax. The syntax is defined

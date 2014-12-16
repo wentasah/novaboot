@@ -1,3 +1,12 @@
+novaboot (20141216) unstable; urgency=medium
+
+  * Do not use nproc to determine the number of processors
+  * Doc: Add a concise list of execution phases
+  * Doc: Rename CONFIGURATION FILE to CONFIGURATION FILES
+  * Add --no-final-eol option
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 16 Dec 2014 13:45:38 +0100
+
 novaboot (20141215) unstable; urgency=medium
 
   * Execute --uboot-cmd even if there are no files to boot

@@ -4,16 +4,16 @@
 
 set -e
 
-# Make README.md be always in sync with novaboot - work with objects
+# Make README.pod be always in sync with novaboot - work with objects
 # in the index (what is being committed), not with what is in the
 # working tree.
-git diff --quiet README.md
+git diff --quiet README.pod
 README_clean=$?
 
-hash=$(git show :novaboot | pod2markdown | git hash-object -w --stdin)
-git update-index --cacheinfo 100644 $hash README.md
+hash=$(git show :novaboot | podselect | git hash-object -w --stdin)
+git update-index --cacheinfo 100644 $hash README.pod
 
 if [ "$README_clean" = 0 ]; then
     # Update the working tree copy
-    git checkout README.md
+    git checkout README.pod
 fi

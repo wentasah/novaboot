@@ -1,0 +1,866 @@
+=head1 NAME
+
+novaboot - Boots a locally compiled operating system on a remote
+target or in qemu
+
+=head1 SYNOPSIS
+
+B<novaboot> --help
+
+B<novaboot> [option]... [--] script...
+
+B<./script> [option]...
+
+=head1 DESCRIPTION
+
+This program makes booting of a locally compiled operating system (OS)
+(e.g. NOVA or Linux) on remote targets as simple as running a program
+locally. It automates things like copying OS images to a TFTP server,
+generation of bootloader configuration files, resetting of target
+hardware or redirection of target's serial line to stdin/out. Novaboot
+is highly configurable and it makes it easy to boot a single image on
+different targets or different images on a single target.
+
+Novaboot operation is controlled by command line options and by a so
+called novaboot script, which can be thought as a generalization of
+bootloader configuration files (see L</"NOVABOOT SCRIPT SYNTAX">).
+Typical way of using novaboot is to make the novaboot script
+executable and set its first line to I<#!/usr/bin/env novaboot>. Then,
+booting a particular OS configuration becomes the same as executing a
+local program - the novaboot script.
+
+Novaboot uses configuration files to, among other things, define
+command line options needed for different targets. Users typically use
+only the B<-t>/B<--target> command line option to select the target.
+Internally, this option expands to the pre-configured options.
+Configuration files are searched at multiple places, which allows to
+have per-system, per-user or per-project configurations. Configuration
+file syntax is described in section L</"CONFIGURATION FILES">.
+
+Simple examples of using C<novaboot>:
+
+=over 3
+
+=item 1.
+
+Run an OS in Qemu. This is can be specified with the B<--qemu> option.
+Thus running C<novaboot --qemu myos> (or C<./myos --qemu> as described
+above) will run Qemu and make it boot the configuration specified in
+the F<myos> script.
+
+=item 2.
+
+Create a bootloader configuration file (currently supported
+bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar and U-Boot) and copy it
+with all other files needed for booting to a remote boot server. Then
+use a TCP/IP-controlled relay/serial-to-TCP converter to reset the
+target and receive its serial output.
+
+ ./myos --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
+
+=item 3.
+
+Run DHCP and TFTP server on developer's machine to boot the target
+from it.
+
+ ./myos --dhcp-tftp
+
+This is useful when no network infrastructure is in place and
+the target is connected directly to developer's box.
+
+=item 4.
+
+Create bootable ISO image.
+
+ novaboot --iso -- script1 script2
+
+The created ISO image will have ISOLINUX bootloader installed on it
+and the boot menu will allow selecting between I<script1> and
+I<script2> configurations.
+
+=back
+
+=head1 PHASES AND OPTIONS
+
+Novaboot performs its work in several phases. Each phase can be
+influenced by several command line options, certain phases can be
+skipped. The list of phases (in the execution order) is as follows.
+
+=over
+
+=item 1. L<Configuration reading|/Configuration reading phase>
+
+=item 2. L<Command line processing|/Command line processing phase>
+
+=item 3. L<Script preprocessing|/Script preprocessing phase>
+
+=item 4. L<File generation|/File generation phase>
+
+=item 5. L<Target connection|/Target connection check>
+
+=item 6. L<File deployment|/File deployment phase>
+
+=item 7. L<Target power-on and reset|/Target power-on and reset phase>
+
+=item 8. L<Interaction with the bootloader|/Interaction with the bootloader on the target>
+
+=item 9. L<Target interaction|/Target interaction phase>
+
+=back
+
+Each phase is described in the following sections together with the
+command line options that control it.
+
+=head2 Configuration reading phase
+
+After starting, novaboot reads configuration files. Their content is
+described in section L</"CONFIGURATION FILES">. By default,
+configuration is read from multiple locations. First from the system
+configuration directory (F</etc/novaboot.d/>), second from the user
+configuration file (F<~/.config/novaboot>) and third from F<.novaboot>
+files along the path to the current directory. Alternatively, a single
+configuration file specified with the B<-c> switch or with the
+C<NOVABOOT_CONFIG> environment variable is read. The latter read files
+override settings from the former ones.
+
+The system configuration directory is determined by the content of
+NOVABOOT_CONFIG_DIR environment variable and defaults to
+F</etc/novaboot.d>. Files in this directory with names consisting
+solely of English letters, numbers, dashes '-' and underscores '_'
+(note that dot '.' is not included) are read in alphabetical order.
+
+Then, the user configuration file is read from
+F<$XDG_CONFIG_HOME/novaboot>. If C<$XDG_CONFIG_HOME> environemnt
+variable is not set F<~/.config/novaboot> is read instead.
+
+Finally, novaboot searches for files named F<.novaboot> starting from the
+directory of the novaboot script (or working directory, see bellow)
+and continuing upwards up to the root directory. The found
+configuration files are then read in the opposite order (i.e. from the
+root directory downwards). This allows to have, for example, a project
+specific configuration in F<~/project/.novaboot>.
+
+Note the difference between F<~/.config/novaboot> and F<~/.novaboot>.
+The former one is read always, whereas the latter only when novaboot
+script or working directory is under the C<$HOME> directory.
+
+In certain cases, the location of the novaboot script cannot be
+determined in this early phase. This happens either when the script is
+read from the standard input or when novaboot is invoked explicitly as
+in the example L</"4."> above. In this case the current working
+directory is used as a starting point for configuration file search
+instead of the novaboot script directory.
+
+=over 8
+
+=item -c, --config=I<filename>
+
+Use the specified configuration file instead of the default one(s).
+
+=back
+
+=head2 Command line processing phase
+
+=over 8
+
+=item --dump-config
+
+Dump the current configuration to stdout end exit. Useful as an
+initial template for a configuration file.
+
+=item -h, --help
+
+Print short (B<-h>) or long (B<--help>) help.
+
+=item -t, --target=I<target>
+
+This option serves as a user configurable shortcut for other novaboot
+options. The effect of this option is the same as specifying the
+options stored in the C<%targets> configuration variable under key
+I<target>. See also L</"CONFIGURATION FILES">.
+
+When this option is not given, novaboot tries to determine the target
+to use from either B<NOVABOOT_TARGET> environment variable or from
+B<$default_target> configuration file variable.
+
+=back
+
+=head2 Script preprocessing phase
+
+This phases allows to modify the parsed novaboot script before it is
+used in the later phases.
+
+=over 8
+
+=item -a, --append=I<parameters>
+
+Append a string to the first C<load> line in the novaboot script. This
+can be used to append parameters to the kernel's or root task's
+command line. This option can appear multiple times.
+
+=item -b, --bender
+
+Use F<bender> chainloader. Bender scans the PCI bus for PCI serial
+ports and stores the information about them in the BIOS data area for
+use by the kernel.
+
+=item --chainloader=I<chainloader>
+
+Specifies a chainloader that is loaded before the kernel and other
+files specified in the novaboot script. E.g. 'bin/boot/bender
+promisc'.
+
+=item --dump
+
+Print the modules to boot and their parameters after this phase
+finishes. Then exit. This is useful for seeing the effect of other
+options in this section.
+
+=item -k, --kernel=F<file>
+
+Replace the first word on the first C<load> line in the novaboot
+script with F<file>.
+
+=item --scriptmod=I<perl expression>
+
+When novaboot script is read, I<perl expression> is executed for every
+line (in $_ variable). For example, C<novaboot
+--scriptmod=s/sigma0/omega6/g> replaces every occurrence of I<sigma0>
+in the script with I<omega6>.
+
+When this option is present, it overrides I<$script_modifier> variable
+from the configuration file, which has the same effect. If this option
+is given multiple times all expressions are evaluated in the command
+line order.
+
+=back
+
+=head2 File generation phase
+
+In this phase, files needed for booting are generated in a so called
+I<build directory> (see L</--build-dir>). In most cases configuration
+for a bootloader is generated automatically by novaboot. It is also
+possible to generate other files using I<heredoc> or I<"<"> syntax in
+novaboot scripts. Finally, binaries can be generated in this phases by
+running C<scons> or C<make>.
+
+=over 8
+
+=item --build-dir=I<directory>
+
+Overrides the default build directory location.
+
+The default build directory location is determined as follows: If the
+configuration file defines the C<$builddir> variable, its value is
+used. Otherwise, it is the directory that contains the first processed
+novaboot script.
+
+See also L</BUILDDIR> variable.
+
+=item -g, --grub[=I<filename>]
+
+Generates grub bootloader menu file. If the I<filename> is not
+specified, F<menu.lst> is used. The I<filename> is relative to the
+build directory (see B<--build-dir>).
+
+=item --grub-preamble=I<prefix>
+
+Specifies the I<preable> that is at the beginning of the generated
+GRUB or GRUB2 config files. This is useful for specifying GRUB's
+timeout.
+
+=item --prefix=I<prefix>
+
+Specifies I<prefix> (e.g. F</srv/tftp>) that is put in front of every
+file name in generated bootloader configuration files (or in U-Boot
+commands).
+
+If the I<prefix> contains string $NAME, it will be replaced with the
+name of the novaboot script (see also B<--name>).
+
+If the I<prefix> contains string $BUILDDIR, it will be replaced with
+the build directory (see also B<--build-dir>).
+
+=item --grub-prefix
+
+Alias for B<--prefix>.
+
+=item --grub2[=I<filename>]
+
+Generate GRUB2 menu entry in I<filename>. If I<filename> is not
+specified F<grub.cfg> is used. The content of the menu entry can be
+customized with B<--grub-preamble>, B<--grub2-prolog> or
+B<--grub_prefix> options.
+
+In order to use the the generated menu entry on your development
+machine that uses GRUB2, append the following snippet to
+F</etc/grub.d/40_custom> file and regenerate your grub configuration,
+i.e. run update-grub on Debian/Ubuntu.
+
+  if [ -f /path/to/nul/build/grub.cfg ]; then
+    source /path/to/nul/build/grub.cfg
+  fi
+
+=item --grub2-prolog=I<prolog>
+
+Specifies text that is put at the beginning of the GRUB2 menu entry.
+
+=item -m, --make[=make command]
+
+Runs C<make> to build files that are not generated by novaboot itself.
+
+=item --name=I<string>
+
+Use the name I<string> instead of the name of the novaboot script.
+This name is used for things like a title of grub menu or for the
+server directory where the boot files are copied to.
+
+=item --no-file-gen
+
+Do not run external commands to generate files (i.e. "<" syntax and
+C<run> keyword). This switch does not influence generation of files
+specified with "<<WORD" syntax.
+
+=item -p, --pulsar[=mac]
+
+Generates pulsar bootloader configuration file named F<config-I<mac>>
+The I<mac> string is typically a MAC address and defaults to
+I<novaboot>.
+
+=item --scons[=scons command]
+
+Runs C<scons> to build files that are not generated by novaboot
+itself.
+
+=item --strip-rom
+
+Strip I<rom://> prefix from command lines and generated config files.
+The I<rom://> prefix is used by NUL. For NRE, it has to be stripped.
+
+=item --gen-only
+
+Exit novaboot after file generation phase.
+
+=back
+
+=head2 Target connection check
+
+If supported by the target, the connection to it is made and it is
+checked whether the target is not occupied by another novaboot
+user/instance.
+
+=over 8
+
+=item --amt=I<"[user[:password]@]host[:port]>
+
+Use Intel AMT technology to control the target machine. WS management
+is used to powercycle it and Serial-Over-Lan (SOL) for input/output.
+The hostname or (IP address) is given by the I<host> parameter. If
+I<password> is not specified, environment variable AMT_PASSWORD is
+used. The I<port> specifies a TCP port for SOL. If not specified, the
+default is 16992. Default I<user> is admin.
+
+=item --iprelay=I<addr[:port]>
+
+Use TCP/IP relay and serial port to access the target's serial port
+and powercycle it. The IP address of the relay is given by I<addr>
+parameter. If I<port> is not specified, it default to 23.
+
+Note: This option is supposed to work with HWG-ER02a IP relays.
+
+=item -s, --serial[=device]
+
+Target's serial line is connected to host's serial line (device). The
+default value for device is F</dev/ttyUSB0>.
+
+The value of this option is exported in NB_NOVABOOT environment
+variable to all subprocesses run by C<novaboot>.
+
+=item --stty=I<settings>
+
+Specifies settings passed to C<stty> invoked on the serial line
+specified with B<--serial> option. If this option is not given,
+C<stty> is called with C<raw -crtscts -onlcr 115200> settings.
+
+=item --remote-cmd=I<cmd>
+
+Command that mediates connection to the target's serial line. For
+example C<ssh server 'cu -l /dev/ttyS0'>.
+
+=item --remote-expect=I<string>
+
+Wait for reception of I<string> after establishing the remote
+connection.
+
+=item --remote-expect-silent=I<string>
+
+The same as B<--remote-expect> except that the remote output is not
+echoed to stdout while waiting for the I<string>. Everything after the
+matched string is printed to stdout, so you may want to include line
+end characters in the I<string> as well.
+
+=back
+
+=head2 File deployment phase
+
+In some setups, it is necessary to copy the files needed for booting
+to a particular location, e.g. to a TFTP boot server or to the
+F</boot> partition.
+
+=over 8
+
+=item -d, --dhcp-tftp
+
+Turns your workstation into a DHCP and TFTP server so that the OS can
+be booted via PXE BIOS (or similar mechanism) on the test machine
+directly connected by a plain Ethernet cable to your workstation.
+
+The DHCP and TFTP servers requires root privileges and C<novaboot>
+uses C<sudo> command to obtain those. You can put the following to
+I</etc/sudoers> to allow running the necessary commands without asking
+for password.
+
+ Cmnd_Alias NOVABOOT = /bin/ip a add 10.23.23.1/24 dev eth0, /bin/ip l set dev eth0 up, /usr/sbin/dhcpd -d -cf dhcpd.conf -lf dhcpd.leases -pf dhcpd.pid, /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/touch dhcpd.leases, /usr/bin/pkill --pidfile=dhcpd.pid, /usr/bin/pkill --pidfile=tftpd.pid
+ your_login ALL=NOPASSWD: NOVABOOT
+
+=item --tftp
+
+Starts a TFTP server on your workstation. This is similar to
+B<--dhcp-tftp> except that DHCP server is not started.
+
+The TFTP server require root privileges and C<novaboot> uses C<sudo>
+command to obtain those. You can put the following to I</etc/sudoers>
+to allow running the necessary commands without asking for password.
+
+ Cmnd_Alias NOVABOOT =  /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
+ your_login ALL=NOPASSWD: NOVABOOT
+
+=item --tftp-port=I<port>
+
+Port to run the TFTP server on. Implies B<--tftp>.
+
+=item --iso[=filename]
+
+Generates the ISO image that boots NOVA system via GRUB. If no filename
+is given, the image is stored under I<NAME>.iso, where I<NAME> is the name
+of the novaboot script (see also B<--name>).
+
+=item --server[=[[user@]server:]path]
+
+Copy all files needed for booting to another location. The files will
+be copied (by B<rsync> tool) to the directory I<path>. If the I<path>
+contains string $NAME, it will be replaced with the name of the
+novaboot script (see also B<--name>).
+
+=item --rsync-flags=I<flags>
+
+Specifies which I<flags> are appended to F<rsync> command line when
+copying files as a result of I<--server> option.
+
+=item --concat
+
+If B<--server> is used and its value ends with $NAME, then after
+copying the files, a new bootloader configuration file (e.g. menu.lst)
+is created at I<path-wo-name>, i.e. the path specified by B<--server>
+with $NAME part removed. The content of the file is created by
+concatenating all files of the same name from all subdirectories of
+I<path-wo-name> found on the "server".
+
+=item --ider
+
+Use Intel AMT technology for IDE redirection. This allows the target
+machine to boot from novaboot created ISO image. Implies B<--iso>.
+
+The experimental C<amtider> utility needed by this option can be
+obtained from https://github.com/wentasah/amtterm.
+
+=back
+
+=head2 Target power-on and reset phase
+
+At this point, the target is reset (or switched on/off). There is
+several ways how this can be accomplished. Resetting a physical target
+can currently be accomplished by the following options: B<--amt>,
+B<--iprelay>, B<--reset-cmd>.
+
+=over 8
+
+=item --on, --off
+
+Switch on/off the target machine and exit. The script (if any) is
+completely ignored. Currently it works only with B<--iprelay> or
+B<--amt>.
+
+=item -Q, --qemu[=I<qemu-binary>]
+
+Boot the configuration in qemu. Optionally, the name of qemu binary
+can be specified as a parameter.
+
+=item --qemu-append=I<flags>
+
+Append I<flags> to the default qemu flags (QEMU_FLAGS variable or
+C<-cpu coreduo -smp 2>).
+
+=item -q, --qemu-flags=I<flags>
+
+Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
+-smp 2>) with I<flags> specified here.
+
+=item --reset-cmd=I<cmd>
+
+Command that resets the target.
+
+=item --no-reset, --reset
+
+Disable/enable resetting of the target.
+
+=back
+
+=head2 Interaction with the bootloader on the target
+
+=over 8
+
+=item --uboot[=I<prompt>]
+
+Interact with U-Boot bootloader to boot the thing described in the
+novaboot script. I<prompt> specifies the U-Boot's prompt (default is
+"=> ", other common prompts are "U-Boot> " or "U-Boot# ").
+Implementation of this option is currently tied to a particular board
+that we use. It may be subject to changes in the future!
+
+=item --no-uboot
+
+Disable U-Boot interaction previously enabled with B<--uboot>.
+
+=item --uboot-init
+
+Command(s) to send the U-Boot bootloader before loading the images and
+booting them. This option can be given multiple times. After sending
+commands from each option novaboot waits for U-Boot I<prompt>.
+
+If the command contains string I<$NB_MYIP> then this string is
+replaced by IPv4 address of eth0 interface. Similarly I<$NB_PREFIX> is
+replaced with prefix given by B<--prefix>.
+
+See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
+
+=item --uboot-addr I<name>=I<address>
+
+Load address of U-Boot's C<tftpboot> command for loading I<name>,
+where name is one of I<kernel>, I<ramdisk> or I<fdt> (flattened device
+tree).
+
+The default addresses are ${I<name>_addr_r}, i.e. U-Boot environment
+variables used by convention for this purpose.
+
+=item --uboot-cmd=I<command>
+
+Specifies U-Boot command used to execute the OS. If the command
+contains strings C<$kernel_addr>, C<$ramdisk_addr>, C<$fdt_addr>,
+these are replaced with the addresses configured with B<--uboot-addr>.
+
+The default value is
+
+    bootm $kernel_addr $ramdisk_addr $fdt_addr
+
+or the C<UBOOT_CMD> variable if defined in the novaboot script.
+
+=back
+
+=head2 Target interaction phase
+
+In this phase, target's serial output is redirected to stdout and if
+stdin is a TTY, it is redirected to the target's serial input allowing
+interactive work with the target.
+
+=over 8
+
+=item --exiton=I<string>
+
+When I<string> is sent by the target, novaboot exits. This option can
+be specified multiple times, in which case novaboot exits whenever
+either of the specified strings is sent.
+
+If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
+treated as regular expression. For example:
+
+    --exiton -re --exiton 'error:.*failed'
+
+=item --exiton-re=I<regex>
+
+The same as --exiton -re --exiton I<regex>.
+
+=item --exiton-timeout=I<seconds>
+
+By default B<--exiton> waits for the string match forever. When this
+option is specified, "exiton" timeouts after the specifies number of
+seconds and novaboot returns non-zero exit code.
+
+=item -i, --interactive
+
+Setup things for interactive use of target. Your terminal will be
+switched to raw mode. In raw mode, your system does not process input
+in any way (no echoing of entered characters, no interpretation
+special characters). This, among others, means that Ctrl-C is passed
+to the target and does no longer interrupt novaboot. Use "~~."
+sequence to exit novaboot.
+
+=item --no-interaction, --interaction
+
+Skip resp. force target interaction phase. When skipped, novaboot exits
+immediately when boot is initiated.
+
+=item --expect=I<string>
+
+When I<string> is received from the target, send the string specified
+with the subsequent B<--send*> option to the target.
+
+=item --expect-re=I<regex>
+
+When target's output matches regular expression I<regex>, send the
+string specified with the subsequent B<--send*> option to the target.
+
+=item --expect-raw=I<perl-code>
+
+Provides direct control over Perl's Expect module.
+
+=item --send=I<string>
+
+Send I<string> to the target after the previously specified
+B<--expect*> was matched in the target's output. The I<string> may
+contain escape sequences such as "\n".
+
+Note that I<string> is actually interpreted by Perl, so it can contain
+much more that escape sequences. This behavior may change in the
+future.
+
+Example: C<--expect='login: ' --send='root\n'>
+
+=item --sendcont=I<string>
+
+Similar to B<--send> but continue expecting more input.
+
+Example: C<--expect='Continue?' --sendcont='yes\n'>
+
+=item --final-eol, --no-final-eol
+
+By default, B<novaboot> always prints an end-of-line character at the
+end of its execution in order to ensure that the output of programs
+started after novaboot appears at the beginning of the line. When this
+is not desired B<--no-final-eol> option can be used to override this
+behavior.
+
+=back
+
+=head1 NOVABOOT SCRIPT SYNTAX
+
+The syntax tries to mimic POSIX shell syntax. The syntax is defined
+with the following rules.
+
+Lines starting with "#" and empty lines are ignored.
+
+Lines that end with "\" are concatenated with the following line after
+removal of the final "\" and leading whitespace of the following line.
+
+Lines of the form I<VARIABLE=...> (i.e. matching '^[A-Z_]+=' regular
+expression) assign values to internal variables. See L</VARIABLES>
+section.
+
+Lines starting with C<load> keyword represent modules to boot. The
+word after C<load> is a file name (relative to the build directory
+(see B<--build-dir>) of the module to load and the remaining words are
+passed to it as the command line parameters.
+
+When the C<load> line ends with "<<WORD" then the subsequent lines
+until the line containing solely WORD are copied literally to the file
+named on that line. This is similar to shell's heredoc feature.
+
+When the C<load> line ends with "< CMD" then command CMD is executed
+with F</bin/sh> and its standard output is stored in the file named on
+that line. The SRCDIR variable in CMD's environment is set to the
+absolute path of the directory containing the interpreted novaboot
+script.
+
+Lines starting with C<run> keyword contain shell commands that are run
+during file generation phase. This is the same as the "< CMD" syntax
+for C<load> keyboard except that the command's output is not
+redirected to a file. The ordering of commands is the same as they
+appear in the novaboot script.
+
+Lines starting with C<uboot> represent U-Boot commands that are sent
+to the target if B<--uboot> option is given. Having a U-Boot line in
+the novaboot script is the same as passing an equivalent
+B<--uboot-init> option to novaboot. The C<uboot> keyword can be
+suffixed with timeout specification. The syntax is C<uboot:Ns>, where
+C<N> is the whole number of seconds. If the U-Boot command prompt does
+not appear before the timeout, novaboot fails. The default timeout is
+10 seconds.
+
+Example (Linux):
+
+  #!/usr/bin/env novaboot
+  load bzImage console=ttyS0,115200
+  run  make -C buildroot
+  load rootfs.cpio < gen_cpio buildroot/images/rootfs.cpio "myapp->/etc/init.d/S99myapp"
+
+Example (NOVA User Land - NUL):
+
+  #!/usr/bin/env novaboot
+  WVDESC=Example program
+  load bin/apps/sigma0.nul S0_DEFAULT script_start:1,1 \
+                           verbose hostkeyb:0,0x60,1,12,2
+  load bin/apps/hello.nul
+  load hello.nulconfig <<EOF
+  sigma0::mem:16 name::/s0/log name::/s0/timer name::/s0/fs/rom ||
+  rom://bin/apps/hello.nul
+  EOF
+
+This example will load three modules: F<sigma0.nul>, F<hello.nul> and
+F<hello.nulconfig>. sigma0 receives some command line parameters and
+F<hello.nulconfig> file is generated on the fly from the lines between
+C<<<EOF> and C<EOF>.
+
+=head2 VARIABLES
+
+The following variables are interpreted in the novaboot script:
+
+=over 8
+
+=item BUILDDIR
+
+Novaboot chdir()s to this directory before file generation phase. The
+directory name specified here is relative to the build directory
+specified by other means (see L</--build-dir>).
+
+=item EXITON
+
+Assigning this variable has the same effect as specifying L</--exiton>
+option.
+
+=item HYPERVISOR_PARAMS
+
+Parameters passed to hypervisor. The default value is "serial", unless
+overridden in configuration file.
+
+=item KERNEL
+
+The kernel to use instead of the hypervisor specified in the
+configuration file with the C<$hypervisor> variable. The value should
+contain the name of the kernel image as well as its command line
+parameters. If this variable is defined and non-empty, the variable
+HYPERVISOR_PARAMS is not used.
+
+=item NO_BOOT
+
+If this variable is 1, the system is not booted. This is currently
+only implemented for U-Boot bootloader where it is useful for
+interacting with the bootloader without booting the system - e.g. for
+flashing.
+
+=item QEMU
+
+Use a specific qemu binary (can be overridden with B<-Q>) and flags
+when booting this script under qemu. If QEMU_FLAGS variable is also
+specified flags specified in QEMU variable are replaced by those in
+QEMU_FLAGS.
+
+=item QEMU_FLAGS
+
+Use specific qemu flags (can be overridden with B<-q>).
+
+=item UBOOT_CMD
+
+See L</--uboot-cmd>.
+
+=item WVDESC
+
+Description of the WvTest-compliant program.
+
+=item WVTEST_TIMEOUT
+
+The timeout in seconds for WvTest harness. If no complete line appears
+in the test output within the time specified here, the test fails. It
+is necessary to specify this for long running tests that produce no
+intermediate output.
+
+=back
+
+=head1 CONFIGURATION FILES
+
+Novaboot can read its configuration from one or more files. By
+default, novaboot looks for files in F</etc/novaboot.d>, file
+F<~/.config/novaboot> and files named F<.novaboot> as described in
+L</Configuration reading phase>. Alternatively, configuration file
+location can be specified with the B<-c> switch or with the
+NOVABOOT_CONFIG environment variable. The configuration file has Perl
+syntax (i.e. it is better to put C<1;> as the last line) and should set
+values of certain Perl variables. The current configuration can be
+dumped with the B<--dump-config> switch. Some configuration variables
+can be overridden by environment variables (see below) or by command
+line switches.
+
+Supported configuration variables include:
+
+=over 8
+
+=item $builddir
+
+Build directory location relative to the location of the configuration
+file.
+
+=item $default_target
+
+Default target (see below) to use when no target is explicitly
+specified with the B<--target> command line option or
+B<NOVABOOT_TARGET> environment variable.
+
+=item %targets
+
+Hash of target definitions to be used with the B<--target> option. The
+key is the identifier of the target, the value is the string with
+command line options. For instance, if the configuration file contains:
+
+ $targets{'mybox'} = '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+
+then the following two commands are equivalent:
+
+ ./myos --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
+ ./myos -t mybox
+
+=back
+
+=head1 ENVIRONMENT VARIABLES
+
+Some options can be specified not only via config file or command line
+but also through environment variables. Environment variables override
+the values from configuration file and command line parameters
+override the environment variables.
+
+=over 8
+
+=item NOVABOOT_CONFIG
+
+Name of the novaboot configuration file to use instead of the default
+one(s).
+
+=item NOVABOOT_CONFIG_DIR
+
+Name of the novaboot configuration directory. When not specified
+F</etc/novaboot.d> is used.
+
+=item NOVABOOT_TARGET
+
+Name of the novaboot target to use. This overrides the value of
+B<$default_target> from the configuration file and can be overriden
+with the B<--target> command line option.
+
+=item NOVABOOT_BENDER
+
+Defining this variable has the same meaning as B<--bender> option.
+
+=back
+
+=head1 AUTHORS
+
+Michal Sojka <sojka@os.inf.tu-dresden.de>
+

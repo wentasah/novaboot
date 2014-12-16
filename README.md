@@ -35,7 +35,7 @@ only the **-t**/**--target** command line option to select the target.
 Internally, this option expands to the pre-configured options.
 Configuration files are searched at multiple places, which allows to
 have per-system, per-user or per-project configurations. Configuration
-file syntax is described in section ["CONFIGURATION FILE"](#configuration-file).
+file syntax is described in section ["CONFIGURATION FILES"](#configuration-files).
 
 Simple examples of using `novaboot`:
 
@@ -89,7 +89,7 @@ command line options that control it.
 ## Configuration reading phase
 
 After starting, novaboot reads configuration files. Their content is
-described in section ["CONFIGURATION FILE"](#configuration-file). By default,
+described in section ["CONFIGURATION FILES"](#configuration-files). By default,
 configuration is read from multiple locations. First from the system
 configuration directory (`/etc/novaboot.d/`), second from the user
 configuration file (`~/.config/novaboot`) and third from `.novaboot`
@@ -146,7 +146,7 @@ instead of the novaboot script directory.
     This option serves as a user configurable shortcut for other novaboot
     options. The effect of this option is the same as specifying the
     options stored in the `%targets` configuration variable under key
-    _target_. See also ["CONFIGURATION FILE"](#configuration-file).
+    _target_. See also ["CONFIGURATION FILES"](#configuration-files).
 
     When this option is not given, novaboot tries to determine the target
     to use from either **NOVABOOT\_TARGET** environment variable or from
@@ -712,7 +712,7 @@ The following variables are interpreted in the novaboot script:
     is necessary to specify this for long running tests that produce no
     intermediate output.
 
-# CONFIGURATION FILE
+# CONFIGURATION FILES
 
 Novaboot can read its configuration from one or more files. By
 default, novaboot looks for files in `/etc/novaboot.d`, file

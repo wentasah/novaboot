@@ -71,8 +71,20 @@ from it.
 
 Novaboot performs its work in several phases. Each phase can be
 influenced by several command line options, certain phases can be
-skipped. The list of phases (in the execution order) and the
-corresponding options follows.
+skipped. The list of phases (in the execution order) is as follows.
+
+- 1. [Configuration reading](#configuration-reading-phase)
+- 2. [Command line processing](#command-line-processing-phase)
+- 3. [Script preprocessing](#script-preprocessing-phase)
+- 4. [File generation](#file-generation-phase)
+- 5. [Target connection](#target-connection-check)
+- 6. [File deployment](#file-deployment-phase)
+- 7. [Target power-on and reset](#target-power-on-and-reset-phase)
+- 8. [Interaction with the bootloader](#interaction-with-the-bootloader-on-the-target)
+- 9. [Target interaction](#target-interaction-phase)
+
+Each phase is described in the following sections together with the
+command line options that control it.
 
 ## Configuration reading phase
 

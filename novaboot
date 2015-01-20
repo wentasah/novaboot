@@ -120,7 +120,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target = $ENV{'NOVABOOT_TARGET'};
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $reset, $reset_cmd, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
 
 # Default values of certain command line options
 %uboot_addr = (
@@ -134,6 +134,7 @@ $stty = 'raw -crtscts -onlcr 115200';
 $reset = 1;			# Reset target by default
 $interaction = 1;		# Perform target interaction by default
 $final_eol = 1;
+$netif = 'eth0';
 
 my @expect_seen = ();
 sub handle_expect
@@ -185,6 +186,7 @@ my %opt_spec;
     "interactive|i"  => \$interactive,
     "name=s"	     => \$config_name_opt,
     "make|m:s"	     => \$make,
+    "netif=s"	     => \$netif,
     "no-file-gen"    => \$no_file_gen,
     "off"	     => \$off_opt,
     "on"	     => \$on_opt,
@@ -983,7 +985,7 @@ if (defined $dhcp_tftp)
     system_verbose('mkdir -p tftpboot');
     generate_grub_config("tftpboot/os-menu.lst", $config_name, "(nd)", \@$modules, "timeout 0");
     open(my $fh, '>', 'dhcpd.conf');
-    my $mac = `cat /sys/class/net/eth0/address`;
+    my $mac = `cat /sys/class/net/$netif/address`;
     chomp $mac;
     print $fh "subnet 10.23.23.0 netmask 255.255.255.0 {
 		      range 10.23.23.10 10.23.23.100;
@@ -995,8 +997,8 @@ host server {
 	fixed-address 10.23.23.1;
 }";
     close($fh);
-    system_verbose("sudo ip a add 10.23.23.1/24 dev eth0;
-	    sudo ip l set dev eth0 up;
+    system_verbose("sudo ip a add 10.23.23.1/24 dev $netif;
+	    sudo ip l set dev $netif up;
 	    sudo touch dhcpd.leases");
 
     # We run servers by forking ourselves, because the servers end up
@@ -1076,7 +1078,7 @@ if (defined $uboot) {
 	    $timeout = 10;
 	}
 	if ($cmd =~ /\$NB_MYIP/) {
-	    my $ip = (grep /inet /, `ip addr show eth0`)[0] || die "Problem determining our IP address";
+	    my $ip = (grep /inet /, `ip addr show $netif`)[0] || die "Problem determining our IP address";
 	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;
 	    $cmd =~ s/\$NB_MYIP/$ip/g;
 	}
@@ -1619,6 +1621,13 @@ to allow running the necessary commands without asking for password.
 
 Port to run the TFTP server on. Implies B<--tftp>.
 
+=item --netif=I<network interface>
+
+Network interface used to deploy files to the target. Default value is
+I<eth0>. This influences the configuration of the DHCP server started
+by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with in
+U-Boot conversation.
+
 =item --iso[=filename]
 
 Generates the ISO image that boots NOVA system via GRUB. If no filename
@@ -1719,8 +1728,8 @@ booting them. This option can be given multiple times. After sending
 commands from each option novaboot waits for U-Boot I<prompt>.
 
 If the command contains string I<$NB_MYIP> then this string is
-replaced by IPv4 address of eth0 interface. Similarly I<$NB_PREFIX> is
-replaced with prefix given by B<--prefix>.
+replaced by IPv4 address of eth0 interface (see also B<--netif>).
+Similarly I<$NB_PREFIX> is replaced with prefix given by B<--prefix>.
 
 See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
 

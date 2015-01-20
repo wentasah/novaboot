@@ -439,6 +439,13 @@ to allow running the necessary commands without asking for password.
 
 Port to run the TFTP server on. Implies B<--tftp>.
 
+=item --netif=I<network interface>
+
+Network interface used to deploy files to the target. Default value is
+I<eth0>. This influences the configuration of the DHCP server started
+by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with in
+U-Boot conversation.
+
 =item --iso[=filename]
 
 Generates the ISO image that boots NOVA system via GRUB. If no filename
@@ -539,8 +546,8 @@ booting them. This option can be given multiple times. After sending
 commands from each option novaboot waits for U-Boot I<prompt>.
 
 If the command contains string I<$NB_MYIP> then this string is
-replaced by IPv4 address of eth0 interface. Similarly I<$NB_PREFIX> is
-replaced with prefix given by B<--prefix>.
+replaced by IPv4 address of eth0 interface (see also B<--netif>).
+Similarly I<$NB_PREFIX> is replaced with prefix given by B<--prefix>.
 
 See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
 

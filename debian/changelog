@@ -1,3 +1,10 @@
+novaboot (20150127a) unstable; urgency=medium
+
+  * Do not invoke rsync if there is nothing to copy
+  * uboot: Make loading files and booting independent
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 27 Jan 2015 14:49:18 +0100
+
 novaboot (20150127) unstable; urgency=medium
 
   * Add --netif option

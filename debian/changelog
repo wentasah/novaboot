@@ -1,3 +1,9 @@
+novaboot (20150127) unstable; urgency=medium
+
+  * Add --netif option
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Tue, 27 Jan 2015 12:20:44 +0100
+
 novaboot (20141216) unstable; urgency=medium
 
   * Do not use nproc to determine the number of processors

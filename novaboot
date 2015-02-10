@@ -1130,8 +1130,8 @@ if (defined $uboot) {
 	$exp->expect(5, $uboot_prompt)  || die "U-Boot prompt timeout";
 
     }
-    if (!$variables->{NO_BOOT}) {
-	$uboot_cmd //= $variables->{UBOOT_CMD} // 'bootm $kernel_addr $ramdisk_addr $fdt_addr';
+    $uboot_cmd //= $variables->{UBOOT_CMD} // 'bootm $kernel_addr $ramdisk_addr $fdt_addr';
+    if (!$variables->{NO_BOOT} && $uboot_cmd ne '') {
 	$uboot_cmd =~ s/\$kernel_addr/$uboot_addr{kernel}/g;
 	$uboot_cmd =~ s/\$ramdisk_addr/$uboot_addr{ramdisk}/g;
 	$uboot_cmd =~ s/\$fdt_addr/$uboot_addr{fdt}/g;

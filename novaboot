@@ -1198,21 +1198,21 @@ B<./script> [option]...
 
 =head1 DESCRIPTION
 
-This program makes booting of a locally compiled operating system (OS)
+Novaboot makes booting of a locally compiled operating system (OS)
 (e.g. NOVA or Linux) on remote targets as simple as running a program
 locally. It automates things like copying OS images to a TFTP server,
 generation of bootloader configuration files, resetting of target
 hardware or redirection of target's serial line to stdin/out. Novaboot
-is highly configurable and it makes it easy to boot a single image on
+is highly configurable and makes it easy to boot a single image on
 different targets or different images on a single target.
 
-Novaboot operation is controlled by command line options and by a so
-called novaboot script, which can be thought as a generalization of
-bootloader configuration files (see L</"NOVABOOT SCRIPT SYNTAX">).
-Typical way of using novaboot is to make the novaboot script
-executable and set its first line to I<#!/usr/bin/env novaboot>. Then,
-booting a particular OS configuration becomes the same as executing a
-local program - the novaboot script.
+Novaboot operation is controlled by configuration files, command line
+options and by a so called novaboot script, which can be thought as a
+generalization of bootloader configuration files (see L</"NOVABOOT
+SCRIPT SYNTAX">). Typical way of using novaboot is to make the
+novaboot script executable and set its first line to I<#!/usr/bin/env
+novaboot>. Then, booting a particular OS configuration becomes the
+same as executing a local program – the novaboot script.
 
 Novaboot uses configuration files to, among other things, define
 command line options needed for different targets. Users typically use

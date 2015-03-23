@@ -1,3 +1,4 @@
+=encoding utf8
 =head1 NAME
 
 novaboot - Boots a locally compiled operating system on a remote

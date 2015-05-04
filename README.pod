@@ -45,9 +45,12 @@ Simple examples of using C<novaboot>:
 =item 1.
 
 Run an OS in Qemu. This is can be specified with the B<--qemu> option.
-Thus running C<novaboot --qemu myos> (or C<./myos --qemu> as described
-above) will run Qemu and make it boot the configuration specified in
-the F<myos> script.
+Thus running
+
+ novaboot --qemu myos
+
+(or C<./myos --qemu> as described above) will run Qemu and make it
+boot the configuration specified in the F<myos> script.
 
 =item 2.
 
@@ -58,6 +61,11 @@ use a TCP/IP-controlled relay/serial-to-TCP converter to reset the
 target and receive its serial output.
 
  ./myos --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
+
+Alternatively, you can put these switches to the configuration file
+and run:
+
+ ./myos --target mytarget
 
 =item 3.
 

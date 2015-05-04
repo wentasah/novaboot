@@ -44,7 +44,7 @@ Simple examples of using C<novaboot>:
 
 =item 1.
 
-Run an OS in Qemu. This is can be specified with the B<--qemu> option.
+Run an OS in Qemu. This can be specified with the B<--qemu> option.
 Thus running
 
  novaboot --qemu myos

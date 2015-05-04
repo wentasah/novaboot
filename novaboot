@@ -2065,6 +2065,9 @@ Defining this variable has the same meaning as B<--bender> option.
 
 Michal Sojka <sojka@os.inf.tu-dresden.de>
 
+Latest novaboot version can be found at
+L<https://github.com/wentasah/novaboot>.
+
 =cut
 
 # LocalWords:  novaboot Novaboot NOVABOOT TFTP PXE DHCP filename stty

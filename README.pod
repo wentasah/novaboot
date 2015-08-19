@@ -497,7 +497,7 @@ obtained from https://github.com/wentasah/amtterm.
 At this point, the target is reset (or switched on/off). There is
 several ways how this can be accomplished. Resetting a physical target
 can currently be accomplished by the following options: B<--amt>,
-B<--iprelay>, B<--reset-cmd>.
+B<--iprelay>, B<--reset-cmd> and B<--reset-send>.
 
 =over 8
 
@@ -525,6 +525,11 @@ Replace the default qemu flags (QEMU_FLAGS variable or C<-cpu coreduo
 =item --reset-cmd=I<cmd>
 
 Command that resets the target.
+
+=item --reset-send=I<string>
+
+Reset the target by sending the given I<string> to the remote serial
+line. "\n" sequences are replaced with newline character.
 
 =item --no-reset, --reset
 

@@ -1402,9 +1402,10 @@ command line. This option can appear multiple times.
 
 =item -b, --bender
 
-Use F<bender> chainloader. Bender scans the PCI bus for PCI serial
-ports and stores the information about them in the BIOS data area for
-use by the kernel.
+Use L<bender|https://github.com/TUD-OS/morbo/blob/master/standalone/bender.c>
+chainloader. Bender scans the PCI bus for PCI serial ports and stores
+the information about them in the BIOS data area for use by the
+kernel.
 
 =item --chainloader=I<chainloader>
 
@@ -2070,7 +2071,8 @@ with the B<--target> command line option.
 
 =item NOVABOOT_BENDER
 
-Defining this variable has the same meaning as B<--bender> option.
+Defining this variable has the same effect as using B<--bender>
+option.
 
 =back
 

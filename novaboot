@@ -1099,7 +1099,13 @@ if (defined $uboot) {
 	}
 	chomp($cmd);
 	$exp->send("$cmd\n");
-	$exp->expect($timeout, $uboot_prompt) || die "U-Boot prompt timeout";
+
+	my ($matched_pattern_position, $error,
+	    $successfully_matching_string,
+	    $before_match, $after_match) =
+		$exp->expect($timeout, $uboot_prompt);
+	die "No U-Boot prompt: $error" if $error;
+	#print "\n>>>>$before_match<<<<\n";
     }
 
     # Load files if there are some load lines in the script

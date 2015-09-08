@@ -370,9 +370,16 @@ while (!$skip_reading && ($_ = <>)) {
     if (/^uboot(?::([0-9]+)s)? +(< *)?(.*)/) {	# uboot line
 	# TODO: If U-Boot supports some interactive menu, it might
 	# make sense to store uboot lines per novaboot script.
-	push @uboot_init, { command => $2 ? "" : $3,
-			    system =>  $2 ? $3 : "",
-			    timeout => $1 // 10 };
+	my ($timeout, $redir, $string, $dest) = ($1, $2, $3);
+	if ($string =~ /(.*) *> *(.*)/) {
+	    $string = $1;
+	    $dest = $2;
+	}
+	push @uboot_init, { command => $redir ? "" : $string,
+			    system =>  $redir ? $string : "",
+			    timeout => $timeout,
+			    dest => $dest,
+	};
 	next;
     }
 
@@ -1111,7 +1118,12 @@ if (defined $uboot) {
 	    $before_match, $after_match) =
 		$exp->expect($timeout, $uboot_prompt);
 	die "No U-Boot prompt: $error" if $error;
-	#print "\n>>>>$before_match<<<<\n";
+
+	if ($cmdspec->{dest}) {
+	    open(my $fh, ">", $cmdspec->{dest}) or die "Cannot open '$cmdspec->{dest}': $!";
+	    print $fh $before_match;
+	    close($fh);
+	}
     }
 
     # Load files if there are some load lines in the script
@@ -1939,8 +1951,8 @@ script is the same as giving B<--uboot-init> option to novaboot. The
 following syntax variants are supported:
 
 
-  uboot[:<timeout>] <string>
-  uboot[:<timeout>] < <shell>
+  uboot[:<timeout>] <string> [> <file>]
+  uboot[:<timeout>] < <shell> [> <file>]
 
 C<string> is the literal U-Boot command.
 
@@ -1953,6 +1965,9 @@ In the second variant with the C<<> character the shell code is
 executed and its standard output is sent to U-Boot. Example:
 
   uboot < printf "mmc write \$loadaddr 1 %x" $(($(/usr/bin/stat -c%s rootfs.ext4) / 512))
+
+When C<E<gt> file> part is present, the output of the U-Boot command
+is written into the given file.
 
 =back
 

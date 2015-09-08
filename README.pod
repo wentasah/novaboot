@@ -734,8 +734,8 @@ script is the same as giving B<--uboot-init> option to novaboot. The
 following syntax variants are supported:
 
 
-  uboot[:<timeout>] <string>
-  uboot[:<timeout>] < <shell>
+  uboot[:<timeout>] <string> [> <file>]
+  uboot[:<timeout>] < <shell> [> <file>]
 
 C<string> is the literal U-Boot command.
 
@@ -748,6 +748,9 @@ In the second variant with the C<<> character the shell code is
 executed and its standard output is sent to U-Boot. Example:
 
   uboot < printf "mmc write \$loadaddr 1 %x" $(($(/usr/bin/stat -c%s rootfs.ext4) / 512))
+
+When C<E<gt> file> part is present, the output of the U-Boot command
+is written into the given file.
 
 =back
 

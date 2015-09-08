@@ -216,7 +216,7 @@ my %opt_spec;
     "no-uboot"	     => sub { undef $uboot; },
     "uboot-addr=s"   => \%uboot_addr,
     "uboot-cmd=s"    => \$uboot_cmd,
-    "uboot-init=s"   => \@uboot_init,
+    "uboot-init=s"   => sub { push @uboot_init, { command => $_[1] }; },
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
@@ -1084,17 +1084,15 @@ if (defined $uboot) {
 		 $uboot_prompt) || die "No U-Boot prompt deteceted";
     foreach my $cmdspec (@uboot_init) {
 	my ($cmd, $timeout);
-	if (ref($cmdspec) eq "HASH") {
-	    if ($cmdspec->{system}) {
-		$cmd = `$cmdspec->{system}`;
-	    } else {
-		$cmd = $cmdspec->{command};
-	    }
-	    $timeout = $cmdspec->{timeout};
+	die "Internal error - please report a bug" unless ref($cmdspec) eq "HASH";
+
+	if ($cmdspec->{system}) {
+	    $cmd = `$cmdspec->{system}`;
 	} else {
-	    $cmd = $cmdspec;
-	    $timeout = 10;
+	    $cmd = $cmdspec->{command};
 	}
+	$timeout = $cmdspec->{timeout} // 10;
+
 	if ($cmd =~ /\$NB_MYIP/) {
 	    my $ip = (grep /inet /, `ip addr show $netif`)[0] || die "Problem determining IP address of $netif";
 	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;

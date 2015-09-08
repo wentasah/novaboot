@@ -1088,7 +1088,7 @@ if (defined $uboot) {
 	    $timeout = 10;
 	}
 	if ($cmd =~ /\$NB_MYIP/) {
-	    my $ip = (grep /inet /, `ip addr show $netif`)[0] || die "Problem determining our IP address";
+	    my $ip = (grep /inet /, `ip addr show $netif`)[0] || die "Problem determining IP address of $netif";
 	    $ip =~ s/\s*inet ([0-9.]*).*/$1/;
 	    $cmd =~ s/\$NB_MYIP/$ip/g;
 	}

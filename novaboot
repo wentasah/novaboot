@@ -296,7 +296,7 @@ my @scripts;
 my $file;
 my $EOF;
 my $last_fn = '';
-my ($modules, $variables, $generated, $continuation) = ([], {}, []);
+my ($modules, $variables, $generated, $copy, $continuation) = ([], {}, [], []);
 my $skip_reading = defined($on_opt) || defined($off_opt);
 while (!$skip_reading && ($_ = <>)) {
     if ($ARGV ne $last_fn) { # New script
@@ -306,7 +306,9 @@ while (!$skip_reading && ($_ = <>)) {
 	push @scripts, { 'filename' => $ARGV,
 			 'modules' => $modules = [],
 			 'variables' => $variables = {},
-			 'generated' => $generated = []};
+			 'generated' => $generated = [],
+			 'copy' => $copy = [],
+	};
 
     }
     chomp();
@@ -339,21 +341,26 @@ while (!$skip_reading && ($_ = <>)) {
 	push(@exiton, $2) if ($1 eq "EXITON");
 	next;
     }
-    if (s/^load *//) {		# Load line
+    sub process_load_copy($) {
 	die("novaboot: '$last_fn' line $.: Missing file name\n") unless /^[^ <]+/;
 	if (/^([^ ]*)(.*?)[[:space:]]*<<([^ ]*)$/) { # Heredoc start
-	    push @$modules, "$1$2";
 	    $file = [];
 	    push @$generated, {filename => $1, content => $file};
 	    $EOF = $3;
-	    next;
+	    return "$1$2";
 	}
 	if (/^([^ ]*)(.*?)[[:space:]]*< ?(.*)$/) { # Command substitution
-	    push @$modules, "$1$2";
 	    push @$generated, {filename => $1, command => $3};
-	    next;
+	    return "$1$2";
 	}
-	push @$modules, $_;
+	return $_;
+    }
+    if (s/^load *//) {		# Load line
+	push @$modules, process_load_copy($_);
+	next;
+    }
+    if (s/^copy *//) {		# Copy line
+	push @$copy, process_load_copy($_);
 	next;
     }
     if (/^run (.*)/) {		# run line
@@ -874,7 +881,7 @@ foreach my $script (@scripts) {
 	    $path = $hostname;
 	    $hostname = "";
 	}
-	my $files = join(" ", map({ ($file) = m/([^ ]*)/; $file; } ( @$modules, @bootloader_configs)));
+	my $files = join(" ", map({ ($file) = m/([^ ]*)/; $file; } ( @$modules, @bootloader_configs, @$copy)));
 	map({ my $file = (split)[0]; die "$file: $!" if ! -f $file; } @$modules);
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
@@ -1901,6 +1908,12 @@ with F</bin/sh> and its standard output is stored in the file named on
 that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
+
+Lines starting with C<copy> keyword are similar to C<load> lines. The
+file mentioned there is copied to the same place as in case of C<load>
+(e.g. tftp server), but the file is not used in the bootloader
+configuration. Such a file can be used by the target for other
+purposed than booting, e.g. at OS runtime or for firmware update.
 
 Lines starting with C<run> keyword contain shell commands that are run
 during file generation phase. This is the same as the "< CMD" syntax

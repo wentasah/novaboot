@@ -728,14 +728,26 @@ appear in the novaboot script.
 
 =item C<uboot>
 
-Lines starting with C<uboot> represent U-Boot commands that are sent
-to the target if B<--uboot> option is given. Having a U-Boot line in
-the novaboot script is the same as passing an equivalent
-B<--uboot-init> option to novaboot. The C<uboot> keyword can be
-suffixed with timeout specification. The syntax is C<uboot:Ns>, where
-C<N> is the whole number of seconds. If the U-Boot command prompt does
-not appear before the timeout, novaboot fails. The default timeout is
-10 seconds.
+These lines represent U-Boot commands that are sent to the target if
+B<--uboot> option is given. Having a U-Boot line in the novaboot
+script is the same as giving B<--uboot-init> option to novaboot. The
+following syntax variants are supported:
+
+
+  uboot[:<timeout>] <string>
+  uboot[:<timeout>] < <shell>
+
+C<string> is the literal U-Boot command.
+
+The C<uboot> keyword can be suffixed with timeout specification. The
+syntax is C<uboot:Ns>, where C<N> is the whole number of seconds. If
+the U-Boot command prompt does not appear before the timeout, novaboot
+fails. The default timeout is 10 seconds.
+
+In the second variant with the C<<> character the shell code is
+executed and its standard output is sent to U-Boot. Example:
+
+  uboot < printf "mmc write \$loadaddr 1 %x" $(($(/usr/bin/stat -c%s rootfs.ext4) / 512))
 
 =back
 

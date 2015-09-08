@@ -1995,6 +1995,28 @@ F<hello.nulconfig>. sigma0 receives some command line parameters and
 F<hello.nulconfig> file is generated on the fly from the lines between
 C<<<EOF> and C<EOF>.
 
+Example (Zynq system update via U-Boot):
+
+  #!/usr/bin/env novaboot
+
+  uboot dhcp
+
+  # Write kernel to FAT filesystem on the 1st SD card partition
+  run mkimage -f uboot-image.its image.ub
+  copy image.ub
+  uboot:60s tftpboot ${loadaddr} $NB_PREFIX/image.ub
+  uboot fatwrite mmc 0:1 ${loadaddr} image.ub $filesize
+  uboot set bootargs console=ttyPS0,115200 root=/dev/mmcblk0p2
+
+  # Write root FS image to the 2nd SD card partition
+  copy rootfs/images/rootfs.ext4
+  uboot:60s tftpboot ${loadaddr} $NB_PREFIX/rootfs/images/rootfs.ext4
+  uboot mmc part > mmc-part.txt
+  uboot < printf "mmc write \$loadaddr %x %x" $(awk '{ if ($1 == "2") { print $2 }}' mmc-part.txt) $(($(/usr/bin/stat -L --printf=%s rootfs/images/rootfs.ext4) / 512))
+
+  UBOOT_CMD=boot
+
+
 =head2 VARIABLES
 
 The following variables are interpreted in the novaboot script:

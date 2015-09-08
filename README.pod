@@ -688,7 +688,14 @@ Lines of the form I<VARIABLE=...> (i.e. matching '^[A-Z_]+=' regular
 expression) assign values to internal variables. See L</VARIABLES>
 section.
 
-Lines starting with C<load> keyword represent modules to boot. The
+Otherwise, the first word on the line defines the meaning of the line.
+The following keywords are supported:
+
+=over 4
+
+=item C<load>
+
+These lines represent modules to boot. The
 word after C<load> is a file name (relative to the build directory
 (see B<--build-dir>) of the module to load and the remaining words are
 passed to it as the command line parameters.
@@ -703,17 +710,23 @@ that line. The SRCDIR variable in CMD's environment is set to the
 absolute path of the directory containing the interpreted novaboot
 script.
 
-Lines starting with C<copy> keyword are similar to C<load> lines. The
+=item C<copy>
+
+These lines are similar to C<load> lines. The
 file mentioned there is copied to the same place as in case of C<load>
 (e.g. tftp server), but the file is not used in the bootloader
 configuration. Such a file can be used by the target for other
 purposed than booting, e.g. at OS runtime or for firmware update.
+
+=item C<run>
 
 Lines starting with C<run> keyword contain shell commands that are run
 during file generation phase. This is the same as the "< CMD" syntax
 for C<load> keyboard except that the command's output is not
 redirected to a file. The ordering of commands is the same as they
 appear in the novaboot script.
+
+=item C<uboot>
 
 Lines starting with C<uboot> represent U-Boot commands that are sent
 to the target if B<--uboot> option is given. Having a U-Boot line in
@@ -723,6 +736,8 @@ suffixed with timeout specification. The syntax is C<uboot:Ns>, where
 C<N> is the whole number of seconds. If the U-Boot command prompt does
 not appear before the timeout, novaboot fails. The default timeout is
 10 seconds.
+
+=back
 
 Example (Linux):
 

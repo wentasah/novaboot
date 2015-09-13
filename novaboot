@@ -868,7 +868,11 @@ foreach my $script (@scripts) {
 
 ### Run scons or make
     {
-	my @files = map({ ($file) = m/([^ ]*)/; $file; } @$modules);
+	my @all;
+	push @all, @$modules;
+	push @all, @$copy;
+	my @files = map({ ($file) = m/([^ ]*)/; $file; } @all);
+
 	# Filter-out generated files
 	my @to_build = grep({ my $file = $_; !scalar(grep($file eq ($$_{filename} || ''), @$generated)) } @files);
 

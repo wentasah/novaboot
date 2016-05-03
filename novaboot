@@ -992,7 +992,9 @@ if (defined $qemu) {
 	    push(@qemu_flags, ('-dtb', $dtb)) if $dtb;
 	}
     }
-    push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
+    if (!grep /^-serial$/, @qemu_flags) {
+	push(@qemu_flags,  qw(-serial stdio)); # Redirect serial output (for collecting test restuls)
+    }
     unshift(@qemu_flags, ('-name', $config_name));
     print STDERR "novaboot: Running: ".shell_cmd_string($qemu, @qemu_flags)."\n";
     $exp = Expect->spawn(($qemu, @qemu_flags)) || die("exec() failed: $!");

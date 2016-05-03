@@ -235,6 +235,11 @@ my %opt_spec;
 	push(@target_expanded, @$remaining_args);
 	$t = $explicit_target;
     }
+
+    (undef, my @args) = @ARGV;
+    @args = (@target_expanded, @args);
+    print STDERR "novaboot: Effective options: @args\n";
+
     Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);
     GetOptionsFromArray(\@target_expanded, %opt_spec) or die ("Error in target definition");
 }

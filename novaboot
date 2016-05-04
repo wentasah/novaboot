@@ -301,7 +301,7 @@ my @scripts;
 my $file;
 my $EOF;
 my $last_fn = '';
-my ($modules, $variables, $generated, $copy, $continuation) = ([], {}, [], []);
+my ($modules, $variables, $generated, $copy, $chainload, $continuation) = ([], {}, [], []);
 my $skip_reading = defined($on_opt) || defined($off_opt);
 while (!$skip_reading && ($_ = <>)) {
     if ($ARGV ne $last_fn) { # New script
@@ -313,6 +313,7 @@ while (!$skip_reading && ($_ = <>)) {
 			 'variables' => $variables = {},
 			 'generated' => $generated = [],
 			 'copy' => $copy = [],
+			 'chainload' => $chainload = [],
 	};
 
     }
@@ -366,6 +367,10 @@ while (!$skip_reading && ($_ = <>)) {
     }
     if (s/^copy *//) {		# Copy line
 	push @$copy, process_load_copy($_);
+	next;
+    }
+    if (s/^chld *//) {		# Chainload line
+	push @$chainload, process_load_copy($_);
 	next;
     }
     if (/^run (.*)/) {		# run line
@@ -535,26 +540,30 @@ sub generate_grub2_config($$$$;$$)
     return $filename;
 }
 
-sub generate_pulsar_config($$)
+sub generate_pulsar_config($$$)
 {
-    my ($filename, $modules_ref) = @_;
+    my ($filename, $modules_ref, $chainload_ref) = @_;
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "root $pulsar_root\n" if defined $pulsar_root;
-    my $first = 1;
-    my ($kbin, $kcmd);
-    foreach (@$modules_ref) {
-	if ($first) {
-	    $first = 0;
-	    ($kbin, $kcmd) = split(' ', $_, 2);
-	    $kcmd = '' if !defined $kcmd;
-	} else {
-	    my @args = split;
-	    s|\brom://|$rom_prefix|g;
-	    print $fg "load $_\n";
+    if (scalar(@$chainload_ref) > 0) {
+	print $fg "chld $$chainload_ref[0]\n";
+    } else {
+	my $first = 1;
+	my ($kbin, $kcmd);
+	foreach (@$modules_ref) {
+	    if ($first) {
+		$first = 0;
+		($kbin, $kcmd) = split(' ', $_, 2);
+		$kcmd = '' if !defined $kcmd;
+	    } else {
+		my @args = split;
+		s|\brom://|$rom_prefix|g;
+		print $fg "load $_\n";
+	    }
 	}
+	# Put kernel as last - this is needed for booting Linux and has no influence on non-Linux OSes
+	print $fg "exec $kbin $kcmd\n";
     }
-    # Put kernel as last - this is needed for booting Linux and has no influence on non-Linux OSes
-    print $fg "exec $kbin $kcmd\n";
     close($fg);
     print("novaboot: Created $builddir/$filename\n");
     return $filename;
@@ -869,13 +878,14 @@ foreach my $script (@scripts) {
     my @bootloader_configs;
     push @bootloader_configs, generate_grub_config($grub_config, $config_name, $prefix, $modules, $grub_preamble) if (defined $grub_config);
     push @bootloader_configs, generate_grub2_config($grub2_config, $config_name, $prefix, $modules, $grub_preamble, $grub2_prolog) if (defined $grub2_config);
-    push @bootloader_configs, generate_pulsar_config('config-'.($pulsar||'novaboot'), $modules) if (defined $pulsar);
+    push @bootloader_configs, generate_pulsar_config('config-'.($pulsar||'novaboot'), $modules, $chainload) if (defined $pulsar);
 
 ### Run scons or make
     {
 	my @all;
 	push @all, @$modules;
 	push @all, @$copy;
+	push @all, @$chainload;
 	my @files = map({ ($file) = m/([^ ]*)/; $file; } @all);
 
 	# Filter-out generated files
@@ -1945,6 +1955,16 @@ file mentioned there is copied to the same place as in case of C<load>
 (e.g. tftp server), but the file is not used in the bootloader
 configuration. Such a file can be used by the target for other
 purposed than booting, e.g. at OS runtime or for firmware update.
+
+=item C<chld>
+
+Chainload another bootloader. Instead of loading multiboot modules
+identified with C<load> keyword, run another bootloader. This is
+currently supported only by pulsar and can be used to load e.g. Grub
+as in the example below:
+
+ chld boot/grub/i386-pc/core.0
+
 
 =item C<run>
 

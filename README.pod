@@ -718,6 +718,16 @@ file mentioned there is copied to the same place as in case of C<load>
 configuration. Such a file can be used by the target for other
 purposed than booting, e.g. at OS runtime or for firmware update.
 
+=item C<chld>
+
+Chainload another bootloader. Instead of loading multiboot modules
+identified with C<load> keyword, run another bootloader. This is
+currently supported only by pulsar and can be used to load e.g. Grub
+as in the example below:
+
+ chld boot/grub/i386-pc/core.0
+
+
 =item C<run>
 
 Lines starting with C<run> keyword contain shell commands that are run

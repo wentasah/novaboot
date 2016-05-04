@@ -19,6 +19,13 @@ create_dummy
 WVPASS ./script --gen-only --pulsar --pulsar-root=ASDF
 WVPASS grep "root ASDF" config-novaboot
 
+WVSTART Pulsar supports chld
+create_script <<EOF
+chld grub
+EOF
+WVPASS ./script --gen-only --pulsar
+WVPASS grep "chld grub" config-novaboot
+
 WVSTART Configuration files
 create_dummy
 echo '1;' > .novaboot

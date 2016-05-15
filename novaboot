@@ -1222,7 +1222,10 @@ if ($interaction && defined $exp) {
 	#use Data::Dumper;
 	#print Dumper(\@expect_raw);
 	$exp->expect(undef, @expect_raw) if @expect_raw;
+
+	$^W = 0; # Suppress Expect warning: handle id(3) is not a tty. Not changing mode at /usr/share/perl5/Expect.pm line 393, <> line 8.
 	Expect::interconnect(@inputs) unless defined($exp->exitstatus);
+	$^W = 1;
     }
 }
 

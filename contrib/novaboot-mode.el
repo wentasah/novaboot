@@ -1,6 +1,6 @@
 ;;; novaboot-mode.el --- Major mode for novaboot scripts
 
-;; Copyright (C) 2014, 2015  Michal Sojka
+;; Copyright (C) 2014, 2015, 2016  Michal Sojka
 
 ;; Author: Michal Sojka <sojkam1@fel.cvut.cz>
 ;; Keywords: languages, tools, files
@@ -41,14 +41,14 @@
 (defvar novaboot-mode-font-lock-keywords)
 (setq novaboot-mode-font-lock-keywords
   `(("^#.*" . font-lock-comment-face)
-    ("^\\(?:load\\|copy\\)\\>.*\\(<<EOF\\)\n\\(\\(?:.*\n\\)*?\\)\\(EOF\\)\n"
+    ("^\\(?:load\\|copy\\|chld\\)\\>.*\\(<<EOF\\)\n\\(\\(?:.*\n\\)*?\\)\\(EOF\\)\n"
      (1 font-lock-preprocessor-face)
      (2 font-lock-string-face)
      (3 font-lock-preprocessor-face))
-    ("^\\(load\\|copy\\)\\s-+\\([^ \n\t]*\\)"
+    ("^\\(load\\|copy\\|chld\\)\\s-+\\([^ \n\t]*\\)"
      (1 font-lock-keyword-face)
      (2 font-lock-function-name-face))
-    ("^\\(?:load\\|copy\\)\\>.*?< \\(.*\\)"
+    ("^\\(?:load\\|copy\\|chld\\)\\>.*?< \\(.*\\)"
      (1 font-lock-string-face))
     ("^\\(run\\|uboot\\)\\>" . font-lock-keyword-face)
     ("^\\([A-Z_]+\\)=" (1 font-lock-variable-name-face))

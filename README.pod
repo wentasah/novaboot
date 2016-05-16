@@ -23,9 +23,9 @@ is highly configurable and makes it easy to boot a single image on
 different targets or different images on a single target.
 
 Novaboot operation is controlled by configuration files, command line
-options and by a so called novaboot script, which can be thought as a
+options and by a so-called novaboot script, which can be thought as a
 generalization of bootloader configuration files (see L</"NOVABOOT
-SCRIPT SYNTAX">). Typical way of using novaboot is to make the
+SCRIPT SYNTAX">). The typical way of using novaboot is to make the
 novaboot script executable and set its first line to I<#!/usr/bin/env
 novaboot>. Then, booting a particular OS configuration becomes the
 same as executing a local program – the novaboot script.
@@ -124,7 +124,7 @@ command line options that control it.
 
 After starting, novaboot reads configuration files. Their content is
 described in section L</"CONFIGURATION FILES">. By default,
-configuration is read from multiple locations. First from the system
+the configuration is read from multiple locations. First from the system
 configuration directory (F</etc/novaboot.d/>), second from the user
 configuration file (F<~/.config/novaboot>) and third from F<.novaboot>
 files along the path to the current directory. Alternatively, a single
@@ -139,14 +139,14 @@ solely of English letters, numbers, dashes '-' and underscores '_'
 (note that dot '.' is not included) are read in alphabetical order.
 
 Then, the user configuration file is read from
-F<$XDG_CONFIG_HOME/novaboot>. If C<$XDG_CONFIG_HOME> environemnt
+F<$XDG_CONFIG_HOME/novaboot>. If C<$XDG_CONFIG_HOME> environment
 variable is not set F<~/.config/novaboot> is read instead.
 
 Finally, novaboot searches for files named F<.novaboot> starting from the
 directory of the novaboot script (or working directory, see bellow)
 and continuing upwards up to the root directory. The found
 configuration files are then read in the opposite order (i.e. from the
-root directory downwards). This allows to have, for example, a project
+root directory downwards). This allows having, for example, a project
 specific configuration in F<~/project/.novaboot>.
 
 Note the difference between F<~/.config/novaboot> and F<~/.novaboot>.
@@ -156,7 +156,7 @@ script or working directory is under the C<$HOME> directory.
 In certain cases, the location of the novaboot script cannot be
 determined in this early phase. This happens either when the script is
 read from the standard input or when novaboot is invoked explicitly as
-in the example L</"4."> above. In this case the current working
+in the example L</"4."> above. In this case, the current working
 directory is used as a starting point for configuration file search
 instead of the novaboot script directory.
 
@@ -196,7 +196,7 @@ B<$default_target> configuration file variable.
 
 =head2 Script preprocessing phase
 
-This phases allows to modify the parsed novaboot script before it is
+This phase allows modifying the parsed novaboot script before it is
 used in the later phases.
 
 =over 8
@@ -222,7 +222,7 @@ promisc'.
 
 =item --dump
 
-Print the modules to boot and their parameters after this phase
+Print the modules to boot and their parameters, after this phase
 finishes. Then exit. This is useful for seeing the effect of other
 options in this section.
 
@@ -231,9 +231,9 @@ options in this section.
 Replace the first word on the first C<load> line in the novaboot
 script with F<file>.
 
-=item --scriptmod=I<perl expression>
+=item --scriptmod=I<Perl expression>
 
-When novaboot script is read, I<perl expression> is executed for every
+When novaboot script is read, I<Perl expression> is executed for every
 line (in $_ variable). For example, C<novaboot
 --scriptmod=s/sigma0/omega6/g> replaces every occurrence of I<sigma0>
 in the script with I<omega6>.
@@ -247,7 +247,7 @@ line order.
 
 =head2 File generation phase
 
-In this phase, files needed for booting are generated in a so called
+In this phase, files needed for booting are generated in a so-called
 I<build directory> (see L</--build-dir>). In most cases configuration
 for a bootloader is generated automatically by novaboot. It is also
 possible to generate other files using I<heredoc> or I<"<"> syntax in
@@ -275,14 +275,14 @@ build directory (see B<--build-dir>).
 
 =item --grub-preamble=I<prefix>
 
-Specifies the I<preable> that is at the beginning of the generated
+Specifies the I<preamble> that is at the beginning of the generated
 GRUB or GRUB2 config files. This is useful for specifying GRUB's
 timeout.
 
 =item --prefix=I<prefix>
 
 Specifies I<prefix> (e.g. F</srv/tftp>) that is put in front of every
-file name in generated bootloader configuration files (or in U-Boot
+filename in generated bootloader configuration files (or in U-Boot
 commands).
 
 If the I<prefix> contains string $NAME, it will be replaced with the
@@ -302,7 +302,7 @@ specified F<grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
 
-In order to use the the generated menu entry on your development
+In order to use the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to
 F</etc/grub.d/40_custom> file and regenerate your grub configuration,
 i.e. run update-grub on Debian/Ubuntu.
@@ -374,7 +374,7 @@ default is 16992. Default I<user> is admin.
 
 Use TCP/IP relay and serial port to access the target's serial port
 and powercycle it. The IP address of the relay is given by I<addr>
-parameter. If I<port> is not specified, it default to 23.
+parameter. If I<port> is not specified, it defaults to 23.
 
 Note: This option is supposed to work with HWG-ER02a IP relays.
 
@@ -425,7 +425,7 @@ Turns your workstation into a DHCP and TFTP server so that the OS can
 be booted via PXE BIOS (or similar mechanism) on the test machine
 directly connected by a plain Ethernet cable to your workstation.
 
-The DHCP and TFTP servers requires root privileges and C<novaboot>
+The DHCP and TFTP servers require root privileges and C<novaboot>
 uses C<sudo> command to obtain those. You can put the following to
 I</etc/sudoers> to allow running the necessary commands without asking
 for password.
@@ -438,7 +438,7 @@ for password.
 Starts a TFTP server on your workstation. This is similar to
 B<--dhcp-tftp> except that DHCP server is not started.
 
-The TFTP server require root privileges and C<novaboot> uses C<sudo>
+The TFTP server requires root privileges and C<novaboot> uses C<sudo>
 command to obtain those. You can put the following to I</etc/sudoers>
 to allow running the necessary commands without asking for password.
 
@@ -453,7 +453,7 @@ Port to run the TFTP server on. Implies B<--tftp>.
 
 Network interface used to deploy files to the target. Default value is
 I<eth0>. This influences the configuration of the DHCP server started
-by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with in
+by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with during
 U-Boot conversation.
 
 =item --iso[=filename]
@@ -495,7 +495,7 @@ obtained from https://github.com/wentasah/amtterm.
 
 =head2 Target power-on and reset phase
 
-At this point, the target is reset (or switched on/off). There is
+At this point, the target is reset (or switched on/off). There are
 several ways how this can be accomplished. Resetting a physical target
 can currently be accomplished by the following options: B<--amt>,
 B<--iprelay>, B<--reset-cmd> and B<--reset-send>.
@@ -505,7 +505,7 @@ B<--iprelay>, B<--reset-cmd> and B<--reset-send>.
 =item --on, --off
 
 Switch on/off the target machine and exit. The script (if any) is
-completely ignored. Currently it works only with B<--iprelay> or
+completely ignored. Currently, it works only with B<--iprelay> or
 B<--amt>.
 
 =item -Q, --qemu[=I<qemu-binary>]
@@ -530,7 +530,7 @@ Command that resets the target.
 =item --reset-send=I<string>
 
 Reset the target by sending the given I<string> to the remote serial
-line. "\n" sequences are replaced with newline character.
+line. "\n" sequences are replaced with the newline character.
 
 =item --no-reset, --reset
 
@@ -562,7 +562,7 @@ commands from each option novaboot waits for U-Boot I<prompt>.
 
 If the command contains string I<$NB_MYIP> then this string is
 replaced by IPv4 address of eth0 interface (see also B<--netif>).
-Similarly I<$NB_PREFIX> is replaced with prefix given by B<--prefix>.
+Similarly, I<$NB_PREFIX> is replaced with prefix given by B<--prefix>.
 
 See also C<uboot> keyword in L</"NOVABOOT SCRIPT SYNTAX">).
 
@@ -599,12 +599,12 @@ interactive work with the target.
 
 =item --exiton=I<string>
 
-When I<string> is sent by the target, novaboot exits. This option can
+When the I<string> is sent by the target, novaboot exits. This option can
 be specified multiple times, in which case novaboot exits whenever
 either of the specified strings is sent.
 
-If I<string> is C<-re>, then the next B<--exiton>'s I<string> is
-treated as regular expression. For example:
+If the I<string> is C<-re>, then the next B<--exiton>'s I<string> is
+treated as a regular expression. For example:
 
     --exiton -re --exiton 'error:.*failed'
 
@@ -615,12 +615,12 @@ The same as --exiton -re --exiton I<regex>.
 =item --exiton-timeout=I<seconds>
 
 By default B<--exiton> waits for the string match forever. When this
-option is specified, "exiton" timeouts after the specifies number of
+option is specified, "exiton" timeouts after the specifies the number of
 seconds and novaboot returns non-zero exit code.
 
 =item -i, --interactive
 
-Setup things for interactive use of target. Your terminal will be
+Setup things for the interactive use of the target. Your terminal will be
 switched to raw mode. In raw mode, your system does not process input
 in any way (no echoing of entered characters, no interpretation
 special characters). This, among others, means that Ctrl-C is passed
@@ -634,7 +634,7 @@ immediately when boot is initiated.
 
 =item --expect=I<string>
 
-When I<string> is received from the target, send the string specified
+When the I<string> is received from the target, send the string specified
 with the subsequent B<--send*> option to the target.
 
 =item --expect-re=I<regex>
@@ -677,7 +677,7 @@ behavior.
 =head1 NOVABOOT SCRIPT SYNTAX
 
 The syntax tries to mimic POSIX shell syntax. The syntax is defined
-with the following rules.
+by the following rules.
 
 Lines starting with "#" and empty lines are ignored.
 
@@ -713,10 +713,10 @@ script.
 =item C<copy>
 
 These lines are similar to C<load> lines. The
-file mentioned there is copied to the same place as in case of C<load>
+file mentioned there is copied to the same place as in the case of C<load>
 (e.g. tftp server), but the file is not used in the bootloader
 configuration. Such a file can be used by the target for other
-purposed than booting, e.g. at OS runtime or for firmware update.
+purposes than booting, e.g. at OS runtime or for firmware update.
 
 =item C<chld>
 
@@ -829,8 +829,8 @@ option.
 
 =item HYPERVISOR_PARAMS
 
-Parameters passed to hypervisor. The default value is "serial", unless
-overridden in configuration file.
+Parameters passed to the hypervisor. The default value is "serial", unless
+overridden in the configuration file.
 
 =item KERNEL
 
@@ -923,7 +923,7 @@ then the following two commands are equivalent:
 
 Some options can be specified not only via config file or command line
 but also through environment variables. Environment variables override
-the values from configuration file and command line parameters
+the values from the configuration file and command line parameters
 override the environment variables.
 
 =over 8
@@ -941,7 +941,7 @@ F</etc/novaboot.d> is used.
 =item NOVABOOT_TARGET
 
 Name of the novaboot target to use. This overrides the value of
-B<$default_target> from the configuration file and can be overriden
+B<$default_target> from the configuration file and can be overridden
 with the B<--target> command line option.
 
 =item NOVABOOT_BENDER

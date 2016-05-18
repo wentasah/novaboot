@@ -550,8 +550,6 @@ Disable/enable resetting of the target.
 Interact with U-Boot bootloader to boot the thing described in the
 novaboot script. I<prompt> specifies the U-Boot's prompt (default is
 "=> ", other common prompts are "U-Boot> " or "U-Boot# ").
-Implementation of this option is currently tied to a particular board
-that we use. It may be subject to changes in the future!
 
 =item --no-uboot
 

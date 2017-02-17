@@ -1862,12 +1862,12 @@ seconds and novaboot returns non-zero exit code.
 
 =item -i, --interactive
 
-Setup things for the interactive use of the target. Your terminal will be
-switched to raw mode. In raw mode, your system does not process input
-in any way (no echoing of entered characters, no interpretation
-special characters). This, among others, means that Ctrl-C is passed
-to the target and does no longer interrupt novaboot. Use "~~."
-sequence to exit novaboot.
+Setup things for the interactive use of the target. Your terminal will
+be switched to raw mode. In raw mode, your local terminal does not
+process input in any way (no echoing of entered characters, no
+interpretation of special characters). This, among others, means that
+Ctrl-C is passed to the target and does not interrupt novaboot. To
+exit from novaboot interactive mode type "~~.".
 
 =item --no-interaction, --interaction
 

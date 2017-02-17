@@ -59,7 +59,7 @@ echo '$test_a = 1;' > dir/a
 echo '$test_c = 2;' > dir/c
 echo '$test_c = 1;' > dir/b	# Overriden by the 'c' file
 echo '$test_ign=1;' > dir/b.txt	# Ignored
-WVPASS sh -c 'NOVABOOT_CONFIG_DIR=dir novaboot --dump-config > config'
+WVPASS sh -c 'NOVABOOT_CONFIG_DIR=./dir novaboot --dump-config > config'
 WVPASS sh -c 'grep \$test config > test'
 WVPASS diff -u - test <<'EOF'
 $test_a = 1;

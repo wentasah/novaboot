@@ -18,3 +18,9 @@ install:
 
 test:
 	$(MAKE) -C tests
+
+release:
+	: gbp dch --release -N $(shell date +%Y%m%d) --commit
+	: gbp buildpackage --git-tag -b
+	: debrelease rtime
+	: git push --follow-tags

@@ -47,7 +47,7 @@ $CFG::default_target = '';
 %CFG::targets = (
     'qemu' => '--qemu',
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
-    "novabox" => '--server=rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay=147.32.87.159:2324',
+    "novabox" => '--server=novabox@rtime.felk.cvut.cz:/srv/tftp/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --pulsar --iprelay-cmd="ssh novabox@rtime.felk.cvut.cz nc localhost 2324"',
     "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     "ryu" =>  '--uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --uboot-addr kernel=800000 --uboot-addr ramdisk=b00000 --uboot-addr fdt=7f0000',
     "ryuglab" => '--target ryu --server=pc-sojkam.felk.cvut.cz:/srv/tftp --remote-cmd="ssh -tt pc-sojkam.felk.cvut.cz \"sterm -d -s 115200 /dev/ttyUSB0\""',

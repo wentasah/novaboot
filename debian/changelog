@@ -1,3 +1,14 @@
+novaboot (20170423) unstable; urgency=medium
+
+  * Add support for chainloading another bootloader
+  * Support 'chld' lines in Emacs novaboot-mode.el
+  * Suppress Expect warning: handle id(3) is not a tty...
+  * Documentation updates
+  * Implement --remote-expect-timeout
+  * uboot: Empty FDT address if no device tree is loaded
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Sun, 23 Apr 2017 12:35:11 +0200
+
 novaboot (20160503) unstable; urgency=medium
 
   * Do not run --uboot-cmd if it is empty string

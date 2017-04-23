@@ -412,6 +412,12 @@ echoed to stdout while waiting for the I<string>. Everything after the
 matched string is printed to stdout, so you may want to include line
 end characters in the I<string> as well.
 
+=item --remote-expect-timeout=I<seconds>
+
+Timeout in seconds for B<--remote-expect> or
+B<--remote-expect-seconds>. When negative, waits forever. The default
+is 180 seconds.
+
 =back
 
 =head2 File deployment phase

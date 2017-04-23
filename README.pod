@@ -379,6 +379,11 @@ the relay. If I<port> is not specified, it defaults to 23.
 
 Note: This option is supposed to work with HWG-ER02a IP relays.
 
+=item --iprelay-cmd=I<command>
+
+Similar to B<--iprelay> but uses I<command> to talk to the iprelay
+rather than direct network connection.
+
 =item -s, --serial[=device]
 
 Target's serial line is connected to host's serial line (device). The

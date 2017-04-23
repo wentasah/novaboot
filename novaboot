@@ -120,7 +120,7 @@ read_config($_) foreach $cfg or @cfgs;
 my $explicit_target = $ENV{'NOVABOOT_TARGET'};
 GetOptions ("target|t=s" => \$explicit_target);
 
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, $reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iprelay_cmd, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, $remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, $reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
 
 # Default values of certain command line options
 %uboot_addr = (
@@ -182,6 +182,7 @@ my %opt_spec;
     "ider"           => \$ider,
     "interaction!"   => \$interaction,
     "iprelay=s"	     => \$iprelay,
+    "iprelay-cmd=s"  => \$iprelay_cmd,
     "iso:s" 	     => \$iso_image,
     "kernel|k=s"     => \$kernel_opt,
     "interactive|i"  => \$interactive,
@@ -282,6 +283,7 @@ if ($ider) {
 
 {
     my %input_opts = ('--iprelay'    => \$iprelay,
+		      '--iprelay-cmd'=> \$iprelay_cmd,
 		      '--serial'     => \$serial,
 		      '--remote-cmd' => \$remote_cmd,
 		      '--amt'	     => \$amt);
@@ -620,19 +622,27 @@ my $exp; # Expect object to communicate with the target over serial line
 my ($target_reset, $target_power_on, $target_power_off);
 my ($amt_user, $amt_password, $amt_host, $amt_port);
 
-if (defined $iprelay) {
-    my $IPRELAY;
-    $iprelay =~ /([.0-9]+)(:([0-9]+))?/;
-    my $addr = $1;
-    my $port = $3 || 23;
-    my $paddr   = sockaddr_in($port, inet_aton($addr));
-    my $proto   = getprotobyname('tcp');
-    socket($IPRELAY, PF_INET, SOCK_STREAM, $proto)  || die "socket: $!";
-    print STDERR "novaboot: Connecting to IP relay... ";
-    connect($IPRELAY, $paddr)    || die "connect: $!";
-    print STDERR "done\n";
-    $exp = Expect->init(\*$IPRELAY);
-    $exp->log_stdout(1);
+if (defined $iprelay || defined $iprelay_cmd) {
+    if (defined $iprelay) {
+	my $IPRELAY;
+	$iprelay =~ /([.0-9]+)(:([0-9]+))?/;
+	my $addr = $1;
+	my $port = $3 || 23;
+	my $paddr   = sockaddr_in($port, inet_aton($addr));
+	my $proto   = getprotobyname('tcp');
+	socket($IPRELAY, PF_INET, SOCK_STREAM, $proto)  || die "socket: $!";
+	print STDERR "novaboot: Connecting to IP relay... ";
+	connect($IPRELAY, $paddr)    || die "connect: $!";
+	print STDERR "done\n";
+	$exp = Expect->init(\*$IPRELAY);
+	$exp->log_stdout(1);
+    }
+    if (defined $iprelay_cmd) {
+	print STDERR "novaboot: Running: $iprelay_cmd\n";
+	$exp = new Expect;
+	$exp->raw_pty(1);
+	$exp->spawn($iprelay_cmd);
+    }
 
     while (1) {
 	print $exp "\xFF\xF6";	# AYT
@@ -1624,6 +1634,11 @@ and powercycle it. The I<addr> parameter specifies the IP address of
 the relay. If I<port> is not specified, it defaults to 23.
 
 Note: This option is supposed to work with HWG-ER02a IP relays.
+
+=item --iprelay-cmd=I<command>
+
+Similar to B<--iprelay> but uses I<command> to talk to the iprelay
+rather than direct network connection.
 
 =item -s, --serial[=device]
 

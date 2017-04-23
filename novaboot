@@ -1170,6 +1170,8 @@ if (defined $uboot) {
 	    $exp->expect(10,
 			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Device tree load timeout";
+	} else  {
+	    $uboot_addr{fdt} = '';
 	}
 	if (defined $initrd) {
 	    die "No '--uboot-addr ramdisk' given" unless $uboot_addr{ramdisk};

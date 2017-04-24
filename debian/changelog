@@ -1,3 +1,9 @@
+novaboot (20170424) unstable; urgency=medium
+
+  * Add --iprelay-cmd option
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Mon, 24 Apr 2017 10:19:50 +0200
+
 novaboot (20170423) unstable; urgency=medium
 
   * Add support for chainloading another bootloader

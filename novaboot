@@ -648,7 +648,8 @@ if (defined $iprelay || defined $iprelay_cmd) {
 	print $exp "\xFF\xF6";	# AYT
 	my $connected = $exp->expect(20, # Timeout in seconds
 				     '<iprelayd: connected>',
-				     '-re', '<WEB51 HW[^>]*>');
+				     '-re', '<WEB51 HW[^>]*>')
+	    || die "iprelay connection: " . ($! || "timeout");
 	last if $connected;
     }
 
@@ -673,7 +674,8 @@ if (defined $iprelay || defined $iprelay_cmd) {
 	$exp->log_stdout(0);
 	print $exp relaycmd($relay, $onoff);
 	my $confirmed = $exp->expect(20, # Timeout in seconds
-				     relayconf($relay, $onoff));
+				     relayconf($relay, $onoff))
+	    || die "iprelay command: " . ($! || "timeout");
 	if (!$confirmed) {
 	    if ($can_giveup) {
 		print("Relay confirmation timeout - ignoring\n");
@@ -809,8 +811,7 @@ END
     my $cmd = "amtterm -u $amt_user -p $amt_password $amt_host $amt_port";
     print STDERR "novaboot: Running: $cmd\n" =~ s/\Q$amt_password\E/???/r;
     $exp = Expect->spawn($cmd);
-    $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL' timed out";
-
+    $exp->expect(10, "RUN_SOL") || die "Expect for 'RUN_SOL': " . ($! || "timeout");
 }
 
 
@@ -821,7 +822,7 @@ if ($remote_expect) {
 	$exp->log_stdout(0);
     }
     $exp->expect($remote_expect_timeout >= 0 ? $remote_expect_timeout : undef,
-		 $remote_expect) || die "Expect for '$remote_expect' timed out";
+		 $remote_expect) || die "Expect for '$remote_expect':" . ($! || "timeout");;
     if (defined $remote_expect_silent) {
 	$exp->log_stdout($log);
 	print $exp->after() if $log;
@@ -1172,14 +1173,14 @@ if (defined $uboot) {
 	    $exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
 	    $exp->expect(10,
 			 [qr/##/, sub { exp_continue; }],
-			 $uboot_prompt) || die "Kernel load timeout";
+			 $uboot_prompt) || die "Kernel load: " . ($! || "timeout");
 	}
 	if (defined $dtb) {
 	    die "No '--uboot-addr fdt' given" unless $uboot_addr{fdt};
 	    $exp->send("tftpboot $uboot_addr{fdt} $prefix$dtb\n");
 	    $exp->expect(10,
 			 [qr/##/, sub { exp_continue; }],
-			 $uboot_prompt) || die "Device tree load timeout";
+			 $uboot_prompt) || die "Device tree load: " . ($! || "timeout");
 	} else  {
 	    $uboot_addr{fdt} = '';
 	}
@@ -1188,14 +1189,14 @@ if (defined $uboot) {
 	    $exp->send("tftpboot $uboot_addr{ramdisk} $prefix$initrd\n");
 	    $exp->expect(10,
 			 [qr/##/, sub { exp_continue; }],
-			 $uboot_prompt) || die "Initrd load timeout";
+			 $uboot_prompt) || die "Initrd load: " . ($! || "timeout");
 	} else {
 	    $uboot_addr{ramdisk} = '-';
 	}
 
 	$kcmd //= '';
 	$exp->send("setenv bootargs $kcmd\n");
-	$exp->expect(5, $uboot_prompt)  || die "U-Boot prompt timeout";
+	$exp->expect(5, $uboot_prompt)  || die "U-Boot prompt: " . ($! || "timeout");
 
     }
     $uboot_cmd //= $variables->{UBOOT_CMD} // 'bootm $kernel_addr $ramdisk_addr $fdt_addr';
@@ -1205,7 +1206,7 @@ if (defined $uboot) {
 	$uboot_cmd =~ s/\$fdt_addr/$uboot_addr{fdt}/g;
 
 	$exp->send($uboot_cmd . "\n");
-	$exp->expect(5, "\n")  || die "U-Boot command timeout";
+	$exp->expect(5, "\n")  || die "U-Boot command: " . ($! || "timeout");
     }
 }
 
@@ -1219,7 +1220,7 @@ if ($interaction && defined $exp) {
     print STDERR "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
-	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton timeout");
+	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton: " . ($! || "timeout"));
     } else {
 	my @inputs = ($exp);
 	my $infile = new IO::File;

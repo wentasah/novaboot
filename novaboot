@@ -239,8 +239,7 @@ my %opt_spec;
 	$t = $explicit_target;
     }
 
-    (undef, my @args) = @ARGV;
-    @args = (@target_expanded, @args);
+    my @args = (@target_expanded, @ARGV);
     print STDERR "novaboot: Effective options: @args\n";
 
     Getopt::Long::Configure(qw/no_ignore_case no_pass_through/);

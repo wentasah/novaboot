@@ -1,13 +1,11 @@
 [Unit]
-StopWhenUnneeded=true
+Description=Power on a novaboot target %i
+
+After=novaboot-target-off@%i.service
+Conflicts=novaboot-target-off@%i.timer
+After=novaboot-target-off@%i.timer
 
 [Service]
 Type=oneshot
-RemainAfterExit=true
-ExecStart=/bin/systemctl stop novaboot-target-off@%i.timer
-#ExecStart=/bin/su -c "/home/%i/novaboot-shell on" %i
-ExecStop=/bin/systemctl start novaboot-target-off@%i.timer
-
-[Install]
-# After 'systemctl enable', change the number below to the uid of user %i
-RequiredBy=user@1000.service
+ExecStart=/bin/sh -c "/home/%i/novaboot-shell on"
+User=%i

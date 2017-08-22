@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2014 Michal Sojka <sojkam1@fel.cvut.cz>
+# Copyright 2014, 2015, 2017 Michal Sojka <sojkam1@fel.cvut.cz>
 # License: GPLv2+
 
 """Versatile WvTest protocol tool. It replaces wvtestrun script and
@@ -14,7 +14,7 @@ provides some other useful features. Namely:
 Newest version can be found at https://github.com/wentasah/wvtest.
 """
 
-version = "v0-7-g409306f"
+version = "v0-28-g299b716"
 
 import argparse
 import subprocess as sp
@@ -23,6 +23,9 @@ import sys
 import os
 import signal
 import math
+import io
+import datetime
+import time
 
 # Regulr expression that matches potential prefixes to wvtest protocol lines
 re_prefix = ''
@@ -132,17 +135,24 @@ class WvLine:
         for (key, val) in match.groupdict().items():
             setattr(self, key, val)
 
-    def print(self):
-        print(str(self))
+    def print(self, file=sys.stdout):
+        "Print the line (terminal is expected on output)"
+        print(str(self), file=file)
+
+    def log(self, file=sys.stdout):
+        "Print the line (without terminal escape sequences)"
+        self.print(file)
 
 
 class WvPlainLine(WvLine):
     re = re.compile("(?P<line>.*)")
+
     def __str__(self):
         return self.line
 
 class WvTestingLine(WvLine):
     re = re.compile('(?P<prefix>' + re_prefix + ')Testing "(?P<what>.*)" in (?P<where>.*):$')
+
     def __init__(self, *args):
         if len(args) == 1:
             WvLine.__init__(self, args[0])
@@ -152,16 +162,22 @@ class WvTestingLine(WvLine):
             self.where = args[1]
         else:
             raise TypeError("WvTestingLine.__init__() takes at most 2 positional arguments")
+
     def __str__(self):
         return '{self.prefix}! Testing "{self.what}" in {self.where}:'.format(self=self)
-    def print(self):
-        print(term.attr.bold + str(self) + term.attr.reset)
+
+    def print(self, file=sys.stdout):
+        print(term.attr.bold + str(self) + term.attr.reset, file=file)
+
+    def log(self, file):
+        print(str(self), file=file)
 
     def asWvCheckLine(self, result):
         return WvCheckLine('{self.where}  {self.what}'.format(self=self), result)
 
 class WvCheckLine(WvLine):
     re = re.compile('(?P<prefix>' + re_prefix + ')!\s*(?P<text>.*?)\s+(?P<result>\S+)$')
+
     def __init__(self, *args):
         if len(args) == 1:
             WvLine.__init__(self, args[0])
@@ -179,7 +195,7 @@ class WvCheckLine(WvLine):
     def is_success(self):
         return self.result == 'ok'
 
-    def print(self):
+    def formated(self):
         text = '{self.prefix}! {self.text} '.format(self=self)
         if self.is_success():
             color = term.fg.lightgreen
@@ -192,7 +208,15 @@ class WvCheckLine(WvLine):
             lines += 1
 
         text = format(text, '.<' + str(lines * term.width - 10))
-        print('{text} {result}'.format(text=text, result=result))
+        return '{text} {result}'.format(text=text, result=result)
+
+    def print(self, file=sys.stdout):
+        print(self.formated(), file=file)
+
+    def log(self, file=sys.stdout):
+        text = '{self.prefix}! {self.text} '.format(self=self)
+        print('{text:.<80} {result}'.format(text=text, result=self.result), file=file)
+
 
 class WvTagLine(WvLine):
     re  = re.compile('(?P<prefix>' + re_prefix + ')wvtest:\s*(?P<tag>.*)$')
@@ -212,7 +236,8 @@ class WvTestLog(list):
         # reformat/syntax-highlight known lines.
         VERBOSE = 3
 
-    def __init__(self, verbosity = Verbosity.NORMAL):
+    def __init__(self, verbosity = Verbosity.NORMAL, junit_xml : io.IOBase = None,
+                 logdir = None):
         self.checkCount = 0
         self.checkFailedCount = 0
         self.testCount = 0
@@ -225,22 +250,75 @@ class WvTestLog(list):
         self.verbosity = verbosity
         self.show_progress = False
 
+        self.junit_xml = junit_xml
+
+        if junit_xml:
+            global wvjunit
+            import wvjunit
+            self.junitTestcases = []
+
+        self.logdir = logdir
+        self.log = None
+        if logdir and not os.path.isdir(logdir):
+            os.mkdir(logdir)
+
     def setImplicitTestTitle (self, testing):
         """If the test does not supply its own title as a first line of test
         output, it this title will be used instead."""
         self.implicitTestTitle = testing
 
-    def print(self):
+    def print(self, file=sys.stdout):
         for entry in self:
-            entry.print()
+            entry.print(file=file)
+
+    def __str__(self):
+        s = ''
+        for entry in self:
+            if 'formated' in dir(entry):
+                e = entry.formated()
+            else:
+                e = str(entry)
+            s += e + "\n"
+        return s
+
+    def plainText(self):
+        return "\n".join([str(entry) for entry in self]) + "\n"
+
+    def _rememberJUnitTestcase(self):
+        if not self.junit_xml:
+            return
+
+        failure = None
+        if self.currentTestFailedCount > 0:
+            failure = wvjunit.Failure(text=self.plainText())
+
+        tc = wvjunit.Testcase(classname = self.currentTest.where,
+                              name = self.currentTest.what,
+                              time = time.time() - self.testStartTime,
+                              failure = failure)
+        self.junitTestcases.append(tc)
+
+    def _generateJUnitXML(self):
+        if not self.junit_xml:
+            return
+        ts = wvjunit.Testsuite(tests = self.testCount,
+                               failures = self.testFailedCount,
+                               errors = 0,
+                               name = 'N/A',
+                               time = 0,
+                               hostname="localhost",
+                               timestamp = datetime.datetime.now(),
+                               testcases = self.junitTestcases)
+        ts.print(file = self.junit_xml)
 
     def _finishCurrentTest(self):
+        self._rememberJUnitTestcase()
         if self.currentTestFailedCount > 0:
-            if self.verbosity >= self.Verbosity.NORMAL:
-                if self.show_progress:
-                    term.clear_progress_msg()
+            if self.show_progress and self.verbosity < self.Verbosity.VERBOSE:
+                term.clear_progress_msg()
+            if self.verbosity == self.Verbosity.NORMAL:
                 self.print()
-            else:
+            elif self.verbosity < self.Verbosity.NORMAL:
                 self.currentTest.asWvCheckLine('FAILED').print()
             self.testFailedCount += 1
         else:
@@ -248,6 +326,8 @@ class WvTestLog(list):
                 self.currentTest.asWvCheckLine('ok').print()
         sys.stdout.flush()
         self.clear()
+        if self.log:
+            self.log.close()
 
     def clear(self):
         del self[:]
@@ -259,6 +339,12 @@ class WvTestLog(list):
             self.testCount += 1
             if self.show_progress and self.verbosity < self.Verbosity.VERBOSE:
                 term.set_progress_msg(str(testing.asWvCheckLine(None)))
+
+            if self.logdir:
+                self.log = open(os.path.join(self.logdir, "%s-%s.log" %
+                                             (testing.where, testing.what.lower().replace(' ', '_'))),
+                                'w')
+            self.testStartTime = time.time()
         self.currentTest = testing
         self.currentTestFailedCount = 0
 
@@ -288,11 +374,13 @@ class WvTestLog(list):
         list.append(self, logEntry)
 
         if self.verbosity == self.Verbosity.VERBOSE:
-            self.print()
-            self.clear()
+            logEntry.print()
         else:
             if self.show_progress:
                 term.update_progress_msg()
+
+        if self.log:
+            logEntry.log(self.log)
 
     def addLine(self, line):
         line = line.rstrip()
@@ -310,6 +398,8 @@ class WvTestLog(list):
 
     def done(self):
         self._newTest(None)
+
+        self._generateJUnitXML()
 
         print("WvTest: {total} test{plt}, {fail} failure{plf}."
               .format(total = self.testCount, plt = '' if self.testCount == 1 else 's',
@@ -336,14 +426,15 @@ def _run(command, log):
     cmd = command if isinstance(command, str) else ' '.join(command)
     log.setImplicitTestTitle(WvTestingLine("Executing "+cmd, "wvtool"))
 
-    # Popen does not seep to be able to call setpgrp(). Therefore, we
+    # Popen does not seem to be able to call setpgrp(). Therefore, we
     # use start_new_session, but this also create a new session and
     # detaches the process from a terminal. This might be a problem
     # for programs that need a terminal to run.
-    with sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT,
-                  universal_newlines=True, start_new_session=True) as proc:
+    with sp.Popen(command, stdin=None, stdout=sp.PIPE, stderr=sp.STDOUT,
+                  universal_newlines=False, start_new_session=True) as proc:
         signal.alarm(timeout)
-        for line in proc.stdout:
+        stdout = io.TextIOWrapper(proc.stdout, errors='replace')
+        for line in stdout:
             signal.alarm(timeout)
             log.addLine(line)
 
@@ -391,6 +482,10 @@ parser.add_argument('-s', '--summary', dest='verbosity', action='store_const',
                     const=WvTestLog.Verbosity.SUMMARY,
                     help='''Hide output of all tests. Print just one line for each "Testing"
                     section and report "ok" or "FAILURE" of it.''')
+parser.add_argument('--junit-xml', type=argparse.FileType('w'),
+                    help='''Convert output to JUnit compatible XML file''')
+parser.add_argument('--logdir',
+                    help='''Store test logs in the given directory''')
 parser.add_argument('--version', action='version', version='%(prog)s '+version)
 
 subparsers = parser.add_subparsers(help='sub-command help')
@@ -416,11 +511,10 @@ if not 'func' in args:
     parser.print_help()
     sys.exit(1)
 
-log = WvTestLog(args.verbosity)
+log = WvTestLog(args.verbosity, junit_xml = args.junit_xml, logdir=args.logdir)
 args.func(args, log)
 log.done()
 sys.exit(0 if log.is_success() else 1)
 
 # Local Variables:
-# compile-command: "make wvtool"
 # End:

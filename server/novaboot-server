@@ -1,0 +1,143 @@
+#!/bin/sh
+
+set -e
+
+die() {
+    echo >&2 "$*"
+    exit 1
+}
+
+print_help() {
+    cat <<EOF
+Target commands:
+- console
+- reset
+- on
+- off
+- rsync ...
+
+Management commands:
+- add-key
+- help
+EOF
+    exit 0
+}
+
+add_key() {
+    local user
+
+    user="$1"
+    die "Not implemented"
+}
+
+lock_queue() {
+    lslocks | awk '{ if ($9 == "'"$RUN_DIR"'") { print $2 } }'
+}
+
+print_queue() {
+    local queue
+
+    queue=$(
+	for pid in $(lock_queue); do
+	    echo $pid $(sed --null-data -ne '/^NOVABOOT_ID=/ s///p' /proc/$pid/environ)
+	done | sort)
+    if [ "$queue" ]; then
+	echo "Target is occupied by:"
+	( echo "PID USER LOGIN_TIME FROM"; echo "$queue" ) | column -t
+    fi
+}
+
+locked() {
+    print_queue
+    exec flock --no-fork "$RUN_DIR" "$@"
+}
+
+unlocked() {
+    exec "$@"
+}
+
+check_var() {
+    if eval [ "\"\$$1\"" ]; then
+	return 0
+    else
+	die "$1 variable not defined in $CFG"
+    fi
+}
+
+# run_subcommand should be called only after permission checks and/or locking
+run_subcommand() {
+    case "$*" in
+	"console")
+	    trap "rm -f $RUN_DIR/ppid" EXIT
+	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
+	    echo 'novaboot-server: Connected'
+	    $target_reset_begin
+	    check_var target_console && eval exec $target_console;;
+	"reset")
+	    check_var target_reset && eval exec $target_reset;;
+	"rsync --server "*" . .")
+	    if [ $# -ne 5 ]; then die "Unexpected rsync invocation: $*"; fi
+	    mkdir -p "$HOME/tftproot"
+	    cd "$HOME/tftproot"
+	    exec rsync --server $3 . . ;;
+	"on")
+	    check_var target_on && eval exec $target_on;;
+	"off")
+	    check_var target_off && eval exec $target_off;;
+	*)
+	    echo >&2 "novaboot-server: Command not allowed: $*"
+	    logger -p error "novaboot-server: Command not allowed: $*"
+	    exit 1;;
+    esac
+}
+
+main() {
+    if [ "$1" = "-c" ]; then shift
+    else die "Permission denied"; fi
+
+    if [ "${1%% *}" = "user" ]; then
+	# Get user name encoded in ~/.ssh/authorized_keys
+	NB_USER="${1#* }";
+	set -- $SSH_ORIGINAL_COMMAND
+    fi
+
+    if [ $# -eq 0 ]; then print_help; fi
+
+    IP=${SSH_CONNECTION%% *}
+    HOST=$(getent hosts $IP) || HOST=$IP
+    REMOTE=${HOST##* }
+    DATE=$(LANG=C date +'%F_%T')
+    export NOVABOOT_ID="${NB_USER:-?} $DATE ${REMOTE}"
+    export NOVABOOT_PPID=$PPID
+
+    mkdir -p "$RUN_DIR"
+
+    # Commands allowed at any time
+    case "$1" in
+	"console") locked $0 console;;
+	"add-key") shift; add_key "$@"; exit $?;;
+	"help") print_help;;
+    esac
+
+
+    # Commands allowed only when nobody or the same user is connected to the console
+    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
+    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
+    $run $0 "$@"
+}
+
+RUN_DIR="$XDG_RUNTIME_DIR/novaboot"
+
+if [ -z "$NOVABOOT_ID" ]; then
+    main "$@"
+else
+    if [ "$NOVABOOT_SERVER_CONFIG" ]; then
+	CFG="$NOVABOOT_SERVER_CONFIG"
+    else
+	CFG="$HOME/.novaboot-server"
+    fi
+
+    . "$CFG"
+
+    run_subcommand "$@"
+fi

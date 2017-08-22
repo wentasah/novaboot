@@ -1,0 +1,65 @@
+#!/bin/bash
+
+cd $(dirname $0)
+. wvtest.sh
+
+set -e
+
+export WV_BASE_DIR
+export NOVABOOT_SERVER_CONFIG="$WV_BASE_DIR/.novaboot-server"
+cat <<EOF > "$NOVABOOT_SERVER_CONFIG"
+target_console="/bin/sh -c 'while :; do sleep 0.1; date; done'"
+target_reset="touch reset"
+EOF
+
+export MAIN_PID=$$
+
+function run_server() {
+    SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-server -c user test
+}
+
+function exec_server() {
+    local exec
+    exec=exec
+    run_server "$@"
+}
+
+trap 'kill "$COPROC_PID"' EXIT
+
+WVSTART Help subcommand
+run_server help > log
+WVPASS grep 'Target commands:' log
+
+WVSTART Help is printed without any arguments
+run_server > log
+WVPASS grep 'Target commands:' log
+
+WVSTART "Console prints a 'connected' message"
+coproc exec_server console
+sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
+WVPASSRC
+kill $COPROC_PID; wait
+
+WVSTART 'Second connection to console prints queue'
+coproc exec_server console
+sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
+WVPASSRC
+run_server console | sed -e '/Target is occupied by:/q0'
+kill $COPROC_PID; wait
+
+WVSTART 'Cannot reset when somebody else is connected to console'
+coproc exec_server console
+sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
+run_server reset | sed -e '/Target is occupied by:/q0'
+WVPASSRC
+WVFAIL test -e reset
+kill $COPROC_PID; wait
+
+WVSTART "Can reset when I'm connected to console"
+coproc exec_server console
+sed -e '/novaboot-server: Connected/q0'  <&${COPROC[0]}
+run_server reset
+WVPASS test -e reset
+kill $COPROC_PID
+
+trap - EXIT

@@ -46,7 +46,7 @@ _wvcheck()
 	fi
 	echo "! $WVCALLER_FILE:$WVCALLER_LINE  $TEXT  $OK" >&2
 	if [ "$CODE" -ne 0 ]; then
-		exit $CODE
+		return $CODE
 	else
 		return 0
 	fi

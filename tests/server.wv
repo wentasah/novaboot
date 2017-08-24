@@ -27,6 +27,7 @@ trap 'kill "$COPROC_PID"' EXIT
 WVSTART Help subcommand
 run_server help > log
 WVPASS grep 'Target commands:' log
+WVFAIL grep 'add-key' log
 
 WVSTART Help is printed without any arguments
 run_server > log
@@ -51,6 +52,10 @@ WVPASS sed -e '/novaboot-server: Connected/q0' <&${console1[0]}
 coproc console2 { username=another_username exec_server console; }
 WVPASS sed -e '/my_cool_username/q0' <&${console2[0]}
 kill $console1_PID $console2_PID; wait
+
+WVSTART Admin sees help for admin subcommands
+admin=1 run_server help > log
+WVPASS grep 'add-key' log
 
 WVSTART 'Cannot reset when somebody else is connected to console'
 coproc exec_server console

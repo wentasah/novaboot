@@ -17,9 +17,14 @@ Target commands:
 - rsync ...
 
 Management commands:
-- add-key
 - help
 EOF
+
+    if [ "$NB_ADMIN" ]; then
+	cat <<EOF
+- add-key
+EOF
+    fi
     exit 0
 }
 
@@ -95,10 +100,12 @@ main() {
     if [ "$1" = "-c" ]; then shift
     else die "Permission denied"; fi
 
+    NB_ADMIN=
     if [ "${1%% *}" = "user" ]; then
 	# Get user name encoded in ~/.ssh/authorized_keys
 	set -- $1
 	NB_USER="$2";
+	[ "$3" = "admin" ] && NB_ADMIN=1
 	set -- $SSH_ORIGINAL_COMMAND
     fi
 

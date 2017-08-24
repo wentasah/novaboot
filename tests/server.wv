@@ -22,8 +22,6 @@ function exec_server() {
     run_server "$@"
 }
 
-trap 'kill "$COPROC_PID"' EXIT
-
 WVSTART Help subcommand
 run_server help > log
 WVPASS grep 'Target commands:' log
@@ -35,22 +33,21 @@ WVPASS grep 'Target commands:' log
 
 WVSTART "Console prints a 'connected' message"
 coproc exec_server console
-sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
-WVPASSRC
+WVPASS sed -e '/novaboot-server: Connected/q0' -e '3q1' <&${COPROC[0]}
 kill $COPROC_PID; wait
 
 WVSTART 'Second connection to console prints queue'
-coproc exec_server console
-sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
-WVPASSRC
-run_server console | sed -e '/Target is occupied by:/q0'
-kill $COPROC_PID; wait
+coproc console1 { exec_server console; }
+WVPASS sed -e '/novaboot-server: Connected/q0' -e '3q1' <&${console1[0]}
+coproc console2 { exec_server console; }
+WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
+kill $console1_PID $console2_PID; wait
 
 WVSTART 'Printed queue contains correct username'
 coproc console1 { username=my_cool_username exec_server console; }
-WVPASS sed -e '/novaboot-server: Connected/q0' <&${console1[0]}
+WVPASS sed -e '/novaboot-server: Connected/q0' -e '3q1' <&${console1[0]}
 coproc console2 { username=another_username exec_server console; }
-WVPASS sed -e '/my_cool_username/q0' <&${console2[0]}
+WVPASS sed -e '/my_cool_username/q0' -e '3q1' <&${console2[0]}
 kill $console1_PID $console2_PID; wait
 
 WVSTART Admin sees help for admin subcommands
@@ -58,18 +55,18 @@ admin=1 run_server help > log
 WVPASS grep 'add-key' log
 
 WVSTART 'Cannot reset when somebody else is connected to console'
-coproc exec_server console
-sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
-run_server reset | sed -e '/Target is occupied by:/q0'
-WVPASSRC
-WVFAIL test -e reset
-kill $COPROC_PID; wait
+coproc console1 { exec_server console; }
+WVPASS sed -e '/novaboot-server: Connected/q0' -e '3q1' <&${console1[0]}
+coproc console2 { run_server reset; }
+WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
+WVPASS test ! -e reset
+WVPASS kill $console1_PID $console2_PID; wait
 
 WVSTART "Can reset when I'm connected to console"
 coproc exec_server console
-sed -e '/novaboot-server: Connected/q0'  <&${COPROC[0]}
-run_server reset
+WVPASS sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
+WVPASS run_server reset
 WVPASS test -e reset
-kill $COPROC_PID
+WVPASS kill $COPROC_PID
 
 trap - EXIT

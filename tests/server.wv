@@ -15,7 +15,7 @@ EOF
 export MAIN_PID=$$
 
 function run_server() {
-    SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-server -c user test
+    SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-server -c "${account:-user} ${username:-test} ${admin:+admin}"
 }
 
 function exec_server() {
@@ -46,6 +46,13 @@ sed -e '/novaboot-server: Connected/q0' <&${COPROC[0]}
 WVPASSRC
 run_server console | sed -e '/Target is occupied by:/q0'
 kill $COPROC_PID; wait
+
+WVSTART 'Printed queue contains correct username'
+coproc console1 { username=my_cool_username exec_server console; }
+WVPASS sed -e '/novaboot-server: Connected/q0' <&${console1[0]}
+coproc console2 { username=another_username exec_server console; }
+WVPASS sed -e '/my_cool_username/q0' <&${console2[0]}
+kill $console1_PID $console2_PID; wait
 
 WVSTART 'Cannot reset when somebody else is connected to console'
 coproc exec_server console

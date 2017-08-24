@@ -97,7 +97,8 @@ main() {
 
     if [ "${1%% *}" = "user" ]; then
 	# Get user name encoded in ~/.ssh/authorized_keys
-	NB_USER="${1#* }";
+	set -- $1
+	NB_USER="$2";
 	set -- $SSH_ORIGINAL_COMMAND
     fi
 

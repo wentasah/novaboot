@@ -1,0 +1,11 @@
+[Unit]
+Description=Power on a novaboot target %i
+
+After=novaboot-server-off@%i.service
+Conflicts=novaboot-server-off@%i.timer
+After=novaboot-server-off@%i.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/novaboot-shell -c on
+User=%i

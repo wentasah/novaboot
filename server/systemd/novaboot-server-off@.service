@@ -3,5 +3,5 @@ Description=Power off a novaboot target %i
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c "/home/%i/novaboot-shell off"
+ExecStart=/usr/bin/novaboot-shell -c off
 User=%i

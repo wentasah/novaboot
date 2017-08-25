@@ -1,11 +1,11 @@
 [Unit]
 Description=Novaboot target on/off manager for %i
-Requires=novaboot-target-on@%i.service
-After=novaboot-target-on@%i.service
+Requires=novaboot-server-on@%i.service
+After=novaboot-server-on@%i.service
 StopWhenUnneeded=true
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStop=/bin/systemctl start novaboot-target-off@%i.timer
+ExecStop=/bin/systemctl start novaboot-server-off@%i.timer
 TimeoutSec=10

@@ -81,10 +81,12 @@ run_subcommand() {
 	"reset")
 	    check_var target_reset && eval exec $target_reset;;
 	"rsync --server "*" . .")
-	    if [ $# -ne 5 ]; then die "Unexpected rsync invocation: $*"; fi
+	    if ! [ $# -eq 5 -o \( $# -eq 6 -a "$4" = '--log-format=X' \) ]; then
+		die "Unexpected rsync invocation: $*"
+	    fi
 	    mkdir -p "$HOME/tftproot"
 	    cd "$HOME/tftproot"
-	    exec rsync --server $3 . . ;;
+	    exec "$@";;
 	"on")
 	    check_var target_on && eval exec $target_on;;
 	"off")

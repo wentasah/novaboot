@@ -109,3 +109,23 @@ load file
 EOF
 WVPASS diff -u file $TFTPROOT/file
 WVPASS grep /prefix/file $TFTPROOT/grub.cfg
+
+WVSTART "Novaboot --ssh remote config fails on non-safe options"
+WVPASS tee $SHELLRC <<EOF
+target_console=cat
+target_reset=true
+target_config() { echo --prefix=/prefix; echo --make; }
+EOF
+WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
+load file < date
+EOF
+
+WVSTART "Novaboot --ssh remote config fails on unknown arguments"
+WVPASS tee $SHELLRC <<EOF
+target_console=cat
+target_reset=true
+target_config() { echo --prefix=/prefix; echo blablabla; }
+EOF
+WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
+load file < date
+EOF

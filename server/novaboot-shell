@@ -30,9 +30,23 @@ EOF
 
 add_key() {
     local user
+    [ "$NB_ADMIN" ] || return 1
 
+    case $# in
+	0) die "Username argument missing";;
+	1) break;;
+	*) die "User name must not contain spaces: $*";;
+    esac
     user="$1"
-    die "Not implemented"
+    key=$(cat)
+
+    tmp=$(mktemp ~/.ssh/authorized_keys.XXXXXXXX)
+    {
+	cat ~/.ssh/authorized_keys
+	echo "command=\"user $user\" $key"
+    } | sort -u > $tmp
+
+    mv $tmp ~/.ssh/authorized_keys
 }
 
 lock_queue() {

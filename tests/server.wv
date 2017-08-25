@@ -78,7 +78,12 @@ WVPASS kill $COPROC_PID
 
 SHELLRC="$WV_BASE_DIR/home-novaboot-test/.novaboot-shell"
 TFTPROOT="$WV_BASE_DIR/home-novaboot-test/tftproot"
+AUTH="$WV_BASE_DIR/home-novaboot-test/.ssh/authorized_keys"
 
+WVSTART "Setup SSH server's admin key"
+WVPASS ssh-add -L > keys
+WVPASS test $(wc -l < keys) -gt 0
+WVPASS echo 'command="user test admin"' $(tail -n 1 keys) > $AUTH
 
 WVSTART "Novaboot --ssh option (connect, rsync, reset)"
 WVPASS rm -rf $TFTPROOT
@@ -129,3 +134,19 @@ EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
 load file < date
 EOF
+
+WVSTART "add-key subcommand"
+WVPASS ssh-keygen -t ed25519 -N '' -f key
+WVFAIL grep new_user $AUTH
+WVPASS ssh novaboot-test@localhost add-key new_user < key.pub
+WVPASS grep new_user $AUTH
+
+WVSTART "add-key user must not contain spaces"
+WVPASS cp $AUTH auth
+WVFAIL ssh novaboot-test@localhost add-key "new user" < /dev/null
+WVPASS diff -u $AUTH auth
+
+WVSTART "add-key requires username"
+WVPASS cp $AUTH auth
+WVFAIL ssh novaboot-test@localhost add-key < /dev/null
+WVPASS diff -u $AUTH auth

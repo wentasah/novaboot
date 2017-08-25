@@ -1,0 +1,104 @@
+#!/bin/sh
+
+set -e
+
+die() {
+    echo >&2 "$@"
+    exit 1
+}
+
+print_help() {
+    cat <<EOF
+Usage: adduser-novaboot --key KEY [--admin-id=NAME] [adduser options] user
+EOF
+}
+
+TEMP=$(getopt -o 'h' --long 'admin-id:,key:,help,home:,uid:,firstuid:,lastuid:,gecos:,ingroup:,gid:' -n "${0##*/}" -- "$@")
+[ $? -ne 0 ] && die "getopt error"
+eval set -- "$TEMP"
+unset TEMP
+
+admin=admin
+key=
+while true; do
+    case "$1" in
+	'--admin-id')
+	    admin=$2
+	    shift 2;;
+	'--key')
+	    keysrc=$2
+	    shift 2;;
+	'-h' | '--help')
+	    print_help; exit;;
+	'--')
+	    shift; break;;
+	*)
+	    adduser_opts="$adduser_opts $1 $2"
+	    shift 2;;
+    esac
+done
+
+[ -z "$keysrc" ] && die "Missing --key option"
+
+if [ "$keysrc" = "-" ]; then
+    key=$(cat)
+else
+    key=$(cat "$keysrc")
+fi
+
+[ -z "$key" -o "$(echo "$key" | wc -l)" -ne 1 ] && die "--key needs to be just one line"
+echo "$key" | grep -q ssh || die "--key does not look like an SSH public key"
+
+adduser --disabled-password --shell $(which novaboot-shell) $adduser_opts "$@"
+
+user="$1"
+home=$(getent passwd "$user"|awk -F: '{print $6;}')
+uid=$(id -u "$user")
+
+echo "Creating $home/.ssh/authorized_keys"
+mkdir -p -m 700 "$home/.ssh"
+echo "command=\"user $admin admin\" $key" >> $home/.ssh/authorized_keys
+chown $user "$home/.ssh" "$home/.ssh/authorized_keys"
+
+if [ -d /srv/tftp -a ! -e /srv/tftp/$user  ]; then
+    echo "Creating symlink from /srv/tftp/$user to $home/tftproot."
+    mkdir -p $home/tftproot
+    chown $user $home/tftproot
+    ln -s $home/tftproot /srv/tftp/$user
+else
+    echo "NOT creating symlink from /srv/tftp/$user to $home/tftproot."
+fi
+
+if [ -d /run/systemd/system ]; then
+    echo "Installing systemd services and timers in /etc/systemd/system/user@$uid.service.d"
+    mkdir -p /etc/systemd/system/user@$uid.service.d
+    cat <<EOF > /etc/systemd/system/user@$uid.service.d/novaboot-server.conf
+[Unit]
+Requires=novaboot-server-login@$user.service
+After=novaboot-server-login@$user.service
+EOF
+fi
+
+echo "Creating configuration template in $home/.novaboot-shell"
+cat <<'CONFIG_EOF' > $home/.novaboot-shell
+#
+# Configuration for novaboot-shell
+#
+
+#console_cmd='sterm -s 115200 /dev/ttyUSB0'
+
+#reset_cmd='/bin/sh -c "(usbrelay LY03X_2=1; sleep 0.1; usbrelay LY03X_2=0) 2>/dev/null"'
+
+#on_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 0.1; usbrelay LY03X_1=0) 2>/dev/null"';;
+#off_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 7.0; usbrelay LY03X_1=0) 2>/dev/null"';;
+
+
+target_config() {
+#    echo '--prefix=/prefix'
+#    echo '--uboot="=>"'
+#    echo '--uboot-init="setenv serverip 192.168.1.1"'
+}
+CONFIG_EOF
+
+
+echo "Done"

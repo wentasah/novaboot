@@ -76,7 +76,7 @@ run_subcommand() {
 	    trap "rm -f $RUN_DIR/ppid" EXIT
 	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
 	    echo 'novaboot-shell: Connected'
-	    $target_reset_begin
+	    # TODO: $target_reset_begin
 	    check_var target_console && eval exec $target_console;;
 	"reset")
 	    check_var target_reset && eval exec $target_reset;;

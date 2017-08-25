@@ -158,23 +158,6 @@ sub handle_send
     @expect_seen = ();
 }
 
-sub handle_novaboot_server
-{
-    my ($n, $val) = @_;
-    my $xdg_runtime_dir = $ENV{XDG_RUNTIME_DIR} || '/var/run';
-    my $ssh_ctl_path = "${xdg_runtime_dir}/novaboot-%r@%h%p";
-
-    $remote_cmd = "ssh -tt -M -S '${ssh_ctl_path}' '${val}' console";
-    $remote_expect = "novaboot-shell: Connected";
-    $server = "$val:";
-    $rsync_flags = "--rsh='ssh -S \'${ssh_ctl_path}\''";
-    ($grub_prefix = $val) =~ s/@.*// if index($val, '@') != -1;
-    $reset_cmd = "ssh -tt -S '${ssh_ctl_path}' '${val}' reset";
-
-    $target_power_off = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' off"); };
-    $target_power_on  = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' on"); };
-}
-
 my %opt_spec;
 %opt_spec = (
     "amt=s" 	     => \$amt,
@@ -244,6 +227,23 @@ my %opt_spec;
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
+
+sub handle_novaboot_server
+{
+    my ($n, $val) = @_;
+    my $xdg_runtime_dir = $ENV{XDG_RUNTIME_DIR} || '/var/run';
+    my $ssh_ctl_path = "${xdg_runtime_dir}/novaboot-%r@%h%p";
+
+    $remote_cmd = "ssh -tt -M -S '${ssh_ctl_path}' '${val}' console";
+    $remote_expect = "novaboot-shell: Connected";
+    $server = "$val:";
+    $rsync_flags = "--rsh='ssh -S \'${ssh_ctl_path}\''";
+    ($grub_prefix = $val) =~ s/@.*// if index($val, '@') != -1;
+    $reset_cmd = "ssh -tt -S '${ssh_ctl_path}' '${val}' reset";
+
+    $target_power_off = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' off"); };
+    $target_power_on  = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' on"); };
+}
 
 # First process target options
 {

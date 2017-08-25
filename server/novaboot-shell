@@ -3,7 +3,7 @@
 set -e
 
 die() {
-    echo >&2 "$*"
+    echo >&2 "novaboot-shell: $*"
     exit 1
 }
 

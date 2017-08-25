@@ -90,10 +90,10 @@ run_subcommand() {
 	    trap "rm -f $RUN_DIR/ppid" EXIT
 	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
 	    echo 'novaboot-shell: Connected'
-	    # TODO: $target_reset_begin
-	    check_var target_console && eval exec $target_console;;
+	    # TODO: $reset_begin_cmd
+	    check_var console_cmd && eval exec $console_cmd;;
 	"reset")
-	    check_var target_reset && eval exec $target_reset;;
+	    check_var reset_cmd && eval exec $reset_cmd;;
 	"rsync --server "*" . .")
 	    if ! [ $# -eq 5 -o \( $# -eq 6 -a "$4" = '--log-format=X' \) ]; then
 		die "Unexpected rsync invocation: $*"
@@ -102,9 +102,9 @@ run_subcommand() {
 	    cd "$HOME/tftproot"
 	    exec "$@";;
 	"on")
-	    check_var target_on && eval exec $target_on;;
+	    check_var on_cmd && eval exec $on_cmd;;
 	"off")
-	    check_var target_off && eval exec $target_off;;
+	    check_var off_cmd && eval exec $off_cmd;;
     esac
 }
 

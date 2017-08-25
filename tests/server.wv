@@ -6,8 +6,8 @@ cd $(dirname $0)
 export WV_BASE_DIR
 export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > "$NOVABOOT_SHELL_CONFIG"
-target_console="/bin/sh -c 'while :; do sleep 0.1; date; done'"
-target_reset="touch reset"
+console_cmd="/bin/sh -c 'while :; do sleep 0.1; date; done'"
+reset_cmd="touch reset"
 target_config() echo --prefix=asdf
 EOF
 
@@ -89,8 +89,8 @@ WVSTART "Novaboot --ssh option (connect, rsync, reset)"
 WVPASS rm -rf $TFTPROOT
 TS=$(date --rfc-3339=ns)
 WVPASS tee $SHELLRC <<EOF
-target_console=cat
-target_reset="echo $TS > reset.stamp"
+console_cmd=cat
+reset_cmd="echo $TS > reset.stamp"
 target_config() :
 EOF
 date > file
@@ -104,8 +104,8 @@ WVPASS diff -u <(echo $TS) "$WV_BASE_DIR/home-novaboot-test/reset.stamp"
 WVSTART "Novaboot --ssh remote config"
 WVPASS rm -rf $TFTPROOT
 WVPASS tee $SHELLRC <<EOF
-target_console=cat
-target_reset=true
+console_cmd=cat
+reset_cmd=true
 target_config() { echo --prefix=/prefix; echo --grub2; }
 EOF
 date > file
@@ -117,9 +117,9 @@ WVPASS grep /prefix/file $TFTPROOT/grub.cfg
 
 WVSTART "Novaboot --ssh remote config fails on non-safe options"
 WVPASS tee $SHELLRC <<EOF
-target_console=cat
-target_reset=true
-target_config() { echo --prefix=/prefix; echo --make; }
+console_cmd=cat
+reset_cmd=true
+config() { echo --prefix=/prefix; echo --make; }
 EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
 load file < date
@@ -127,8 +127,8 @@ EOF
 
 WVSTART "Novaboot --ssh remote config fails on unknown arguments"
 WVPASS tee $SHELLRC <<EOF
-target_console=cat
-target_reset=true
+console_cmd=cat
+reset_cmd=true
 target_config() { echo --prefix=/prefix; echo blablabla; }
 EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<EOF

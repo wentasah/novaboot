@@ -1,0 +1,3 @@
+Home directory for novaboot --ssh testing. Configure your system to
+have novaboot-test user with home directory pointing here and
+novaboot-shell as shell.

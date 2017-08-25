@@ -8,6 +8,7 @@ export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > "$NOVABOOT_SHELL_CONFIG"
 target_console="/bin/sh -c 'while :; do sleep 0.1; date; done'"
 target_reset="touch reset"
+target_config() echo --prefix=asdf
 EOF
 
 export MAIN_PID=$$
@@ -30,6 +31,10 @@ WVFAIL grep 'add-key' log
 WVSTART Help is printed without any arguments
 run_server > log
 WVPASS grep 'Target commands:' log
+
+WVSTART Get-config command works
+run_server get-config > log
+WVPASS grep -e '^--prefix=asdf$' log
 
 WVSTART "Console prints a 'connected' message"
 coproc exec_server console
@@ -69,11 +74,38 @@ WVPASS run_server reset
 WVPASS test -e reset
 WVPASS kill $COPROC_PID
 
-WVSTART "Novaboot --ssh option"
+
+
+SHELLRC="$WV_BASE_DIR/home-novaboot-test/.novaboot-shell"
+TFTPROOT="$WV_BASE_DIR/home-novaboot-test/tftproot"
+
+
+WVSTART "Novaboot --ssh option (connect, rsync, reset)"
+WVPASS rm -rf $TFTPROOT
+TS=$(date --rfc-3339=ns)
+WVPASS tee $SHELLRC <<EOF
+target_console=cat
+target_reset="echo $TS > reset.stamp"
+target_config() :
+EOF
 date > file
 WVPASS novaboot --ssh novaboot-test@localhost <<EOF
 copy file
 EOF
-WVPASS diff -u file /home/novaboot-test/tftproot/file
+WVPASS diff -u file $TFTPROOT/file
+WVPASS diff -u <(echo $TS) "$WV_BASE_DIR/home-novaboot-test/reset.stamp"
 
-trap - EXIT
+
+WVSTART "Novaboot --ssh remote config"
+WVPASS rm -rf $TFTPROOT
+WVPASS tee $SHELLRC <<EOF
+target_console=cat
+target_reset=true
+target_config() { echo --prefix=/prefix; echo --grub2; }
+EOF
+date > file
+WVPASS novaboot --ssh novaboot-test@localhost <<EOF
+load file
+EOF
+WVPASS diff -u file $TFTPROOT/file
+WVPASS grep /prefix/file $TFTPROOT/grub.cfg

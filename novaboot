@@ -158,8 +158,24 @@ sub handle_send
     @expect_seen = ();
 }
 
-my %opt_spec;
-%opt_spec = (
+# Options which can be safely specified on the server (via --ssh),
+# i.e. which cannot cause unwanted local code execution etc.
+my %opt_spec_safe = (
+    "grub|g:s" 	     => \$grub_config,
+    "grub-preamble=s"=> \$grub_preamble,
+    "grub2-prolog=s" => \$grub2_prolog,
+    "grub2:s" 	     => \$grub2_config,
+    "prefix|grub-prefix=s" => \$grub_prefix,
+    "pulsar-root=s"  => \$pulsar_root,
+    "pulsar|p:s"     => \$pulsar,
+    "uboot-addr=s"   => \%uboot_addr,
+    "uboot-cmd=s"    => \$uboot_cmd,
+    "uboot-init=s"   => sub { push @uboot_init, { command => $_[1] }; },
+    "uboot:s"	     => \$uboot,
+    );
+
+my %opt_spec = (
+    %opt_spec_safe,
     "amt=s" 	     => \$amt,
     "append|a=s"     => \@append,
     "bender|b"       => \$bender,
@@ -177,11 +193,6 @@ my %opt_spec;
     "expect-raw=s"   => sub { my ($n, $v) = @_; unshift(@expect_raw, eval($v)); },
     "final-eol!"     => \$final_eol,
     "gen-only"	     => \$gen_only,
-    "grub|g:s" 	     => \$grub_config,
-    "grub-preamble=s"=> \$grub_preamble,
-    "prefix|grub-prefix=s" => \$grub_prefix,
-    "grub2:s" 	     => \$grub2_config,
-    "grub2-prolog=s" => \$grub2_prolog,
     "ider"           => \$ider,
     "interaction!"   => \$interaction,
     "iprelay=s"	     => \$iprelay,
@@ -195,8 +206,6 @@ my %opt_spec;
     "no-file-gen"    => \$no_file_gen,
     "off"	     => \$off_opt,
     "on"	     => \$on_opt,
-    "pulsar|p:s"     => \$pulsar,
-    "pulsar-root=s"  => \$pulsar_root,
     "qemu|Q:s" 	     => \$qemu,
     "qemu-append=s"  => \$qemu_append,
     "qemu-flags|q=s" => \$qemu_flags_cmd,
@@ -219,11 +228,7 @@ my %opt_spec;
     "stty=s"	     => \$stty,
     "tftp"	     => \$tftp,
     "tftp-port=i"    => \$tftp_port,
-    "uboot:s"	     => \$uboot,
     "no-uboot"	     => sub { undef $uboot; },
-    "uboot-addr=s"   => \%uboot_addr,
-    "uboot-cmd=s"    => \$uboot_cmd,
-    "uboot-init=s"   => sub { push @uboot_init, { command => $_[1] }; },
     "h" 	     => \$help,
     "help" 	     => \$man,
     );
@@ -243,6 +248,16 @@ sub handle_novaboot_server
 
     $target_power_off = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' off"); };
     $target_power_on  = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' on"); };
+
+    my $cmd = "ssh '${val}' get-config";
+    print STDERR "novaboot: Running: $cmd\n";
+    my @target_config = qx($cmd  < /dev/null);
+    if ($?) { die("Cannot get target configuration from the server"); }
+    printf "novaboot: Received configuration from the server:%s\n", (!@target_config) ? " empty" : "";
+    foreach (@target_config) { chomp; print "  $_\n"; }
+
+    GetOptionsFromArray(\@target_config, %opt_spec_safe) or die("Error processing configuration from the server");
+    if (scalar @target_config) { die "Unsuported configuration received from the server: ".join(", ", @target_config); }
 }
 
 # First process target options

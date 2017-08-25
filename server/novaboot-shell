@@ -121,14 +121,15 @@ main() {
     case "$1" in
 	# Commands allowed at any time
 	"console") locked $0 console;;
-	"add-key") shift; add_key "$@"; exit $?;;
+	"get-config") target_config; exit;;
+	"add-key") shift; add_key "$@"; exit;;
 	"help") print_help;;
 
 	# Commands allowed only when nobody or the same user is connected
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
 	# using SSH connection sharing on cline side.
-	console | reset | rsync | on | off)
+	reset | rsync | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
 	    $run $0 "$@";;
@@ -141,16 +142,16 @@ main() {
 
 RUN_DIR="$XDG_RUNTIME_DIR/novaboot"
 
+if [ "$NOVABOOT_SHELL_CONFIG" ]; then
+    CFG="$NOVABOOT_SHELL_CONFIG"
+else
+    CFG="$HOME/.novaboot-shell"
+fi
+
+. "$CFG"
+
 if [ -z "$NOVABOOT_ID" ]; then
     main "$@"
 else
-    if [ "$NOVABOOT_SHELL_CONFIG" ]; then
-	CFG="$NOVABOOT_SHELL_CONFIG"
-    else
-	CFG="$HOME/.novaboot-shell"
-    fi
-
-    . "$CFG"
-
     run_subcommand "$@"
 fi

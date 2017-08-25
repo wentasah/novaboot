@@ -69,4 +69,11 @@ WVPASS run_server reset
 WVPASS test -e reset
 WVPASS kill $COPROC_PID
 
+WVSTART "Novaboot --ssh option"
+date > file
+WVPASS novaboot --ssh novaboot-test@localhost <<EOF
+copy file
+EOF
+WVPASS diff -u file /home/novaboot-test/tftproot/file
+
 trap - EXIT

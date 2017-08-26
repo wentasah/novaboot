@@ -59,6 +59,10 @@ WVSTART Admin sees help for admin subcommands
 admin=1 run_server help > log
 WVPASS grep 'add-key' log
 
+WVSTART Only admin can run shell
+WVFAIL run_server shell
+admin=1 WVPASS run_server shell < /dev/null
+
 WVSTART 'Cannot reset when somebody else is connected to console'
 coproc console1 { exec_server console; }
 WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}

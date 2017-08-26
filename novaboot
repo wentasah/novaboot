@@ -243,7 +243,7 @@ sub handle_novaboot_server
     $remote_expect = "novaboot-shell: Connected";
     $server = "$val:";
     $rsync_flags = "--rsh='ssh -S \'${ssh_ctl_path}\''";
-    ($grub_prefix = $val) =~ s/@.*// if index($val, '@') != -1;
+    ($grub_prefix = $val) =~ s|(.*)@.*|\/$1\/| if index($val, '@') != -1;
     $reset_cmd = "ssh -tt -S '${ssh_ctl_path}' '${val}' reset";
 
     $target_power_off = sub { system_verbose("ssh -tt -S '${ssh_ctl_path}' '${val}' off"); };

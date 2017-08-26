@@ -1,0 +1,4 @@
+etc/novaboot.d/README.txt
+etc/sudoers.d/novaboot
+usr/bin/novaboot
+usr/share/man/man1/novaboot.1

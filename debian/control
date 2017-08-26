@@ -27,3 +27,17 @@ Description: Tool for booting operating systems on remote hardware
  locations, perhaps on a remote TFTP server and reset the target host.
  Finally, target host's serial output is redirected to standard output
  if that is possible.
+
+Package: novaboot-server
+Architecture: all
+Depends: dash | bash, util-linux, ${misc:Depends}
+Description: Server-side scripts simplifying novaboot target configuration
+ This package allows controlling novaboot target hardware via simple,
+ unified, SSH-based interface. Most of the target configuration
+ happens on the server, novaboot clients only need to specify '--ssh
+ user@server' to use the target. The server is easily usable also
+ without novaboot - e.g. reseting the target is as simple as running
+ 'ssh user@server reset'. The server contains logic that blocks other
+ user's requests, while somebody else is connected to target's
+ console. Blocked users see who is using the target and are
+ automatically unblocked when the target becomes free.

@@ -1,0 +1,6 @@
+server/novaboot-shell /usr/bin
+server/adduser-novaboot /usr/sbin
+server/systemd/novaboot-server-login@.service /lib/systemd/system
+server/systemd/novaboot-server-off@.service /lib/systemd/system
+server/systemd/novaboot-server-off@.timer /lib/systemd/system
+server/systemd/novaboot-server-on@.service /lib/systemd/system

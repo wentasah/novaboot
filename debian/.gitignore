@@ -1,4 +1,9 @@
+.debhelper/
 files
 novaboot.debhelper.log
 novaboot.substvars
 novaboot/
+novaboot-server.debhelper.log
+novaboot-server.substvars
+novaboot-server/
+tmp/

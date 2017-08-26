@@ -1491,7 +1491,10 @@ running remotely via SSH.
 
 Using this option is the same as specifying B<--remote-cmd>,
 B<--remote-expect>, B<--server> B<--rsync-flags>, B<--prefix> and
-B<--reset-cmd> manually in a way compatible with V<novaboot-shell>.
+B<--reset-cmd> manually in a way compatible with C<novaboot-shell>.
+The server can be configured to provide other, safe bootloader-related
+options, to the client. When this happens, novaboot prints them to
+stdout.
 
 Currently, this in an initial experimental implementation. We plan to
 change/extend this feature soon!

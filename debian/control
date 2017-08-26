@@ -36,7 +36,7 @@ Description: Server-side scripts simplifying novaboot target configuration
  unified, SSH-based interface. Most of the target configuration
  happens on the server, novaboot clients only need to specify '--ssh
  user@server' to use the target. The server is easily usable also
- without novaboot - e.g. reseting the target is as simple as running
+ without novaboot - e.g. resetting the target is as simple as running
  'ssh user@server reset'. The server contains logic that blocks other
  user's requests, while somebody else is connected to target's
  console. Blocked users see who is using the target and are

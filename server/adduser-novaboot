@@ -58,7 +58,7 @@ uid=$(id -u "$user")
 echo "Creating $home/.ssh/authorized_keys"
 mkdir -p -m 700 "$home/.ssh"
 echo "command=\"user $admin admin\" $key" >> $home/.ssh/authorized_keys
-chown $user "$home/.ssh" "$home/.ssh/authorized_keys"
+chown $user: "$home/.ssh" "$home/.ssh/authorized_keys"
 
 if [ -d /srv/tftp -a ! -e /srv/tftp/$user  ]; then
     echo "Creating symlink from /srv/tftp/$user to $home/tftproot."
@@ -94,6 +94,7 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 
 
 target_config() {
+    :
 #    echo '--prefix=/prefix'
 #    echo '--uboot="=>"'
 #    echo '--uboot-init="setenv serverip 192.168.1.1"'

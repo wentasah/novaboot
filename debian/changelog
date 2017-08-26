@@ -1,3 +1,10 @@
+novaboot (20170826) unstable; urgency=medium
+
+  * New, experimental, implementation of novaboot-server and its client-side
+    support
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Sun, 27 Aug 2017 00:03:24 +0200
+
 novaboot (20170424) unstable; urgency=medium
 
   * Add --iprelay-cmd option

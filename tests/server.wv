@@ -83,6 +83,8 @@ AUTH="$WV_BASE_DIR/home-novaboot-test/.ssh/authorized_keys"
 WVSTART "Setup SSH server's admin key"
 WVPASS ssh-add -L > keys
 WVPASS test $(wc -l < keys) -gt 0
+WVPASS mkdir -p $(dirname $AUTH)
+WVPASS chmod 700 $(dirname $AUTH)
 WVPASS echo 'command="user test admin"' $(tail -n 1 keys) > $AUTH
 
 WVSTART "Novaboot --ssh option (connect, rsync, reset)"

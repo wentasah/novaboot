@@ -11,8 +11,6 @@ reset_cmd="touch reset"
 target_config() echo --prefix=asdf
 EOF
 
-export MAIN_PID=$$
-
 function run_server() {
     SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-shell -c "${account:-user} ${username:-test} ${admin:+admin}"
 }
@@ -78,7 +76,26 @@ WVPASS run_server reset
 WVPASS test -e reset
 WVPASS kill $COPROC_PID
 
+WVSTART "Quoting of config variables"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
 
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch file1 file2"'
+    WVPASS run_server reset
+    WVPASS test -e file1 -a -e file2
+
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1 file2\""'
+    WVPASS run_server reset
+    WVPASS test -e "file1 file2"
+
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1   file2\""'
+    WVPASS run_server reset
+    WVPASS test -e "file1   file2"
+
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"\\\"file1 file2\\\"\""'
+    WVPASS run_server reset
+    WVPASS test -e '"file1 file2"'
+)
 
 SHELLRC="$WV_BASE_DIR/home-novaboot-test/.novaboot-shell"
 TFTPROOT="$WV_BASE_DIR/home-novaboot-test/tftproot"

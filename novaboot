@@ -256,7 +256,10 @@ sub handle_novaboot_server
     printf "novaboot: Received configuration from the server:%s\n", (!@target_config) ? " empty" : "";
     foreach (@target_config) { chomp; print "  $_\n"; }
 
-    GetOptionsFromArray(\@target_config, %opt_spec_safe) or die("Error processing configuration from the server");
+    my $p = Getopt::Long::Parser->new;
+    $p->configure(qw/no_ignore_case no_pass_through/);
+    $p->getoptionsfromarray(\@target_config, %opt_spec_safe) or die("Error processing configuration from the server");
+
     if (scalar @target_config) { die "Unsuported configuration received from the server: ".join(", ", @target_config); }
 }
 

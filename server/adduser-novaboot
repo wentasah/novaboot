@@ -81,6 +81,7 @@ fi
 
 echo "Creating configuration template in $home/.novaboot-shell"
 cat <<'CONFIG_EOF' > $home/.novaboot-shell
+#!/bin/sh
 #
 # Configuration for novaboot-shell
 #
@@ -89,15 +90,15 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 
 #reset_cmd='/bin/sh -c "(usbrelay LY03X_2=1; sleep 0.1; usbrelay LY03X_2=0) 2>/dev/null"'
 
-#on_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 0.1; usbrelay LY03X_1=0) 2>/dev/null"';;
-#off_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 7.0; usbrelay LY03X_1=0) 2>/dev/null"';;
+#on_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 0.1; usbrelay LY03X_1=0) 2>/dev/null"';
+#off_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 7.0; usbrelay LY03X_1=0) 2>/dev/null"';
 
 
 target_config() {
     :
-#    echo '--prefix=/prefix'
-#    echo '--uboot="=>"'
-#    echo '--uboot-init="setenv serverip 192.168.1.1"'
+#    echo '--prefix=/prefix/'
+#    echo '--uboot==>'
+#    echo '--uboot-init=setenv serverip 192.168.1.1'
 }
 CONFIG_EOF
 

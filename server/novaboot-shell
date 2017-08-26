@@ -154,7 +154,7 @@ main() {
     esac
 }
 
-RUN_DIR="$XDG_RUNTIME_DIR/novaboot"
+RUN_DIR="$HOME"
 
 if [ "$NOVABOOT_SHELL_CONFIG" ]; then
     CFG="$NOVABOOT_SHELL_CONFIG"

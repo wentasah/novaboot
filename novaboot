@@ -323,7 +323,7 @@ if ($ider) {
     my %input_opts = ('--iprelay'    => \$iprelay,
 		      '--iprelay-cmd'=> \$iprelay_cmd,
 		      '--serial'     => \$serial,
-		      '--remote-cmd' => \join(' ', @remote_cmd),
+		      '--remote-cmd' => (@remote_cmd ? \$remote_cmd[0] : undef),
 		      '--amt'	     => \$amt);
     my @opts = grep(defined(${$input_opts{$_}}) , keys %input_opts);
 

@@ -122,5 +122,7 @@ WVPASS test "$(cat t)" = Target2
 WVPASSSH 'NOVABOOT_TARGET=t2 novaboot --target t3 /dev/null'
 WVPASS test "$(cat t)" = Target3
 
+WVSTART --iprelay-cmd
+WVPASS novaboot --iprelay-cmd="/bin/echo -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

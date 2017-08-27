@@ -237,7 +237,7 @@ sub handle_novaboot_server
 {
     my ($n, $val) = @_;
     my $xdg_runtime_dir = $ENV{XDG_RUNTIME_DIR} || '/var/run';
-    my $ssh_ctl_path = "${xdg_runtime_dir}/novaboot$$-%r@%h%p";
+    my $ssh_ctl_path = "${xdg_runtime_dir}/novaboot$$";
 
     @remote_cmd = ('ssh', '-tt', '-M', '-S', $ssh_ctl_path, $val, 'console');
     $remote_expect = "novaboot-shell: Connected";

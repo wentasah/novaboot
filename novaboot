@@ -623,11 +623,10 @@ sub exec_verbose(@)
     exit(1); # should not be reached
 }
 
-sub system_verbose($)
+sub system_verbose
 {
-    my $cmd = shift;
-    print STDERR "novaboot: Running: $cmd\n";
-    my $ret = system($cmd);
+    print STDERR "novaboot: Running: ".shell_cmd_string(@_)."\n";
+    my $ret = system(@_);
     if ($ret & 0x007f) { die("Command terminated by a signal"); }
     if ($ret & 0xff00) {die("Command exit with non-zero exit code"); }
     if ($ret) { die("Command failure $ret"); }

@@ -660,6 +660,30 @@ if (exists $variables->{WVDESC}) {
 
 my $exp; # Expect object to communicate with the target over serial line
 
+sub kill_exp_on_signal() {
+    # Sometimes, under unclear circumstances (e.g. when running under
+    # both Jenkins and Robotframework), novaboot does not terminate
+    # console command when killed. The console is then blocked by the
+    # stale process forever. Theoretically, this should not happen,
+    # because when novaboot is killed, console command's controlling
+    # terminal sends SIGHUP to the console command and the command
+    # should terminate. It seems that at least SSH sometimes ignores
+    # HUP and does not terminate. The code below seems to work around
+    # that problem by killing the process immediately with SIGTERM,
+    # which is not ignored.
+
+    sub kill_console { kill TERM => $exp->pid if $exp->pid; die "Terminated by SIG$_[0]"; };
+
+    # For our Jenkins/Robotframework use case, it was sufficient to
+    # handle the TERM signal, but to be on the safe side, we also
+    # catch other signals.
+    $SIG{TERM} = \&kill_console;
+    $SIG{HUP} = \&kill_console;
+    $SIG{INT} = \&kill_console;
+    $SIG{QUIT} = \&kill_console;
+}
+
+
 my ($amt_user, $amt_password, $amt_host, $amt_port);
 
 if (defined $iprelay || defined $iprelay_cmd) {
@@ -682,6 +706,7 @@ if (defined $iprelay || defined $iprelay_cmd) {
 	$exp = new Expect;
 	$exp->raw_pty(1);
 	$exp->spawn($iprelay_cmd);
+	kill_exp_on_signal();
     }
 
     while (1) {
@@ -753,6 +778,7 @@ elsif ($serial) {
 elsif (@remote_cmd) {
     print STDERR "novaboot: Running: ".shell_cmd_string(@remote_cmd)."\n";
     $exp = Expect->spawn(@remote_cmd);
+    kill_exp_on_signal();
 }
 elsif (defined $amt) {
     require LWP::UserAgent;
@@ -1284,6 +1310,10 @@ if ($interaction && defined $exp) {
 	$^W = 1;
     }
 }
+
+# When exp-spawned command ignores SIGHUP, Expect waits 5 seconds
+# before killing it. We kill it by SIGTERM immediately.
+kill TERM => $exp->pid if defined $exp && $exp->pid;
 
 ## Kill dhcpc or tftpd
 if (defined $dhcp_tftp || defined $tftp) {

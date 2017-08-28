@@ -125,4 +125,22 @@ WVPASS test "$(cat t)" = Target3
 WVSTART --iprelay-cmd
 WVPASS novaboot --iprelay-cmd="/bin/echo -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
 
+WVSTART Killing of --remote-cmd when it ignores SIGHUP
+WVPASS tee script <<'EOF'
+$SIG{HUP}='IGNORE';
+open(FH, ">", "pid") or die;
+print FH "$$";
+close FH;
+print "ready pid=$$\n";
+print "exit\n";
+sleep;
+EOF
+WVPASS novaboot --remote-cmd='perl script' --remote-expect=ready --exiton=exit /dev/null
+WVFAIL test -d /proc/$(cat pid)
+coproc novaboot --remote-cmd='perl script' --remote-expect=ready /dev/null
+WVPASS sed -e '/ready/q0' <&${COPROC[0]}
+WVPASS kill $COPROC_PID
+WVFAIL wait $COPROC_PID # Signal termination is considered a failure
+WVFAIL test -d /proc/$(cat pid)
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

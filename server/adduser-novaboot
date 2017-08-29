@@ -93,18 +93,14 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 #on_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 0.1; usbrelay LY03X_1=0) 2>/dev/null"';
 #off_cmd='/bin/sh -c "(usbrelay LY03X_1=1; sleep 7.0; usbrelay LY03X_1=0) 2>/dev/null"';
 
-
-target_config() {
-    :
-#    echo '--prefix=/prefix/'
-#    echo '--uboot==>'
-#    echo '--uboot-init=setenv serverip 192.168.1.1'
-#    echo '--uboot-addr=kernel=0x81000000'
-#    echo '--uboot-addr=fdt=0x83000000'
-#    echo '--uboot-addr=ramdisk=0x83100000'
-
-}
+# target_config="\
+# --prefix=/prefix/
+# --uboot==>
+# --uboot-init=setenv serverip 192.168.1.1
+# --uboot-addr=kernel=0x81000000
+# --uboot-addr=fdt=0x83000000
+# --uboot-addr=ramdisk=0x83100000
+# "
 CONFIG_EOF
-
 
 echo "Done"

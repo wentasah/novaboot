@@ -145,7 +145,7 @@ main() {
     case "$1" in
 	# Commands allowed at any time
 	"console") locked $0 console;;
-	"get-config") target_config; exit;;
+	"get-config") echo -n "${target_config}"; exit;;
 	"add-key") shift; add_key "$@"; exit;;
 	"shell") exec_shell; exit;;
 	"help") print_help;;

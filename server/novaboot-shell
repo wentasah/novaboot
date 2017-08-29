@@ -85,14 +85,6 @@ unlocked() {
     exec "$@"
 }
 
-check_var() {
-    if eval [ "\"\$$1\"" ]; then
-	return 0
-    else
-	die "$1 variable not defined in $CFG"
-    fi
-}
-
 # run_subcommand should be called only after permission checks and/or locking
 run_subcommand() {
     case "$*" in
@@ -101,9 +93,9 @@ run_subcommand() {
 	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
 	    echo 'novaboot-shell: Connected'
 	    # TODO: $reset_begin_cmd
-	    check_var console_cmd && eval exec "$console_cmd";;
+	    eval exec "${console_cmd:?}";;
 	"reset")
-	    check_var reset_cmd && eval exec "$reset_cmd";;
+	    eval exec "${reset_cmd:?}";;
 	"rsync --server "*" . .")
 	    if ! [ $# -eq 5 -o \( $# -eq 6 -a "$4" = '--log-format=X' \) ]; then
 		die "Unexpected rsync invocation: $*"
@@ -112,9 +104,9 @@ run_subcommand() {
 	    cd "$HOME/tftproot"
 	    exec "$@";;
 	"on")
-	    check_var on_cmd && eval exec "$on_cmd";;
+	    eval exec "${on_cmd:?}";;
 	"off")
-	    check_var off_cmd && eval exec "$off_cmd";;
+	    eval exec "${off_cmd:?}";;
     esac
 }
 

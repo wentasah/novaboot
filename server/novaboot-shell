@@ -85,8 +85,13 @@ unlocked() {
     exec "$@"
 }
 
+read_config() {
+    . "${NOVABOOT_SHELL_CONFIG:-$HOME/.novaboot-shell}"
+}
+
 # run_subcommand should be called only after permission checks and/or locking
 run_subcommand() {
+    read_config
     case "$*" in
 	"console")
 	    trap "rm -f $RUN_DIR/ppid" EXIT
@@ -139,7 +144,7 @@ main() {
     case "$1" in
 	# Commands allowed at any time
 	"console") locked $0 console;;
-	"get-config") echo -n "${target_config}"; exit;;
+	"get-config") read_config && echo -n "${target_config}"; exit;;
 	"add-key") shift; add_key "$@"; exit;;
 	"shell") exec_shell; exit;;
 	"help") print_help;;
@@ -160,14 +165,6 @@ main() {
 }
 
 RUN_DIR="$HOME"
-
-if [ "$NOVABOOT_SHELL_CONFIG" ]; then
-    CFG="$NOVABOOT_SHELL_CONFIG"
-else
-    CFG="$HOME/.novaboot-shell"
-fi
-
-. "$CFG"
 
 if [ -z "$NOVABOOT_ID" ]; then
     main "$@"

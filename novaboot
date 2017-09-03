@@ -395,6 +395,7 @@ while (!$skip_reading && ($_ = <>)) {
     if (/^([A-Z_]+)=(.*)$/) {	# Internal variable
 	$$variables{$1} = $2;
 	push(@exiton, $2) if ($1 eq "EXITON");
+	$interaction = $2 if ($1 eq "INTERACTION");
 	next;
     }
     sub process_load_copy($) {
@@ -2188,6 +2189,12 @@ specified by other means (see L</--build-dir>).
 
 Assigning this variable has the same effect as specifying L</--exiton>
 option.
+
+=item INTERACTION
+
+Setting this variable to zero is the same as giving
+L</--no-interaction>, specifying to one corresponds to
+L</--interaction>.
 
 =item HYPERVISOR_PARAMS
 

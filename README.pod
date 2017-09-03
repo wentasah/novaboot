@@ -854,6 +854,12 @@ specified by other means (see L</--build-dir>).
 Assigning this variable has the same effect as specifying L</--exiton>
 option.
 
+=item INTERACTION
+
+Setting this variable to zero is the same as giving
+L</--no-interaction>, specifying to one corresponds to
+L</--interaction>.
+
 =item HYPERVISOR_PARAMS
 
 Parameters passed to the hypervisor. The default value is "serial", unless

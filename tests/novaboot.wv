@@ -156,4 +156,7 @@ all:
 EOF
 WVPASS make -C dir | WVPASS grep "Config OK"
 
+WVSTART "INTERACTION variable"
+WVPASS novaboot --remote-cmd=cat <<<INTERACTION=0
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

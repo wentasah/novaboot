@@ -7,7 +7,7 @@ export WV_BASE_DIR
 export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > $NOVABOOT_SHELL_CONFIG
 console_cmd="/bin/sh -c 'while :; do sleep 0.1; date; done'"
-reset_cmd="touch reset"
+reset_cmd="touch reset_done"
 target_config='--prefix=asdf'
 EOF
 
@@ -74,14 +74,15 @@ coproc console1 { exec_server console; }
 WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
 coproc console2 { run_server reset; }
 WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
-WVPASS test ! -e reset
+WVPASS test ! -e reset_done
 WVPASS kill $console1_PID $console2_PID; wait
+exit 0
 
 WVSTART "Can reset when I'm connected to console"
 coproc exec_server console
 WVPASS sed -e '/novaboot-shell: Connected/q0' <&${COPROC[0]}
 WVPASS run_server reset
-WVPASS test -e reset
+WVPASS test -e reset_done
 WVPASS kill $COPROC_PID
 
 WVSTART "Quoting of config variables"

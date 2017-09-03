@@ -36,6 +36,14 @@ $| = 1;
 
 my $invocation_dir = $ENV{PWD} || getcwd();
 
+# We prefer using PWD, to use nicer paths names with symbolic links.
+# However, when executed from 'make -C dir', PWD may contain the make
+# invocation path, not the real invocation path with dir at the end.
+# We fix that here.
+if (abs_path($ENV{PWD}) ne abs_path(getcwd())) {
+    $invocation_dir = getcwd();
+}
+
 ## Configuration file handling
 
 # Default configuration

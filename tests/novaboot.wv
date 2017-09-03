@@ -143,4 +143,17 @@ WVPASS kill $COPROC_PID
 WVFAIL wait $COPROC_PID # Signal termination is considered a failure
 WVFAIL test -d /proc/$(cat pid)
 
+WVSTART Correct invocation path
+WVPASS mkdir dir
+WVPASS tee dir/.novaboot <<<'print "Config OK\n";'
+(
+    WVPASS cd dir
+    WVPASS novaboot /dev/null | WVPASS grep "Config OK"
+)
+WVPASS tee dir/Makefile <<EOF
+all:
+	novaboot /dev/null
+EOF
+WVPASS make -C dir | WVPASS grep "Config OK"
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

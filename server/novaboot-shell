@@ -34,7 +34,7 @@ add_key() {
     [ "$NB_ADMIN" ] || return 1
 
     case $# in
-	0) die "Username argument missing";;
+	0) die "Usage: ssh ... add-key USERNAME < id_rsa.pub";;
 	1) break;;
 	*) die "User name must not contain spaces: $*";;
     esac

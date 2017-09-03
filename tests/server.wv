@@ -22,17 +22,25 @@ function exec_server() {
 }
 
 WVSTART Help subcommand
-run_server help > log
+WVPASS run_server help | WVPASS tee log
 WVPASS grep 'Target commands:' log
 WVFAIL grep 'add-key' log
 
 WVSTART Help is printed without any arguments
-run_server > log
+# Invocation with SSH_ORIGINAL_COMMAND
+WVPASS run_server help | WVPASS tee log
 WVPASS grep 'Target commands:' log
+# Invocation without SSH_ORIGINAL_COMMAND
+WVPASS $WV_BASE_DIR/../server/novaboot-shell | WVPASS tee log2
+WVPASS grep 'Target commands:' log2
 
 WVSTART Get-config command works
 run_server get-config > log
 WVPASS grep -e '^--prefix=asdf$' log
+
+WVSTART "Multi-word commands work when user not specified"
+WVPASS $WV_BASE_DIR/../server/novaboot-shell -c "help xxx" | WVPASS tee log
+WVPASS grep 'Target commands:' log
 
 WVSTART "Console prints a 'connected' message"
 coproc exec_server console
@@ -182,3 +190,5 @@ WVSTART "add-key requires username"
 WVPASS cp $AUTH auth
 WVFAIL ssh novaboot-test@localhost add-key < /dev/null
 WVPASS diff -u $AUTH auth
+
+# Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

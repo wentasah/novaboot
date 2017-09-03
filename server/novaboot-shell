@@ -111,13 +111,15 @@ run_subcommand() {
 }
 
 main() {
-    if [ "$1" = "-c" ]; then shift
-    else die "Permission denied"; fi
+    if [ "$1" = "-c" ]; then
+	set -- $2
+    elif [ $# -gt 0 ]; then
+	die "Permission denied"
+    fi
 
     NB_ADMIN=
-    if [ "${1%% *}" = "user" ]; then
+    if [ "$1" = "user" ]; then
 	# Get user name encoded in ~/.ssh/authorized_keys
-	set -- $1
 	NB_USER="$2";
 	[ "$3" = "admin" ] && NB_ADMIN=1
 	set -- $SSH_ORIGINAL_COMMAND

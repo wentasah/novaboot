@@ -61,12 +61,12 @@ echo "command=\"user $admin admin\" $key" >> $home/.ssh/authorized_keys
 chown $user: "$home/.ssh" "$home/.ssh/authorized_keys"
 
 if [ -d /srv/tftp -a ! -e /srv/tftp/$user  ]; then
-    echo "Creating symlink from /srv/tftp/$user to $home/tftproot."
-    mkdir -p $home/tftproot
-    chown $user $home/tftproot
-    ln -s $home/tftproot /srv/tftp/$user
+    echo "Creating /srv/tftp/$user and symlink to it from $home/tftproot."
+    mkdir -p /srv/tftp/$user
+    chown $user /srv/tftp/$user
+    ln -s /srv/tftp/$user $home/tftproot
 else
-    echo "NOT creating symlink from /srv/tftp/$user to $home/tftproot."
+    echo "NOT creating /srv/tftp/$user and symlink to it from $home/tftproot."
 fi
 
 if [ -d /run/systemd/system ]; then

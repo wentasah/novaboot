@@ -146,7 +146,7 @@ $reset = 1;			# Reset target by default
 $interaction = 1;		# Perform target interaction by default
 $final_eol = 1;
 $netif = 'eth0';
-$remote_expect_timeout = 180;
+$remote_expect_timeout = -1;
 
 my @expect_seen = ();
 sub handle_expect
@@ -1772,7 +1772,7 @@ end characters in the I<string> as well.
 
 Timeout in seconds for B<--remote-expect> or
 B<--remote-expect-seconds>. When negative, waits forever. The default
-is 180 seconds.
+is -1 seconds.
 
 =back
 

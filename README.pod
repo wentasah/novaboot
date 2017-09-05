@@ -436,7 +436,7 @@ end characters in the I<string> as well.
 
 Timeout in seconds for B<--remote-expect> or
 B<--remote-expect-seconds>. When negative, waits forever. The default
-is 180 seconds.
+is -1 seconds.
 
 =back
 

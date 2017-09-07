@@ -30,7 +30,7 @@ Description: Tool for booting operating systems on remote hardware
 
 Package: novaboot-server
 Architecture: all
-Depends: dash | bash, util-linux, coreutils, ${misc:Depends}
+Depends: dash | bash, util-linux, coreutils, rsync, ${misc:Depends}
 Description: Server-side scripts simplifying novaboot target configuration
  This package allows controlling novaboot target hardware via simple,
  unified, SSH-based interface. Most of the target configuration

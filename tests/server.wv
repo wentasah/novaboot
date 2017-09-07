@@ -109,6 +109,11 @@ SHELLRC="$WV_BASE_DIR/home-novaboot-test/.novaboot-shell"
 TFTPROOT="$WV_BASE_DIR/home-novaboot-test/tftproot"
 AUTH="$WV_BASE_DIR/home-novaboot-test/.ssh/authorized_keys"
 
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    WVSTART "!!! Skipping SSH tests because no ssh-agent was detected !!!"
+    exit 0
+fi
+
 WVSTART "Setup SSH server's admin key"
 WVPASS ssh-add -L > keys
 WVPASS test $(wc -l < keys) -gt 0

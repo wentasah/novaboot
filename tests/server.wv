@@ -76,7 +76,6 @@ coproc console2 { run_server reset; }
 WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
 WVPASS test ! -e reset_done
 WVPASS kill $console1_PID $console2_PID; wait
-exit 0
 
 WVSTART "Can reset when I'm connected to console"
 coproc exec_server console
@@ -191,5 +190,11 @@ WVSTART "add-key requires username"
 WVPASS cp $AUTH auth
 WVFAIL ssh novaboot-test@localhost add-key < /dev/null
 WVPASS diff -u $AUTH auth
+
+WVSTART Suggest using ssh -t for shell
+WVPASS ssh novaboot-test@localhost shell < /dev/null | WVPASS grep -e 'ssh -t'
+echo exit|WVPASS ssh -tt novaboot-test@localhost shell | WVFAIL grep -e 'ssh -t'
+
+
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

@@ -52,6 +52,9 @@ add_key() {
 
 exec_shell() {
     [ "$NB_ADMIN" ] || die "Permission denied"
+    if ! tty > /dev/null; then
+	echo "novaboot-shell: Consider starting the shell with 'ssh -t'"
+    fi
     exec /bin/bash || exec /bin/sh
 }
 

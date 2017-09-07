@@ -1,4 +1,5 @@
 server/novaboot-shell /usr/bin
+server/novaboot-shell.1 /usr/share/man/man1
 server/adduser-novaboot /usr/sbin
 server/adduser-novaboot.8 /usr/share/man/man8
 server/systemd/novaboot-server-login@.service /lib/systemd/system

@@ -171,3 +171,157 @@ if [ -z "$NOVABOOT_ID" ]; then
 else
     run_subcommand "$@"
 fi
+exit
+
+: <<EOF
+=encoding utf8
+
+=head1 NAME
+
+novaboot-shell - provides novaboot with unified SSH-based interface for controlling target hardware
+
+=head1 SYNOPSIS
+
+B<novaboot-shell> -c "command [arguments...]"
+
+B<novaboot-shell> command [arguments...]
+
+B<ssh target@server> command [arguments...]
+
+=head1 DESCRIPTION
+
+B<novaboot-shell> provides L<novaboot(1)> with unified SSH-based
+interface for controlling target hardware. This simplifies client-side
+configuration, because typically only I<-ssh=...> option is needed on
+the client side. B<novaboot-shell> is typically configured as a login
+shell of special user accounts associated with target hardware. It
+ensures that users are able to perform only a limited set of action
+(see L</COMMANDS> below) with the target and have no shell access on
+the server.
+
+=head1 COMMANDS
+
+=over 8
+
+=item console
+
+Connect to target console (usually serial line). When somebody is
+connected to the console, other users are blocked from controlling the
+target. Blocked users see a message indicating who blocks them.
+
+The user connected to the console is able to invoke other commands
+such as L</reset>, but only when the command is invoked via the same
+SSH connection. This can be accomplished by using SSH connection
+sharing, which is what L<novaboot(1)> uses (see I<-M> and I<-S> in
+L<ssh(1)>).
+
+=item reset
+
+Reset the target hardware.
+
+=item on
+
+Power on the target hardware.
+
+=item off
+
+Power off the target hardware.
+
+=item rsync [...]
+
+This command is not meant to be invoked directly by the user. It
+allows using L<rsync(1)> to copy files to the target, perhaps for TFTP
+server. The rsync command must be invoked as: C<rsync ...
+target@server:>, i.e. without specifying destination path. The files
+will be stored into I<$HOME/tftproot>.
+
+=item user <uernamename> [admin]
+
+User command is meant to be used with C<command=> option in SSH's
+L<authorized_keys(5)> file. It allows the shell to display
+human-readable names when printing information about who blocks the
+target. Then, the real command is taken from SSH_ORIGINAL_COMMAND
+environment variable.
+
+When "admin" is specified after the user name, this user is considered
+an administrator and is allowed to run L</add-key> and L</shell>
+commands.
+
+=back
+
+=head2 Administration commands
+
+Only administrators (see L</user>) are allowed to execute these
+commands.
+
+=over 8
+
+=item add-key <username>
+
+Reads the SSH public key from standard input and adds it into in
+F<~/.ssh/authorized_keys>.
+
+Example: C<ssh target@server add-key johndoe < john_rsa.pub>
+
+=item shell
+
+Runs shell on the server. Useful for editing configuration file. It is
+better used with allocated pseudo-terminal.
+
+Example: C<ssh -t target@server shell>
+
+=back
+
+=head1 CONFIGURATION FILE
+
+B<novaboot-shell> reads configuration file from
+F<$HOME/.novaboot-shell>. It should define values for the following
+variables in the SH syntax.
+
+=over 8
+
+=item console_cmd
+
+Command to C<exec> that connects to target's console.
+
+=item reset_cmd
+
+Command to C<exec> that resets the Target.
+
+=item on_cmd
+
+Command to C<exec> that powers the target on.
+
+=item off_cmd
+
+Command to C<exec> that powers the target off.
+
+=item target_config
+
+Novaboot command line options that specify which boot loader is used
+by the target (L<novaboot(1)> rejects other, possibly dangerous, options).
+Each option is on its own line and no quoting, escaping or stripping
+is performed on the values.
+
+Example:
+
+  target_config="\
+  --uboot=(uboot)
+  --uboot-init=setenv serverip 192.168.1.1; setenv ipaddr 192.168.1.10
+  --uboot-addr=kernel=0x8100000
+  --uboot-addr=fdt=0x83000000
+  --uboot-addr=ramdisk=0x83100000
+  "
+
+
+=back
+
+=head1 AUTHORS
+
+Michal Sojka <sojkam1@fel.cvut.cz>
+
+Latest version can be found at
+L<https://github.com/wentasah/novaboot>.
+
+=cut
+EOF

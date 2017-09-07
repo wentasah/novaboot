@@ -104,3 +104,53 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 CONFIG_EOF
 
 echo "Done"
+exit 0
+
+: <<EOF
+=encoding utf8
+
+=head1 NAME
+
+adduser-novaboot - create user account for use with novaboot's --ssh option
+
+=head1 SYNOPSIS
+
+B<adduser-novaboot> --key KEY [--admin-id NAME] [adduser options] user
+
+=head1 DESCRIPTION
+
+B<adduser-novaboot> is a wrapper of L<adduser(8)> command that
+simplifies creation of user accounts for I<novaboot>'s --ssh option.
+The created account has its shell set to L<novaboot-shell(1)>. The
+command also creates a template of the configuration file, sets up
+administrator's SSH key in L<authorized_keys(5)> prepares directories
+and symlinks that for integration with TFTP server and, when run under
+L<systemd(1)>, configures systemd service files to automatically
+power-off the target after timeout.
+
+=head1 OPTIONS
+
+=over 8
+
+=item --key KEY
+
+Mandatory argument specifying administrator's public SSH key (e.g.
+F<~/.ssh/id_rsa.pub>). The key will be copied to the created account's
+F<~/.ssh/authorized_keys> and marked with administrator flag.
+
+=item --admin-id NAME
+
+User name associated with the key. This user name is shown to
+connecting users when the target is occupied.
+
+=back
+
+=head1 AUTHORS
+
+Michal Sojka <sojkam1@fel.cvut.cz>
+
+Latest version can be found at
+L<https://github.com/wentasah/novaboot>.
+
+=cut
+EOF

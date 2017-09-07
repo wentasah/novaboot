@@ -2,6 +2,7 @@ DESTDIR=
 PREFIX=/usr
 
 all:
+	$(MAKE) -C server
 
 README.md: novaboot
 	pod2markdown $< > $@

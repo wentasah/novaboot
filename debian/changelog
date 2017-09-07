@@ -1,3 +1,22 @@
+novaboot (20170907) unstable; urgency=medium
+
+  * Do not share ssh connections across novaboot processes
+  * Fix --iprelay-cmd regression
+  * Properly terminate remote command even when it ignores SIGHUP
+  * server: Store target configuration in a variable, not in a shell function
+  * Fix reading of config files when invoked via "make -C dir"
+  * server: Fix handling of multi-word commands (rsync) without authorized_keys command=user...
+  * Change default novabox configuration
+  * server: Better error message of add-key command
+  * Obey INTERACTION variable
+  * server: Fix creation of tftproot
+  * Change default value of --remote-expect-timeout to infinity
+  * server: Document adduser-novaboot command
+  * server: Document novaboot-shell
+  * Fix man page (and lintian warning)
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Thu, 07 Sep 2017 11:38:41 +0200
+
 novaboot (20170826) unstable; urgency=medium
 
   * New, experimental, implementation of novaboot-server and its client-side

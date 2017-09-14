@@ -77,10 +77,8 @@ print_queue() {
 
 locked() {
     print_queue
-    tmp=$(mktemp)
     no_fork=
     flock -h 2>&1 | grep -q -e "--no-fork" && no_fork=--no-fork
-    rm -f "$tmp"
     exec flock $no_fork "$RUN_DIR" "$@"
 }
 

@@ -26,14 +26,6 @@ WVPASS run_server help | WVPASS tee log
 WVPASS grep 'Target commands:' log
 WVFAIL grep 'add-key' log
 
-WVSTART Help is printed without any arguments
-# Invocation with SSH_ORIGINAL_COMMAND
-WVPASS run_server help | WVPASS tee log
-WVPASS grep 'Target commands:' log
-# Invocation without SSH_ORIGINAL_COMMAND
-WVPASS $WV_BASE_DIR/../server/novaboot-shell | WVPASS tee log2
-WVPASS grep 'Target commands:' log2
-
 WVSTART Get-config command works
 run_server get-config > log
 WVPASS grep -e '^--prefix=asdf$' log
@@ -44,6 +36,11 @@ WVPASS grep 'Target commands:' log
 
 WVSTART "Console prints a 'connected' message"
 coproc exec_server console
+WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
+kill $COPROC_PID; wait
+
+WVSTART "Console command is executed without any argument"
+coproc exec_server
 WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
 kill $COPROC_PID; wait
 

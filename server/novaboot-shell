@@ -10,7 +10,7 @@ die() {
 print_help() {
     cat <<EOF
 Target commands:
-- console
+- console (default command)
 - reset
 - on
 - off
@@ -133,8 +133,6 @@ main() {
 	set -- $SSH_ORIGINAL_COMMAND
     fi
 
-    if [ $# -eq 0 ]; then print_help; fi
-
     IP=${SSH_CONNECTION%% *}
     HOST=$(getent hosts $IP) || HOST=$IP
     REMOTE=${HOST##* }
@@ -146,7 +144,7 @@ main() {
 
     case "$1" in
 	# Commands allowed at any time
-	"console") locked $0 console;;
+	"console"|"") locked $0 console;;
 	"get-config") read_config && echo -n "${target_config}"; exit;;
 	"add-key") shift; add_key "$@"; exit;;
 	"shell") exec_shell; exit;;
@@ -185,11 +183,11 @@ novaboot-shell - provides novaboot with unified SSH-based interface for controll
 
 =head1 SYNOPSIS
 
-B<novaboot-shell> -c "command [arguments...]"
+B<novaboot-shell> -c "[command [arguments...]]"
 
-B<novaboot-shell> command [arguments...]
+B<novaboot-shell> [command [arguments...]]
 
-B<ssh target@server> command [arguments...]
+B<ssh target@server> [command [arguments...]]
 
 =head1 DESCRIPTION
 
@@ -217,6 +215,9 @@ such as L</reset>, but only when the command is invoked via the same
 SSH connection. This can be accomplished by using SSH connection
 sharing, which is what L<novaboot(1)> uses (see I<-M> and I<-S> in
 L<ssh(1)>).
+
+This is the default command when no command is specified on command
+line.
 
 =item reset
 

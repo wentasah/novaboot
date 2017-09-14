@@ -132,7 +132,11 @@ main() {
     fi
 
     IP=${SSH_CONNECTION%% *}
-    HOST=$(getent hosts $IP) || HOST=$IP
+    if [ "$IP" ]; then
+	HOST=$(getent hosts $IP) || HOST=$IP
+    else
+	HOST=localhost
+    fi
     REMOTE=${HOST##* }
     DATE=$(LANG=C date +'%F_%T')
     export NOVABOOT_ID="${NB_USER:-?} $DATE ${REMOTE}"

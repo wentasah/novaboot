@@ -1376,34 +1376,42 @@ having per-system, per-user or per-project configurations.
 Configuration file syntax is described in section L</"CONFIGURATION
 FILES">.
 
-Simple examples of using C<novaboot>:
+=head2 Simple examples of using C<novaboot>:
+
+To boot Linux (files F<bzImage> and F<rootfs.cpio> in current
+directory), create F<mylinux> file with this content:
+
+    #!/usr/bin/env novaboot
+    load bzImage console=ttyS0,115200
+    load rootfs.cpio
 
 =over 3
 
 =item 1.
 
-Running an OS in Qemu can be accomplished by giving the B<--qemu> option.
+Booting an OS in Qemu can be accomplished by giving the B<--qemu> option.
 Thus running
 
- novaboot --qemu myos
+ novaboot --qemu mylinux
 
-(or C<./myos --qemu> as described above) will run Qemu and make it
-boot the configuration specified in the F<myos> script.
+(or C<./mylinux --qemu> as described above) will run Qemu and make it
+boot the configuration specified in the F<mylinux> script. How is qemu
+started can be configured in various ways (see below).
 
 =item 2.
 
 Create a bootloader configuration file (currently supported
 bootloaders are GRUB, GRUB2, ISOLINUX, Pulsar, and U-Boot) and copy it
-with all other files needed for booting to a remote boot server. Then
+with all other files needed for booting to a remote TFTP server. Then
 use a TCP/IP-controlled relay/serial-to-TCP converter to reset the
 target and receive its serial output.
 
- ./myos --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
+ ./mylinux --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
 
 Alternatively, you can put these switches to the configuration file
 and run:
 
- ./myos --target mytarget
+ ./mylinux --target mytarget
 
 =item 3.
 
@@ -1414,7 +1422,7 @@ centrally via L<novaboot-shell(1)> on a server. With such a
 configuration, users only need to use the B<--ssh> option to specify
 where to boot their OS:
 
- ./myos --ssh myboard@example.com
+ ./mylinux --ssh myboard@example.com
 
 Typically, the server is the computer connected to and controlling the
 target board and running the TFTP server.
@@ -1424,7 +1432,7 @@ target board and running the TFTP server.
 Run DHCP and TFTP server on developer's machine to boot the target
 from it.
 
- ./myos --dhcp-tftp
+ ./mylinux --dhcp-tftp
 
 This usage is useful when no network infrastructure is in place, and
 the target is connected directly to developer's box.

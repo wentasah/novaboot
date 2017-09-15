@@ -102,6 +102,7 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 # --uboot-addr=ramdisk=0x83100000
 # "
 CONFIG_EOF
+chown $user: $home/.novaboot-shell
 
 echo "Done"
 exit 0

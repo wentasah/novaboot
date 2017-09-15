@@ -1,3 +1,5 @@
 [Unit]
 Description=Power off a novaboot target %i
 Conflicts=novaboot-target-on@%i.service
+Conflicts=novaboot-target-off@%i.timer
+After=novaboot-target-on@%i.service

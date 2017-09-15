@@ -1407,6 +1407,20 @@ and run:
 
 =item 3.
 
+Specifying all the options needed by novaboot to successfully control
+the target, either on command line or in configuration files, can be
+difficult for users. Novaboot supports configuring the target
+centrally via L<novaboot-shell(1)> on a server. With such a
+configuration, users only need to use the B<--ssh> option to specify
+where to boot their OS:
+
+ ./myos --ssh myboard@example.com
+
+Typically, the server is the computer connected to and controlling the
+target board and running the TFTP server.
+
+=item 4.
+
 Run DHCP and TFTP server on developer's machine to boot the target
 from it.
 
@@ -1415,7 +1429,7 @@ from it.
 This usage is useful when no network infrastructure is in place, and
 the target is connected directly to developer's box.
 
-=item 4.
+=item 5.
 
 Create bootable ISO image.
 

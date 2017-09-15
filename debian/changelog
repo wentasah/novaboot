@@ -1,3 +1,13 @@
+novaboot (20170915) unstable; urgency=medium
+
+  * server: Make console the default command
+  * server: Set proper hostname for locally run commands
+  * server: Update and rename systemd units
+  * doc: Mention --ssh in examples
+  * doc: Update initial examples
+
+ -- Michal Sojka <sojkam1@fel.cvut.cz>  Fri, 15 Sep 2017 12:12:50 +0200
+
 novaboot (20170907) unstable; urgency=medium
 
   * Do not share ssh connections across novaboot processes

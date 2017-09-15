@@ -74,8 +74,8 @@ if [ -d /run/systemd/system ]; then
     mkdir -p /etc/systemd/system/user@$uid.service.d
     cat <<EOF > /etc/systemd/system/user@$uid.service.d/novaboot-server.conf
 [Unit]
-Requires=novaboot-server-login@$user.service
-After=novaboot-server-login@$user.service
+Requires=novaboot-server-session@$user.service
+After=novaboot-server-session@$user.service
 EOF
 fi
 

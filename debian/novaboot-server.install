@@ -2,7 +2,7 @@ server/novaboot-shell /usr/bin
 server/novaboot-shell.1 /usr/share/man/man1
 server/adduser-novaboot /usr/sbin
 server/adduser-novaboot.8 /usr/share/man/man8
-server/systemd/novaboot-server-login@.service /lib/systemd/system
-server/systemd/novaboot-server-off@.service /lib/systemd/system
-server/systemd/novaboot-server-off@.timer /lib/systemd/system
-server/systemd/novaboot-server-on@.service /lib/systemd/system
+server/systemd/novaboot-server-session@.service /lib/systemd/system
+server/systemd/novaboot-target-off@.target /lib/systemd/system
+server/systemd/novaboot-target-off@.timer /lib/systemd/system
+server/systemd/novaboot-target-on@.service /lib/systemd/system

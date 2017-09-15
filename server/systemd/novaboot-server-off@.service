@@ -1,7 +1,8 @@
 [Unit]
 Description=Power off a novaboot target %i
 
+Conflicts=novaboot-server-on@%i.service
+
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/novaboot-shell -c off
-User=%i
+ExecStart=/bin/true

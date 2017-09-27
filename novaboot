@@ -1246,14 +1246,14 @@ if (defined $uboot) {
 	if (defined $kbin) {
 	    die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
 	    $exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
-	    $exp->expect(10,
+	    $exp->expect(15,
 			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Kernel load: " . ($! || "timeout");
 	}
 	if (defined $dtb) {
 	    die "No '--uboot-addr fdt' given" unless $uboot_addr{fdt};
 	    $exp->send("tftpboot $uboot_addr{fdt} $prefix$dtb\n");
-	    $exp->expect(10,
+	    $exp->expect(15,
 			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Device tree load: " . ($! || "timeout");
 	} else  {
@@ -1262,7 +1262,7 @@ if (defined $uboot) {
 	if (defined $initrd) {
 	    die "No '--uboot-addr ramdisk' given" unless $uboot_addr{ramdisk};
 	    $exp->send("tftpboot $uboot_addr{ramdisk} $prefix$initrd\n");
-	    $exp->expect(10,
+	    $exp->expect(15,
 			 [qr/##/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Initrd load: " . ($! || "timeout");
 	} else {

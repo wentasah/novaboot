@@ -155,7 +155,7 @@ main() {
 	# Commands allowed only when nobody or the same user is connected
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
-	# using SSH connection sharing on cline side.
+	# using SSH connection sharing on client side.
 	reset | rsync | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi

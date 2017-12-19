@@ -115,7 +115,7 @@ I<script2> configurations.
 
 =head1 PHASES AND OPTIONS
 
-Novaboot performs its work in several phases. Command like options
+Novaboot performs its work in several phases. Command line options
 described bellow influence the execution of each phase or allow their
 skipping. The list of phases (in the execution order) is as follows.
 

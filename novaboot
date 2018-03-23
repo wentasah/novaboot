@@ -129,7 +129,7 @@ my $explicit_target = $ENV{'NOVABOOT_TARGET'};
 GetOptions ("target|t=s" => \$explicit_target);
 
 # Variables for command line options
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iprelay_cmd, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, @remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, @reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iprelay_cmd, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, @remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, @reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init, $uboot_stop_key);
 
 my ($target_reset, $target_power_on, $target_power_off);
 
@@ -178,6 +178,7 @@ my %opt_spec_safe = (
     "pulsar|p:s"     => \$pulsar,
     "uboot-addr=s"   => \%uboot_addr,
     "uboot-cmd=s"    => \$uboot_cmd,
+    "uboot-stop-key=s" => \$uboot_stop_key,
     "uboot-init=s"   => sub { push @uboot_init, { command => $_[1] }; },
     "uboot:s"	     => \$uboot,
     );
@@ -1197,7 +1198,9 @@ if (defined $uboot) {
     $exp->log_stdout(1);
     #$exp->exp_internal(1);
     $exp->expect(20,
-		 [qr/Hit any key to stop autoboot:/, sub { $exp->send("\n"); exp_continue; }],
+		 [qr/Hit any key to stop autoboot:/, sub {
+		     $exp->send($uboot_stop_key // "\n");
+		     exp_continue; }],
 		 $uboot_prompt) || die "No U-Boot prompt deteceted";
     foreach my $cmdspec (@uboot_init) {
 	my ($cmd, $timeout);
@@ -1939,6 +1942,12 @@ novaboot script. I<prompt> specifies the U-Boot's prompt (default is
 =item --no-uboot
 
 Disable U-Boot interaction previously enabled with B<--uboot>.
+
+=item --uboot-stop-key=I<key>
+
+Character, which is sent as a response to U-Boot's "Hit any key to
+stop autoboot" message. The default value is newline, but some devices
+(e.g. TP-Link TD-W8970) require a specific key to be pressed.
 
 =item --uboot-init
 

@@ -604,6 +604,12 @@ novaboot script. I<prompt> specifies the U-Boot's prompt (default is
 
 Disable U-Boot interaction previously enabled with B<--uboot>.
 
+=item --uboot-stop-key=I<key>
+
+Character, which is sent as a response to U-Boot's "Hit any key to
+stop autoboot" message. The default value is newline, but some devices
+(e.g. TP-Link TD-W8970) require a specific key to be pressed.
+
 =item --uboot-init
 
 Command(s) to send the U-Boot bootloader before loading the images and

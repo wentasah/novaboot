@@ -1,3 +1,13 @@
+novaboot (20180323) unstable; urgency=medium
+
+  * server: Minor update of systemd files
+  * server/adduser: Give configuration file proper owner
+  * Increase uboot load timeouts
+  * server: Do not use flock --no-fork
+  * Add --uboot-stop-key option
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Fri, 23 Mar 2018 14:21:49 +0100
+
 novaboot (20170915) unstable; urgency=medium
 
   * server: Make console the default command

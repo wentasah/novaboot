@@ -142,7 +142,8 @@ F<~/.ssh/authorized_keys> and marked with administrator flag.
 =item --admin-id NAME
 
 User name associated with the key. This user name is shown to
-connecting users when the target is occupied.
+connecting users when the target is occupied by the administrator.
+When omitted, I<admin> is used as the user name.
 
 =back
 

@@ -2010,7 +2010,7 @@ The same as --exiton -re --exiton I<regex>.
 =item --exiton-timeout=I<seconds>
 
 By default B<--exiton> waits for the string match forever. When this
-option is specified, "exiton" timeouts after the specifies the number of
+option is specified, "exiton" timeouts after the specified number of
 seconds and novaboot returns non-zero exit code.
 
 =item -i, --interactive

@@ -1,3 +1,13 @@
+novaboot (20181127) unstable; urgency=medium
+
+  * server: Extend man page
+  * server: Grammar fixes in documentation
+  * doc: Fix typos
+  * Fix typo
+  * Mark --remote-expect* options as safe and improve documentation
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Tue, 27 Nov 2018 23:57:50 +0100
+
 novaboot (20180323) unstable; urgency=medium
 
   * server: Minor update of systemd files

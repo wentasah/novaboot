@@ -1171,7 +1171,7 @@ if (defined $ider) {
 ### Reset target (IP relay, AMT, ...)
 
 if (defined $target_reset && $reset) {
-    print STDERR "novaboot: Reseting the test box... ";
+    print STDERR "novaboot: Resetting the test box... ";
     &$target_reset();
     print STDERR "done\n";
     if (defined $exp) {

@@ -443,10 +443,23 @@ example C<ssh server 'cu -l /dev/ttyS0'>.
 
 =item --remote-expect=I<string>
 
-Wait for reception of I<string> after establishing the remote
-connection. This option is needed when novaboot should wait for
-confirmation before deploying files to the target, e.g. to not
-overwrite other user's files when they are using the target.
+Wait for reception of I<string> after establishing the remote serial
+line connection. Novaboot assumes that after establishing the serial
+line connection, the user running novaboot has exclusive access to the
+target. If establishing of the serial line connection happens
+asynchronously (e.g. running a command remotely via SSH), we need this
+option to wait until the exclusive access is confirmed by the remote
+side.
+
+Depending on target configuration, this option can solve two practical
+problems: 1) Overwriting of files deployed by another user currently
+using the target. 2) Resetting the target board before serial line
+connection is established and thus missing bootloader interaction.
+
+Example of usage with the L<sterm
+tool|https://rtime.felk.cvut.cz/gitweb/sojka/sterm.git>:
+
+  --remote-cmd='ssh -tt example.com sterm -v /dev/ttyUSB0' --remote-expect='sterm: Connected'
 
 =item --remote-expect-silent=I<string>
 

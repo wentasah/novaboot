@@ -40,6 +40,40 @@ having per-system, per-user or per-project configurations.
 Configuration file syntax is described in section L</"CONFIGURATION
 FILES">.
 
+Novaboot newcomers may be confused by a large number of configuration
+options. Understanding all these options is not always needed,
+depending on the used setup. The L<figure from the doc directory
+|https://github.com/wentasah/novaboot/blob/master/doc/typical-setups.svg>
+shows different setups that vary in how much effort is needed
+configure novaboot for them. The setups are:
+
+=over 3
+
+=item A: Laptop and target device only
+
+This requires to configure everything on the laptop side, including a
+serial line connection (L</--serial>, L</--remote-cmd>, ...), power
+on/off/reset commands (L</--reset-cmd>, ...), TFTP server
+(L</--server>, L</--prefix>...), device IP addresses, etc.
+
+=item B: Laptop, target device and external TFTP server
+
+Like the previous setup, but the TFTP (and maybe DHCP) configuration
+is handled by a server. Novaboot users need to understand where to
+copy their files to the TFTP server (L</--server>) and which IP
+addresses their target will get, but do not need to configure the
+servers themselves.
+
+=item C: Novaboot server running novaboot-shell
+
+With this setup, the configuration is done on the server. Users only
+need to know the SSH account (L</--ssh>) used to communicate between
+novaboot and novaboot server. The server is implemented as a
+restricted shell (L<novaboot-shell(1)>) on the server. No need to give
+full shell access to novaboot users on the server.
+
+=back
+
 =head2 Simple examples of using C<novaboot>:
 
 To boot Linux (files F<bzImage> and F<rootfs.cpio> in current

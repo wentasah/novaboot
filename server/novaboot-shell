@@ -196,11 +196,11 @@ B<ssh target@server> [command [arguments...]]
 B<novaboot-shell> provides L<novaboot(1)> with a unified SSH-based
 interface for controlling the target hardware. This simplifies
 client-side configuration, because clients typically need only the
-I<-ssh=...> option. B<novaboot-shell> is typically configured as a
-login shell of special user accounts associated with target hardware.
-It ensures that users can perform only a limited set of actions (see
-L</COMMANDS> below) with the target and have no shell access on the
-server.
+I<--ssh=...> option. B<novaboot-shell> is typically configured as a
+login shell of special user accounts associated with the target
+hardware (as set by L<adduser-novaboot(8)>). It ensures that users can
+perform only a limited set of actions (see L</COMMANDS> below) with
+the target and have no shell access on the server.
 
 =head1 COMMANDS
 

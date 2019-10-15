@@ -6,3 +6,4 @@ server/systemd/novaboot-server-session@.service /lib/systemd/system
 server/systemd/novaboot-target-off@.target /lib/systemd/system
 server/systemd/novaboot-target-off@.timer /lib/systemd/system
 server/systemd/novaboot-target-on@.service /lib/systemd/system
+server/sysusers.d/novaboot-server.conf /usr/lib/sysusers.d

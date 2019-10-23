@@ -1,3 +1,12 @@
+novaboot (20191023) unstable; urgency=medium
+
+  * Add a picture showing typical use cases
+  * adduser-novaboot: Reload systemd after adding override units
+  * server: Mention adduser-novaboot in novaboot-shell documentation
+  * server: Add novaboot users to the novaboot group
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Wed, 23 Oct 2019 10:28:32 +0200
+
 novaboot (20181127) unstable; urgency=medium
 
   * server: Extend man page

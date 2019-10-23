@@ -15,6 +15,7 @@ Target commands:
 - on
 - off
 - rsync ...
+- get-config
 
 Management commands:
 - help

@@ -254,6 +254,11 @@ When "admin" is specified after the user name, this user is considered
 an administrator and is allowed to run L</add-key> and L</shell>
 commands.
 
+=item get-config
+
+Prints novaboot configuration options needed for the target. One
+option per line.
+
 =back
 
 =head2 Administration commands

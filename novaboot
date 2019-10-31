@@ -995,7 +995,7 @@ foreach my $script (@scripts) {
 	    $hostname = "";
 	}
 	my $files = join(" ", map({ ($file) = m/([^ ]*)/; $file; } ( @$modules, @bootloader_configs, @$copy)));
-	map({ my $file = (split)[0]; die "$file: $!" if ! -f $file; } @$modules);
+	map({ my $file = (split)[0]; die "Not a file: $file: $!" if ! -f $file; } @$modules);
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
 	if ($files) {

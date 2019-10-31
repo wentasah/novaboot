@@ -130,7 +130,9 @@ date > file
 WVPASS novaboot --ssh novaboot-test@localhost <<EOF
 copy file
 EOF
+# Check that file was copied to tftproot
 WVPASS diff -u file $TFTPROOT/file
+# Check that reset command was executed
 WVPASS diff -u <(echo $TS) "$WV_BASE_DIR/home-novaboot-test/reset.stamp"
 
 
@@ -160,9 +162,10 @@ target_config="\
 --make
 "
 EOF
-WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
-load file < date
-EOF
+WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
+novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
+    tee >(WVPASS grep -q -F 'Unknown option: make') |\
+    tee >(WVPASS grep -q -F 'Error processing configuration from the server')
 
 WVSTART "Novaboot --ssh remote config fails on unknown arguments"
 WVPASS tee $SHELLRC <<EOF
@@ -173,9 +176,10 @@ target_config="\
 blablabla
 "
 EOF
-WVFAIL novaboot --ssh novaboot-test@localhost <<EOF
-load file < date
-EOF
+WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
+novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
+    WVPASS grep --color=always -q .
+
 
 WVSTART "add-key subcommand"
 WVPASS ssh-keygen -t ed25519 -N '' -f key

@@ -141,7 +141,7 @@ my ($target_reset, $target_power_on, $target_power_off);
     );
 $rsync_flags = '';
 $rom_prefix = 'rom://';
-$stty = 'raw -crtscts -onlcr 115200';
+$stty = 'raw -crtscts -onlcr -echo 115200';
 $reset = 1;			# Reset target by default
 $interaction = 1;		# Perform target interaction by default
 $final_eol = 1;

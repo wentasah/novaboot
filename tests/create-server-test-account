@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Creates an account needed for running some tests in ./server.wv.
+
+set -x
+set -e
+
+sudo adduser-novaboot --key ~/.ssh/id_rsa.pub --admin-id=$USER novaboot-test
+sudo chsh --shell $(realpath $(dirname $0)/../server/novaboot-shell) novaboot-test
+sudo tee /etc/sudoers.d/novaboot-test <<EOF
+$USER  ALL=(novaboot-test) NOPASSWD: ALL
+EOF

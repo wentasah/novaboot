@@ -3,6 +3,7 @@
 cd $(dirname $0)
 . wvtest.sh
 
+NBT_HOME=$(getent passwd novaboot-test|cut -d: -f6)
 export WV_BASE_DIR
 export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > $NOVABOOT_SHELL_CONFIG
@@ -102,26 +103,25 @@ WVSTART "Quoting of config variables"
     WVPASS test -e '"file1 file2"'
 )
 
-SHELLRC="$WV_BASE_DIR/home-novaboot-test/.novaboot-shell"
-TFTPROOT="$WV_BASE_DIR/home-novaboot-test/tftproot"
-AUTH="$WV_BASE_DIR/home-novaboot-test/.ssh/authorized_keys"
+SHELLRC="$NBT_HOME/.novaboot-shell"
+TFTPROOT="$NBT_HOME/tftproot"
+AUTH="$NBT_HOME/.ssh/authorized_keys"
+sudo_() { sudo -u novaboot-test "$@"; }
 
-if [ -z "$SSH_AUTH_SOCK" ]; then
-    WVSTART "!!! Skipping SSH tests because no ssh-agent was detected !!!"
-    exit 0
-fi
+WVSTART "Check that ssh-agent needed for following tests is running"
+WVPASS test -n "$SSH_AUTH_SOCK" || exit 1
 
 WVSTART "Setup SSH server's admin key"
 WVPASS ssh-add -L > keys
 WVPASS test $(wc -l < keys) -gt 0
-WVPASS mkdir -p $(dirname $AUTH)
-WVPASS chmod 700 $(dirname $AUTH)
-WVPASS echo 'command="user test admin"' $(tail -n 1 keys) > $AUTH
+WVPASS sudo_ mkdir -p $(dirname "$AUTH")
+WVPASS sudo_ chmod 700 $(dirname "$AUTH")
+WVPASS sudo_ tee "$AUTH" <<<"command=\"user test admin\" $(tail -n 1 keys)"
 
 WVSTART "Novaboot --ssh option (connect, rsync, reset)"
-WVPASS rm -rf $TFTPROOT
+WVPASS sudo_ rm -rf "$TFTPROOT"
 TS=$(date --rfc-3339=ns)
-WVPASS tee $SHELLRC <<EOF
+WVPASS sudo_ tee "$SHELLRC" <<EOF
 console_cmd=cat
 reset_cmd="echo $TS > reset.stamp"
 target_config=""
@@ -131,14 +131,13 @@ WVPASS novaboot --ssh novaboot-test@localhost <<EOF
 copy file
 EOF
 # Check that file was copied to tftproot
-WVPASS diff -u file $TFTPROOT/file
+WVPASS diff -u file <(sudo_ cat $TFTPROOT/file)
 # Check that reset command was executed
-WVPASS diff -u <(echo $TS) "$WV_BASE_DIR/home-novaboot-test/reset.stamp"
-
+WVPASS test "$TS" = "$(sudo_ cat "$NBT_HOME/reset.stamp")"
 
 WVSTART "Novaboot --ssh remote config"
-WVPASS rm -rf $TFTPROOT
-WVPASS tee $SHELLRC <<EOF
+WVPASS sudo_ rm -rf "$TFTPROOT"
+WVPASS sudo_ tee "$SHELLRC" <<EOF
 console_cmd=cat
 reset_cmd=true
 target_config="\
@@ -150,11 +149,11 @@ date > file
 WVPASS novaboot --ssh novaboot-test@localhost <<EOF
 load file
 EOF
-WVPASS diff -u file $TFTPROOT/file
-WVPASS grep /prefix/file $TFTPROOT/grub.cfg
+WVPASS diff -u file <(sudo_ cat "$TFTPROOT/file")
+WVPASS sudo_ grep /prefix/file "$TFTPROOT/grub.cfg"
 
 WVSTART "Novaboot --ssh remote config fails on non-safe options"
-WVPASS tee $SHELLRC <<EOF
+WVPASS sudo_ tee "$SHELLRC" <<EOF
 console_cmd=cat
 reset_cmd=true
 target_config="\
@@ -164,11 +163,11 @@ target_config="\
 EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
 novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
-    tee >(WVPASS grep -q -F 'Unknown option: make') |\
-    tee >(WVPASS grep -q -F 'Error processing configuration from the server')
+    tee >(WVPASS grep -q -F 'Unknown option: make') \
+	>(WVPASS grep -q -F 'Error processing configuration from the server')
 
 WVSTART "Novaboot --ssh remote config fails on unknown arguments"
-WVPASS tee $SHELLRC <<EOF
+WVPASS sudo_ tee "$SHELLRC" <<EOF
 console_cmd=cat
 reset_cmd=true
 target_config="\
@@ -178,26 +177,25 @@ blablabla
 EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
 novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
-    WVPASS grep --color=always -q .
-
+    WVPASS grep -F "Unsuported configuration received from the server: blablabla"
 
 WVSTART "add-key subcommand"
 WVPASS ssh-keygen -t ed25519 -N '' -f key
-WVFAIL grep new_user $AUTH
+WVFAIL sudo_ grep new_user "$AUTH"
 WVPASS ssh novaboot-test@localhost add-key new_user < key.pub
-WVPASS grep new_user $AUTH
+WVPASS sudo_ grep -F "user new_user" "$AUTH"
 
 WVSTART "add-key user must not contain spaces"
-WVPASS cp $AUTH auth
+WVPASS sudo_ cat "$AUTH" > auth
 WVFAIL ssh novaboot-test@localhost add-key "new user" < /dev/null
-WVPASS diff -u $AUTH auth
+WVPASS diff -u <(sudo_ cat "$AUTH") auth
 
 WVSTART "add-key requires username"
-WVPASS cp $AUTH auth
+WVPASS sudo_ cat "$AUTH" > auth
 WVFAIL ssh novaboot-test@localhost add-key < /dev/null
-WVPASS diff -u $AUTH auth
+WVPASS diff -u <(sudo_ cat "$AUTH") auth
 
-WVSTART Suggest using ssh -t for shell
+WVSTART "Suggest using ssh -t for shell"
 WVPASS ssh novaboot-test@localhost shell < /dev/null | WVPASS grep -e 'ssh -t'
 echo exit|WVPASS ssh -tt novaboot-test@localhost shell | WVFAIL grep -e 'ssh -t'
 

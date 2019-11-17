@@ -16,7 +16,6 @@ Target commands:
 - off
 - rsync ...
 - get-config
-- ssh [options]
 
 Management commands:
 - help
@@ -113,12 +112,6 @@ run_subcommand() {
 	    eval exec "${on_cmd:?}";;
 	"off")
 	    eval exec "${off_cmd:?}";;
-	"ssh"|"ssh "*)
-	    shift
-	    # TODO: sanitize ssh arguments
-	    exec ssh "$@" "${ssh_dest:?}";;
-	*)
-	    die "Unsupported command";;
     esac
 }
 
@@ -162,7 +155,7 @@ main() {
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
 	# using SSH connection sharing on client side.
-	reset | rsync | on | off | ssh)
+	reset | rsync | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
 	    $run $0 "$@";;

@@ -995,7 +995,7 @@ foreach my $script (@scripts) {
 	    $hostname = "";
 	}
 	my $files = join(" ", map({ ($file) = m/([^ ]*)/; $file; } ( @$modules, @bootloader_configs, @$copy)));
-	map({ my $file = (split)[0]; die "Not a file: $file: $!" if ! -f $file; } @$modules);
+	map({ my $file = (split)[0]; die "Not a file: $file: $!" if ! -e $file || -d $file; } @$modules);
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
 	if ($files) {
@@ -1246,7 +1246,7 @@ if (defined $uboot) {
 	@$modules = map { if (/\.dtb$/) { $dtb=$_; (); } else { $_ } } @$modules;
 	my $initrd = shift @$modules;
 
-	if (defined $kbin) {
+	if (defined $kbin && $kbin ne '/dev/null') {
 	    die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
 	    $exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
 	    $exp->expect(15,

@@ -159,4 +159,12 @@ WVPASS make -C dir | WVPASS grep "Config OK"
 WVSTART "INTERACTION variable"
 WVPASS novaboot --remote-cmd=cat <<<INTERACTION=0
 
+WVSTART "Do not accept directories"
+WVPASS mkdir -p tftproot
+WVFAIL novaboot --server=tftproot <<<"load $PWD"
+
+WVSTART "Accept /dev/null file"
+WVPASS mkdir -p tftproot
+WVPASS novaboot --server=tftproot <<<"load /dev/null"
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

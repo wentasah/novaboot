@@ -103,6 +103,15 @@ WVSTART "Quoting of config variables"
     WVPASS test -e '"file1 file2"'
 )
 
+WVSTART "Config variables can depend on user name"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd="echo Hello $NB_USER"'
+    username=asdf WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello asdf"
+    username=qwer WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello qwer"
+)
+
 SHELLRC="$NBT_HOME/.novaboot-shell"
 TFTPROOT="$NBT_HOME/tftproot"
 AUTH="$NBT_HOME/.ssh/authorized_keys"

@@ -125,7 +125,7 @@ main() {
     NB_ADMIN=
     if [ "$1" = "user" ]; then
 	# Get user name encoded in ~/.ssh/authorized_keys
-	NB_USER="$2";
+	export NB_USER="$2";
 	[ "$3" = "admin" ] && NB_ADMIN=1
 	set -- $SSH_ORIGINAL_COMMAND
     fi

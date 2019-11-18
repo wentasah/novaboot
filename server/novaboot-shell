@@ -166,7 +166,12 @@ main() {
     esac
 }
 
-RUN_DIR="$HOME"
+if [ -d "$HOME" ]; then
+    RUN_DIR="$HOME"
+else
+    RUN_DIR="/tmp/novaboot-shell@$USER"
+    mkdir -p "$RUN_DIR"
+fi
 
 if [ -z "$NOVABOOT_ID" ]; then
     main "$@"

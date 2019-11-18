@@ -2,7 +2,9 @@ Source: novaboot
 Section: devel
 Priority: optional
 Maintainer: Michal Sojka <sojkam1@fel.cvut.cz>
-Build-Depends: debhelper (>= 8.0.0), perl, libexpect-perl
+Build-Depends: debhelper (>= 8.0.0), perl, libexpect-perl,
+ python3-minimal, libpython3-stdlib, rsync, isolinux, syslinux-common,
+ genisoimage, sudo
 Standards-Version: 3.9.4
 Homepage: https://github.com/wentasah/novaboot
 Vcs-Git: https://github.com/wentasah/novaboot.git

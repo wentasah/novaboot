@@ -171,9 +171,9 @@ target_config="\
 "
 EOF
 WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
-novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
-    tee >(WVPASS grep -q -F 'Unknown option: make') \
-	>(WVPASS grep -q -F 'Error processing configuration from the server')
+stderr=$(novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null)
+echo "$stderr" | WVPASS grep -q -F 'Unknown option: make'
+echo "$stderr" | WVPASS grep -q -F 'Error processing configuration from the server'
 
 WVSTART "Novaboot --ssh remote config fails on unknown arguments"
 WVPASS sudo_ tee "$SHELLRC" <<EOF

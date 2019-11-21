@@ -6,3 +6,6 @@
 
 %:
 	dh $@ 
+
+override_dh_auto_install:
+	dh_auto_install -- INSTALL_SERVER=yes

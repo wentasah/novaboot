@@ -16,6 +16,9 @@ install:
 	install -m 440 sudoers.novaboot $(DESTDIR)/etc/sudoers.d/novaboot
 	install -d $(DESTDIR)/etc/novaboot.d
 	install -m 644 etc.novaboot.txt $(DESTDIR)/etc/novaboot.d/README.txt
+ifneq ($(INSTALL_SERVER),)
+	$(MAKE) -C server install PREFIX=$(PREFIX)
+endif
 
 test:
 	$(MAKE) -C tests

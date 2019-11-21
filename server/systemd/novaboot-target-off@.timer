@@ -1,3 +1,0 @@
-[Timer]
-OnActiveSec=10min
-Unit=novaboot-target-off@%i.target

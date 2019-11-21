@@ -69,17 +69,6 @@ else
     echo "NOT creating /srv/tftp/$user and symlink to it from $home/tftproot."
 fi
 
-if [ -d /run/systemd/system ]; then
-    echo "Installing systemd services and timers in /etc/systemd/system/user@$uid.service.d"
-    mkdir -p /etc/systemd/system/user@$uid.service.d
-    cat <<EOF > /etc/systemd/system/user@$uid.service.d/novaboot-server.conf
-[Unit]
-Requires=novaboot-server-session@$user.service
-After=novaboot-server-session@$user.service
-EOF
-    systemctl daemon-reload
-fi
-
 echo "Creating configuration template in $home/.novaboot-shell"
 cat <<'CONFIG_EOF' > $home/.novaboot-shell
 #!/bin/sh
@@ -104,6 +93,18 @@ cat <<'CONFIG_EOF' > $home/.novaboot-shell
 # "
 CONFIG_EOF
 chown $user: $home/.novaboot-shell
+
+if [ -d /run/systemd/system ]; then
+    cat <<EOF
+To enable automatic delayed power-off run 'systemctl --user enable novaboot-power-off'
+as the created user (e.g. via shell subcommand)
+EOF
+    # TODO: Add a way to run in automatically from here (allow shell
+    #subcommand to accept command lines)
+    #systemctl --user enable novaboot-power-off
+fi
+
+
 
 echo "Done"
 exit 0

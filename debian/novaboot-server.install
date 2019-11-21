@@ -1,8 +1,10 @@
-/lib/systemd/system/novaboot-target-off@.target
-/lib/systemd/system/novaboot-target-off@.timer
-/lib/systemd/system/novaboot-target-on@.service
-/lib/systemd/system/novaboot-server-session@.service
+/etc/sudoers.d/novaboot-server
+/lib/systemd/system/novaboot-power-off@.target
+/lib/systemd/system/novaboot-power-off@.timer
+/lib/systemd/system/novaboot-power@.service
+/usr/bin/novaboot-power
 /usr/bin/novaboot-shell
+/usr/lib/systemd/user/novaboot-power-off.service
 /usr/lib/sysusers.d/novaboot-server.conf
 /usr/sbin/adduser-novaboot
 /usr/share/man/man1/novaboot-shell.1

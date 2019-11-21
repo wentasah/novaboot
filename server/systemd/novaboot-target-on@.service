@@ -1,9 +1,0 @@
-[Unit]
-Description=Power on novaboot target %i
-
-[Service]
-Type=oneshot
-RemainAfterExit=true
-ExecStart=/usr/bin/novaboot-shell -c on
-ExecStop=/usr/bin/novaboot-shell -c off
-User=%i

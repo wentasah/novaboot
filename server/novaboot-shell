@@ -89,6 +89,21 @@ read_config() {
     . "${NOVABOOT_SHELL_CONFIG:-$HOME/.novaboot-shell}"
 }
 
+power() {
+    local cmd
+    case "$1" in
+	"on")  cmd="${on_cmd:?}";;
+	"off") cmd="${off_cmd:?}";;
+	*) die "Unexpected power parameter";;
+    esac
+
+    if [ "$PPID" -ne 1 ] && systemctl --user is-enabled novaboot-power-off.service; then
+	sudo novaboot-power "$1"
+    else
+	eval "$cmd"
+    fi
+}
+
 # run_subcommand should be called only after permission checks and/or locking
 run_subcommand() {
     read_config
@@ -98,6 +113,7 @@ run_subcommand() {
 	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
 	    echo 'novaboot-shell: Connected'
 	    # TODO: $reset_begin_cmd
+	    [ -n "${on_cmd}" ] && power on
 	    eval exec "${console_cmd:?}";;
 	"reset")
 	    eval exec "${reset_cmd:?}";;
@@ -109,9 +125,13 @@ run_subcommand() {
 	    cd "$HOME/tftproot"
 	    exec "$@";;
 	"on")
-	    eval exec "${on_cmd:?}";;
+	    power on
+	    exit;;
 	"off")
-	    eval exec "${off_cmd:?}";;
+	    power off
+	    exit;;
+	*)
+	    die "Unknown command: $*";;
     esac
 }
 
@@ -173,7 +193,7 @@ else
     mkdir -p "$RUN_DIR"
 fi
 
-if [ -z "$NOVABOOT_ID" ]; then
+if [ -z "$NOVABOOT_ID" ] && [ "$PPID" -ne 1 ]; then
     main "$@"
 else
     run_subcommand "$@"

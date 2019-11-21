@@ -14,7 +14,9 @@ install: all
 	install -D -m 755 -t $(DESTDIR)$(PREFIX)/sbin adduser-novaboot
 	install -D -m 644 -t $(DESTDIR)$(PREFIX)/share/man/man8 adduser-novaboot.8
 	install -D -m 644 -t $(DESTDIR)$(PREFIX)/lib/sysusers.d sysusers.d/novaboot-server.conf
-	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-target-off@.target
-	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-target-off@.timer
-	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-target-on@.service
-	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-server-session@.service
+	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-power-off@.target
+	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-power-off@.timer
+	install -D -m 644 -t $(DESTDIR)/lib/systemd/system systemd/novaboot-power@.service
+	install -D -m 644 -t $(DESTDIR)/usr/lib/systemd/user systemd/novaboot-power-off.service
+	install -D -m 440 systemd/sudoers.novaboot-server $(DESTDIR)/etc/sudoers.d/novaboot-server
+	install -D -m 755 -t $(DESTDIR)$(PREFIX)/bin systemd/novaboot-power

@@ -52,6 +52,7 @@ $CFG::hypervisor_params = "serial";
 $CFG::genisoimage = "genisoimage";
 $CFG::qemu = 'qemu-system-i386 -cpu coreduo -smp 2';
 $CFG::default_target = '';
+$CFG::netif = 'eth0';
 %CFG::targets = (
     'qemu' => '--qemu',
     "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
@@ -145,7 +146,7 @@ $stty = 'raw -crtscts -onlcr -echo 115200';
 $reset = 1;			# Reset target by default
 $interaction = 1;		# Perform target interaction by default
 $final_eol = 1;
-$netif = 'eth0';
+$netif = $CFG::netif;
 $remote_expect_timeout = -1;
 
 my @expect_seen = ();
@@ -1889,10 +1890,11 @@ Port to run the TFTP server on. Implies B<--tftp>.
 
 =item --netif=I<network interface>
 
-Network interface used to deploy files to the target. The default value is
-I<eth0>. This option influences the configuration of the DHCP server started
-by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with during
-U-Boot conversation.
+Network interface used to deploy files to the target. This option
+influences the configuration of the DHCP server started by
+B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with during
+U-Boot conversation. The default value is C<$netif> variable from
+configuration files, which defaults to I<eth0>.
 
 =item --iso[=filename]
 
@@ -2351,6 +2353,11 @@ file.
 Default target (see below) to use when no target is explicitly
 specified with the B<--target> command line option or
 B<NOVABOOT_TARGET> environment variable.
+
+=item $netif
+
+Default value for the B<--netif> option. If not specified, it defaults
+to I<eth0>.
 
 =item %targets
 

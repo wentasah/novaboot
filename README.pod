@@ -550,10 +550,11 @@ Port to run the TFTP server on. Implies B<--tftp>.
 
 =item --netif=I<network interface>
 
-Network interface used to deploy files to the target. The default value is
-I<eth0>. This option influences the configuration of the DHCP server started
-by B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with during
-U-Boot conversation.
+Network interface used to deploy files to the target. This option
+influences the configuration of the DHCP server started by
+B<--dhcp-tftp> and the value that B<$NB_MYIP> get replaced with during
+U-Boot conversation. The default value is C<$netif> variable from
+configuration files, which defaults to I<eth0>.
 
 =item --iso[=filename]
 
@@ -1012,6 +1013,11 @@ file.
 Default target (see below) to use when no target is explicitly
 specified with the B<--target> command line option or
 B<NOVABOOT_TARGET> environment variable.
+
+=item $netif
+
+Default value for the B<--netif> option. If not specified, it defaults
+to I<eth0>.
 
 =item %targets
 

@@ -1,0 +1,13 @@
+[Unit]
+Description=Delayed power-off of the novaboot target
+ConditionGroup=novaboot
+ConditionFileNotEmpty=%h/.novaboot-shell
+Before=shutdown.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sudo novaboot-power delayed-off
+
+[Install]
+WantedBy=shutdown.target

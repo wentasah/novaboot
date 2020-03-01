@@ -1,0 +1,10 @@
+[Unit]
+Description=Power on/off novaboot target %i
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStartPre=systemctl stop novaboot-power-off@%i.timer
+ExecStart=/usr/bin/novaboot-shell on
+ExecStop=/usr/bin/novaboot-shell off
+User=%i

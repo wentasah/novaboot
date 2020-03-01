@@ -1,0 +1,3 @@
+# sudoers file for novaboot-server
+
+%novaboot ALL = NOPASSWD: /usr/sbin/novaboot-power

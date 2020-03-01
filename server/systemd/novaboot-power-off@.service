@@ -1,0 +1,12 @@
+[Unit]
+Description=Power off novaboot target %i
+Conflicts=novaboot-power@%i.service
+After=novaboot-power@%i.service
+
+[Service]
+Type=oneshot
+# We don't need to execute anything. It's sufficient to Conflict
+# novaboot-power. But units without Exec* are invalid. And we don't
+# want tu use target unit (that don't need Exec*), because these don't
+# have RemainAfterExit=no.
+ExecStart=true

@@ -1,8 +1,8 @@
 /etc/sudoers.d/novaboot-server
-/lib/systemd/system/novaboot-power-off@.target
+/lib/systemd/system/novaboot-power-off@.service
 /lib/systemd/system/novaboot-power-off@.timer
 /lib/systemd/system/novaboot-power@.service
-/usr/bin/novaboot-power
+/usr/sbin/novaboot-power
 /usr/bin/novaboot-shell
 /usr/lib/systemd/user/novaboot-power-off.service
 /usr/lib/sysusers.d/novaboot-server.conf

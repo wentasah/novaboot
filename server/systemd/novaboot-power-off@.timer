@@ -1,0 +1,4 @@
+[Timer]
+OnActiveSec=10min
+Unit=novaboot-power-off@%i.service
+RemainAfterElapse=no

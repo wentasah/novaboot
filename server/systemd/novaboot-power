@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -z "$SUDO_USER" ]; then
+    echo >&2 "$0 must be invoked via sudo"
+    exit 1
+fi
+
+case "$1" in
+    on)
+	exec systemctl start "novaboot-power@${SUDO_USER}.service";;
+    off)
+	exec systemctl stop "novaboot-power@${SUDO_USER}.service";;
+    delayed-off)
+	systemctl start "novaboot-power-off@${SUDO_USER}.timer"
+	# || systemd-run --on-active="$2" --unit="novaboot-power-off@${SUDO_USER}.target"
+	;;
+    *)
+	echo >&2 "Invalid argument"
+	exit 1;;
+esac

@@ -1487,7 +1487,7 @@ I<script2> configurations.
 
 =back
 
-=head1 PHASES AND OPTIONS
+=head1 OPTIONS AND PHASES
 
 Novaboot performs its work in several phases. Command line options
 described bellow influence the execution of each phase or allow their
@@ -2152,7 +2152,8 @@ device tree is recognized as the file name ending with C<.dtb>.
 
 When the C<load> line ends with "<<WORD" then the subsequent lines
 until the line containing solely WORD are copied literally to the file
-named on that line. This is similar to shell's heredoc feature.
+named on that line. This is similar to the heredoc feature of UNIX
+shells.
 
 When the C<load> line ends with "< CMD" then command CMD is executed
 with F</bin/sh> and its standard output is stored in the file named on

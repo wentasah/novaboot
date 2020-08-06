@@ -804,6 +804,12 @@ word after C<load> is a file name (relative to the build directory
 (see B<--build-dir>) of the module to load and the remaining words are
 passed to it as the command line parameters.
 
+When booting Linux, the first C<load> line usually refers to the
+kernel image and its command line parameters (unless you use some
+special pre-loader). Other C<load> lines may refer to an initramfs
+image and/or a device tree blob. Their order is not important, as the
+device tree is recognized as the file name ending with C<.dtb>.
+
 When the C<load> line ends with "<<WORD" then the subsequent lines
 until the line containing solely WORD are copied literally to the file
 named on that line. This is similar to shell's heredoc feature.

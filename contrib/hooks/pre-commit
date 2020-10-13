@@ -2,7 +2,7 @@
 
 # git pre-commit hook
 
-set -e
+set -eo pipefail
 
 # Make README.pod be always in sync with novaboot - work with objects
 # in the index (what is being committed), not with what is in the

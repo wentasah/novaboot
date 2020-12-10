@@ -1,0 +1,14 @@
+[Unit]
+Description=UNFS3 daemon (port %i)
+
+[Service]
+# -e /abs/path/to/exports
+# -n nfs_service_port
+# -m mount_service_port
+# -t  # tcp only
+# -p  # do not use portmapper
+# -s  # single-user mode (map file ownership)
+ExecStart=unfsd -e %h/export -n %i -m %i -t -p -s
+
+[Install]
+WantedBy=default.target

@@ -14,11 +14,22 @@ let
   };
   perlEnv = (perl.withPackages (p: [ p.Expect IO-Stty ]));
 in
-stdenv.mkDerivation {
-  name = "novaboot";
-  src = builtins.fetchGit { url = ./.; };
-  buildInputs = [ perlEnv rsync ];
-  installPhase = ''
+{
+  novaboot = stdenv.mkDerivation {
+    name = "novaboot";
+    src = builtins.fetchGit { url = ./.; };
+    buildInputs = [ perlEnv rsync ];
+    installPhase = ''
     make install DESTDIR=$out PREFIX=
   '';
+  };
+  novaboot-server = stdenv.mkDerivation {
+    name = "novaboot-server";
+    src = builtins.fetchGit { url = ./.; };
+    nativeBuildInputs = [ perl ];
+    buildInputs = [ rsync ];
+    installPhase = ''
+    make -C server install DESTDIR=$out PREFIX=
+  '';
+  };
 }

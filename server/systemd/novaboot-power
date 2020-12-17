@@ -7,9 +7,12 @@ fi
 
 case "$1" in
     on)
-	exec systemctl start "novaboot-power@${SUDO_USER}.service";;
+	systemctl stop  "novaboot-power-off@${SUDO_USER}.timer"
+	systemctl start "novaboot-power@${SUDO_USER}.service"
+	;;
     off)
-	exec systemctl stop "novaboot-power@${SUDO_USER}.service";;
+	systemctl stop "novaboot-power@${SUDO_USER}.service"
+	;;
     delayed-off)
 	systemctl start "novaboot-power-off@${SUDO_USER}.timer"
 	# || systemd-run --on-active="$2" --unit="novaboot-power-off@${SUDO_USER}.target"

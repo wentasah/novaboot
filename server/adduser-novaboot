@@ -96,12 +96,12 @@ chown $user: $home/.novaboot-shell
 
 if [ -d /run/systemd/system ]; then
     cat <<EOF
-To enable automatic delayed power-off run 'systemctl --user enable novaboot-power-off'
+To enable automatic delayed power-off run 'systemctl --user enable novaboot-delayed-power-off'
 as the created user (e.g. via shell subcommand)
 EOF
     # TODO: Add a way to run in automatically from here (allow shell
     #subcommand to accept command lines)
-    #systemctl --user enable novaboot-power-off
+    #systemctl --user enable novaboot-delayed-power-off
 fi
 
 

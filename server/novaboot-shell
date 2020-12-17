@@ -97,7 +97,7 @@ power() {
 	*) die "Unexpected power parameter";;
     esac
 
-    if [ "$PPID" -ne 1 ] && systemctl --user is-enabled novaboot-delayed-power-off.service; then
+    if [ "$PPID" -ne 1 ] && systemctl --user is-enabled --quiet novaboot-delayed-power-off.service; then
 	sudo novaboot-power "$1"
     else
 	eval "$cmd"

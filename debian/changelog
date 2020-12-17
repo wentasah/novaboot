@@ -1,3 +1,135 @@
+novaboot (20201217) unstable; urgency=medium
+
+  [ Michal Sojka ]
+  * server: Document get-config
+  * server: Always use flock with --no-fork
+
+  [ Jan Kaisrlik ]
+  * Disable echo in default stty arguments
+
+  [ Michal Sojka ]
+  * server: Ensure that configuration can depend on logged-in user name
+  * Allow specifying /dev/null as load argument
+  * debian: Fix version syntax in Depends
+  * debian: Add build-depends to be able to run tests under pbuilder
+  * server: User temporary RUN_DIR in $HOME does not exist
+  * Simplify systemd logic for automated delayed power off
+  * Allow configuring the default value of --netif globally in configuration files
+  * doc: Add section about booting Linux
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Thu, 17 Dec 2020 08:41:58 +0100
+
+novaboot (20201217) unstable; urgency=medium
+
+  [ Michal Sojka ]
+  * server: Mention get-config command in help message
+  * server: Document get-config
+  * server: Add experimental support for the ssh sub-command
+  * Improve an error message
+  * server: Always use flock with --no-fork
+  * tests: Make some server tests more readable
+
+  [ Jan Kaisrlik ]
+  * Disable echo in default stty arguments
+
+  [ Michal Sojka ]
+  * test: Add script for creating test account
+  * tests: Convert server tests to use the account from last commit
+  * Revert "server: Add experimental support for the ssh sub-command"
+  * server: Ensure that configuration can depend on logged-in user name
+  * Allow specifying /dev/null as load argument
+  * tests: Remove home directory for server tests
+  * debian: Fix version syntax in Depends
+  * debian: Add build-depends to be able to run tests under pbuilder
+  * server: User temporary RUN_DIR in $HOME does not exist
+  * tests: Get rid of asynchronous process substitution
+  * server: Use Makefile to install the server
+  * Simplify systemd logic for automated delayed power off
+  * Allow configuring the default value of --netif globally in configuration files
+  * doc: Add section about booting Linux
+  * doc: Cosmetic changes
+  * Add basic Nix support
+  * Catch errors in pre-commit hook
+  * server: Add missing files for delayed power-off
+  * nix: Add derivation for novaboot-server
+  * Make novaboot shebang NixOS compatible
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Thu, 17 Dec 2020 08:38:42 +0100
+
+novaboot (20201217) unstable; urgency=medium
+
+  [ Michal Sojka ]
+  * server: Mention get-config command in help message
+  * server: Document get-config
+  * server: Add experimental support for the ssh sub-command
+  * Improve an error message
+  * server: Always use flock with --no-fork
+  * tests: Make some server tests more readable
+
+  [ Jan Kaisrlik ]
+  * Disable echo in default stty arguments
+
+  [ Michal Sojka ]
+  * test: Add script for creating test account
+  * tests: Convert server tests to use the account from last commit
+  * Revert "server: Add experimental support for the ssh sub-command"
+  * server: Ensure that configuration can depend on logged-in user name
+  * Allow specifying /dev/null as load argument
+  * tests: Remove home directory for server tests
+  * debian: Fix version syntax in Depends
+  * debian: Add build-depends to be able to run tests under pbuilder
+  * server: User temporary RUN_DIR in $HOME does not exist
+  * tests: Get rid of asynchronous process substitution
+  * server: Use Makefile to install the server
+  * Simplify systemd logic for automated delayed power off
+  * Allow configuring the default value of --netif globally in configuration files
+  * doc: Add section about booting Linux
+  * doc: Cosmetic changes
+  * Add basic Nix support
+  * Catch errors in pre-commit hook
+  * server: Add missing files for delayed power-off
+  * nix: Add derivation for novaboot-server
+  * Make novaboot shebang NixOS compatible
+
+ -- Michal Sojka <wsh@steelpick.2x.cz>  Thu, 17 Dec 2020 08:37:42 +0100
+
+novaboot (20201217) unstable; urgency=medium
+
+  [ Michal Sojka ]
+  * server: Mention get-config command in help message
+  * server: Document get-config
+  * server: Add experimental support for the ssh sub-command
+  * Improve an error message
+  * server: Always use flock with --no-fork
+  * tests: Make some server tests more readable
+
+  [ Jan Kaisrlik ]
+  * Disable echo in default stty arguments
+
+  [ Michal Sojka ]
+  * test: Add script for creating test account
+  * tests: Convert server tests to use the account from last commit
+  * Revert "server: Add experimental support for the ssh sub-command"
+  * server: Ensure that configuration can depend on logged-in user name
+  * Allow specifying /dev/null as load argument
+  * tests: Remove home directory for server tests
+  * debian: Fix version syntax in Depends
+  * debian: Add build-depends to be able to run tests under pbuilder
+  * server: User temporary RUN_DIR in $HOME does not exist
+  * tests: Get rid of asynchronous process substitution
+  * server: Use Makefile to install the server
+  * Simplify systemd logic for automated delayed power off
+  * Allow configuring the default value of --netif globally in configuration files
+  * doc: Add section about booting Linux
+  * doc: Cosmetic changes
+  * Add basic Nix support
+  * Catch errors in pre-commit hook
+  * server: Add missing files for delayed power-off
+  * nix: Add derivation for novaboot-server
+  * Make novaboot shebang NixOS compatible
+
+ -- Michal Sojka <wsh@steelpick.2x.cz>  Thu, 17 Dec 2020 08:37:24 +0100
+
 novaboot (20191023) unstable; urgency=medium
 
   * Add a picture showing typical use cases

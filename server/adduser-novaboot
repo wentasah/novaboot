@@ -96,12 +96,9 @@ chown $user: $home/.novaboot-shell
 
 if [ -d /run/systemd/system ]; then
     cat <<EOF
-To enable automatic delayed power-off run 'systemctl --user enable novaboot-delayed-power-off'
-as the created user (e.g. via shell subcommand)
+See adduser-novaboot(8) for instructions how to automatically power of
+the target.
 EOF
-    # TODO: Add a way to run in automatically from here (allow shell
-    #subcommand to accept command lines)
-    #systemctl --user enable novaboot-delayed-power-off
 fi
 
 
@@ -127,9 +124,32 @@ simplifies creation of user accounts for I<novaboot>'s --ssh option.
 The created account has its shell set to L<novaboot-shell(1)>. The
 command also creates a template of the configuration file, sets up
 administrator's SSH key in L<authorized_keys(5)> prepares directories
-and symlinks that for integration with TFTP server and, when run under
-L<systemd(1)>, configures systemd service files to automatically
-power-off the target after timeout.
+and symlinks that for integration with TFTP server.
+
+=head2 Automatic power-off
+
+When your system uses L<systemd(1)>, you can configure a systemd
+service to automatically power-off the target after timeout. To enable
+this run:
+
+    systemctl --user enable novaboot-delayed-power-off
+
+as the created user (e.g. via shell subcommand). To enable delayed
+power-off for all novaboot-shell account, run the follwing as root:
+
+    systemctl --global enable novaboot-delayed-power-off
+
+Individual accounts may disable this global configuration by running:
+
+    systemctl --user mask novaboot-delayed-power-off
+
+The power-off timeout is hardcoded in the B<novaboot-power-off@.timer>
+unit. To override the timeout, run C<systemctl edit
+novaboot-power-off@TARGET.timer> for your B<TARGET> and insert the
+following to the spawned editor:
+
+    [Timer]
+    OnActiveSec=30min
 
 =head1 OPTIONS
 

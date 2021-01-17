@@ -1299,7 +1299,7 @@ if ($interaction && defined $exp) {
     print STDERR "novaboot: Serial line interaction (press $interrupt to interrupt)...\n";
     $exp->log_stdout(1);
     if (@exiton) {
-	$exp->expect($exiton_timeout, @expect_raw, @exiton) || die("exiton: " . ($! || "timeout"));
+	$exp->expect($exiton_timeout, @exiton, @expect_raw) || die("exiton: " . ($! || "timeout"));
     } else {
 	my @inputs = ($exp);
 	my $infile = new IO::File;

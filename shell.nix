@@ -1,7 +1,6 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs;
 mkShell {
-  # this will make all the build inputs from hello and gnutar
-  # available to the shell environment
+  inputsFrom = [ (import ./default.nix { inherit pkgs; }).novaboot ];
   buildInputs = [ (perl.withPackages (p: [ p.PodParser ])) ];
 }

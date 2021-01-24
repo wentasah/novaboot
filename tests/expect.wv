@@ -29,3 +29,9 @@ WVSTART Expect sendcond
 WVPASS create_dummy
 WVPASS ./script -t '' --expect=More --sendcont="\n" \
     --remote-cmd='seq 100|more'
+
+WVSTART Expect vs exiton priority
+WVPASS create_dummy
+WVPASS ./script -t '' --expect="#" --sendcont="exit\n#" --exiton="exit" \
+       --remote-cmd='echo -n "#"; cat' | tee output
+WVPASS test "$(grep exit output | wc -l )" -eq 1

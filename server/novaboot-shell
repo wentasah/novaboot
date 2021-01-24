@@ -56,7 +56,7 @@ exec_shell() {
     if ! tty > /dev/null; then
 	echo "novaboot-shell: Consider starting the shell with 'ssh -t'"
     fi
-    exec /bin/bash || exec /bin/sh
+    exec /usr/bin/env bash || exec /bin/sh
 }
 
 lock_queue() {

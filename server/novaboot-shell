@@ -104,17 +104,21 @@ power() {
     fi
 }
 
+run_console() {
+    trap "rm -f $RUN_DIR/ppid" EXIT
+    echo $NOVABOOT_PPID > $RUN_DIR/ppid
+    echo 'novaboot-shell: Connected'
+    # TODO: $reset_begin_cmd
+    [ -n "${on_cmd}" ] && power on
+    eval "$1"
+}
+
 # run_subcommand should be called only after permission checks and/or locking
 run_subcommand() {
     read_config
     case "$*" in
 	"console")
-	    trap "rm -f $RUN_DIR/ppid" EXIT
-	    echo $NOVABOOT_PPID > $RUN_DIR/ppid
-	    echo 'novaboot-shell: Connected'
-	    # TODO: $reset_begin_cmd
-	    [ -n "${on_cmd}" ] && power on
-	    eval exec "${console_cmd:?}";;
+	    run_console "${console_cmd:?}";;
 	"reset")
 	    eval exec "${reset_cmd:?}";;
 	"rsync --server "*" . .")

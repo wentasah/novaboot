@@ -7,7 +7,7 @@ NBT_HOME=$(getent passwd novaboot-test|cut -d: -f6)
 export WV_BASE_DIR
 export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > $NOVABOOT_SHELL_CONFIG
-console_cmd="/bin/sh -c 'while :; do sleep 0.1; date; done'"
+console_cmd="while :; do sleep 0.1; date; done"
 reset_cmd="touch reset_done"
 target_config='--prefix=asdf'
 EOF

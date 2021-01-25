@@ -1,6 +1,7 @@
 {
   nixpkgs ? <nixpkgs>,
-  pkgs ? import nixpkgs {}
+  pkgs ? import nixpkgs {},
+  otherPerlPackages ? []
 }:
 with pkgs;
 let
@@ -12,7 +13,7 @@ let
       sha256 = "1hjicqy50mgbippn310k4zclr9ksz05yyg81za3q4gb9m3qhk5aw";
     };
   };
-  perlEnv = (perl.withPackages (p: [ p.Expect IO-Stty ]));
+  perlEnv = (perl.withPackages (p: [ p.Expect IO-Stty ] ++ otherPerlPackages));
 in
 {
   novaboot = stdenv.mkDerivation {

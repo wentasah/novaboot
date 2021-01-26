@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+cd $(dirname $0)
+. wvtest.sh
+
+WVPASS tee uboot-sim <<'EOF'
+#!/usr/bin/env bash
+
+rm -rf log
+
+echo "Hit any key to stop autoboot:"
+read -r
+
+while true; do
+      echo -n "uboot> "
+      read -r CMD
+      echo "$CMD" >> log
+done
+EOF
+WVPASS chmod +x uboot-sim
+
+WVSTART "Basic U-Boot support"
+WVPASS cp "$WV_BASE_DIR/uboot-sim" .
+WVPASS touch kernel
+WVPASS novaboot --remote-cmd="./uboot-sim" --uboot="uboot> " <<<'load kernel console=ttyS0'
+WVPASS diff -u - log <<'EOF'
+tftpboot ${kernel_addr_r} kernel
+setenv bootargs console=ttyS0
+bootm ${kernel_addr_r} -
+EOF
+
+WVSTART "Ramdisk support"
+WVPASS cp "$WV_BASE_DIR/uboot-sim" .
+WVPASS touch kernel ramdisk
+WVPASS novaboot --remote-cmd="./uboot-sim" --uboot="uboot> " <<'EOF'
+load kernel console=ttyS0
+load ramdisk
+EOF
+WVPASS diff -u - log <<'EOF'
+tftpboot ${kernel_addr_r} kernel
+tftpboot ${ramdisk_addr_r} ramdisk
+setenv bootargs console=ttyS0
+bootm ${kernel_addr_r} ${ramdisk_addr_r}
+EOF
+
+WVSTART "Device tree support"
+WVPASS cp "$WV_BASE_DIR/uboot-sim" .
+WVPASS touch kernel devicetree.dtb
+WVPASS novaboot --remote-cmd="./uboot-sim" --uboot="uboot> " <<'EOF'
+load kernel console=ttyS0
+load devicetree.dtb
+EOF
+WVPASS diff -u - log <<'EOF'
+tftpboot ${kernel_addr_r} kernel
+tftpboot ${fdt_addr_r} devicetree.dtb
+setenv bootargs console=ttyS0
+bootm ${kernel_addr_r} - ${fdt_addr_r}
+EOF
+
+WVSTART "Ramdisk and device tree support"
+WVPASS cp "$WV_BASE_DIR/uboot-sim" .
+WVPASS touch kernel ramdisk devicetree.dtb
+WVPASS novaboot --remote-cmd="./uboot-sim" --uboot="uboot> " <<'EOF'
+load kernel console=ttyS0
+load devicetree.dtb
+load ramdisk
+EOF
+WVPASS diff -u - log <<'EOF'
+tftpboot ${kernel_addr_r} kernel
+tftpboot ${fdt_addr_r} devicetree.dtb
+tftpboot ${ramdisk_addr_r} ramdisk
+setenv bootargs console=ttyS0
+bootm ${kernel_addr_r} ${ramdisk_addr_r} ${fdt_addr_r}
+EOF

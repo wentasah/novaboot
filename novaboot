@@ -412,6 +412,7 @@ while (!$skip_reading && ($_ = <>)) {
 	    push @$generated, {filename => $1, command => $3};
 	    return "$1$2";
 	}
+	s/\s*$//;		# Strip trailing whitespace
 	return $_;
     }
     if (s/^load *//) {		# Load line

@@ -57,6 +57,20 @@ setenv bootargs console=ttyS0
 bootm ${kernel_addr_r} - ${fdt_addr_r}
 EOF
 
+WVSTART "Device tree with space at the end"
+WVPASS cp "$WV_BASE_DIR/uboot-sim" .
+WVPASS touch devicetree.dtb
+WVPASS novaboot --remote-cmd="./uboot-sim" --uboot="uboot> " <<'EOF'
+load kernel console=ttyS0
+load devicetree.dtb 
+EOF
+WVPASS diff -u - log <<'EOF'
+tftpboot ${kernel_addr_r} kernel
+tftpboot ${fdt_addr_r} devicetree.dtb
+setenv bootargs console=ttyS0
+bootm ${kernel_addr_r} - ${fdt_addr_r}
+EOF
+
 WVSTART "Ramdisk and device tree support"
 WVPASS cp "$WV_BASE_DIR/uboot-sim" .
 WVPASS touch kernel ramdisk devicetree.dtb

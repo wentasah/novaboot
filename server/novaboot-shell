@@ -117,6 +117,8 @@ run_console() {
 run_subcommand() {
     read_config
     case "$*" in
+	"default")
+	    run_console "${default_cmd:-${console_cmd:?}}";;
 	"console")
 	    run_console "${console_cmd:?}";;
 	"reset")
@@ -169,7 +171,8 @@ main() {
 
     case "$1" in
 	# Commands allowed at any time
-	"console"|"") locked $0 console;;
+	"") locked $0 default;;
+	"console") locked $0 console;;
 	"get-config") read_config && echo -n "${target_config}"; exit;;
 	"add-key") shift; add_key "$@"; exit;;
 	"shell") exec_shell; exit;;
@@ -246,8 +249,8 @@ SSH connection. This can be accomplished by using SSH connection
 sharing, which is what L<novaboot(1)> uses (see I<-M> and I<-S> in
 L<ssh(1)>).
 
-This is the default command when no command is specified on command
-line.
+This is the default command when no command is specified on the
+command line and C<default_cmd> is not set in the configuration file.
 
 =item reset
 
@@ -314,8 +317,8 @@ Example: C<ssh -t target@server shell>
 =head1 CONFIGURATION FILE
 
 B<novaboot-shell> reads configuration file from
-F<$HOME/.novaboot-shell>. It should define values for the following
-variables in the SH syntax.
+F<$HOME/.novaboot-shell>. It can define values for the following
+variables in the shell syntax.
 
 =over 8
 
@@ -358,6 +361,20 @@ Example:
   --uboot-addr=ramdisk=0x83100000
   "
 
+=item default_cmd
+
+If set, this command is executed when no command is specified on the
+command line. If not set, C<console_cmd> is executed instead.
+
+As F<novaboot> (client) always uses the C<console> command to connect
+to the console, C<default_cmd> can be used to boot the target with
+some default configuration for users who do not use F<novaboot> client
+to boot their own configuration. For example, C<default_cmd> can be
+set to execute a novaboot script.
+
+In other words, C<ssh board@host> boots the board in the default
+configuration, whereas C<novaboot --ssh=board@host ...> boots the
+board as configured in C<...>.
 
 =back
 

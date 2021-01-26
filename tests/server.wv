@@ -7,15 +7,17 @@ NBT_HOME=$(getent passwd novaboot-test|cut -d: -f6)
 export WV_BASE_DIR
 export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
 cat <<EOF > $NOVABOOT_SHELL_CONFIG
-console_cmd="while :; do sleep 0.1; date; done"
+console_cmd="echo 'Hello console'; while :; do sleep 0.1; date; done"
 reset_cmd="touch reset_done"
 target_config='--prefix=asdf'
 EOF
 
+# Run server synchronously
 function run_server() {
     SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-shell -c "${account:-user} ${username:-test} ${admin:+admin}"
 }
 
+# Exec server (for use with coproc - then the server can be easily killed)
 function exec_server() {
     local exec
     exec=exec
@@ -40,10 +42,22 @@ coproc exec_server console
 WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
 kill $COPROC_PID; wait
 
-WVSTART "Console command is executed without any argument"
+WVSTART "Without any argument console_cmd is executed if no default_cmd is configured"
 coproc exec_server
-WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
+WVPASS sed -e '/Hello console/q0' -e '3q1' <&${COPROC[0]}
 kill $COPROC_PID; wait
+
+WVSTART "Without any argument default_cmd is executed if configured"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+    cat <<EOF > $NOVABOOT_SHELL_CONFIG
+default_cmd='echo "Hello default"'
+console_cmd='echo "Hello console"'
+EOF
+    WVPASS run_server | WVPASS grep -F 'Hello default'
+
+    WVPASS run_server console | WVPASS grep -F 'Hello console'
+)
 
 WVSTART 'Second connection to console prints queue'
 coproc console1 { exec_server console; }

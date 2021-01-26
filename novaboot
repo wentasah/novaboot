@@ -1026,11 +1026,17 @@ if (defined $iso_image) {
     if (-f '/usr/lib/ISOLINUX/isolinux.bin') {
 	# Newer ISOLINUX version
 	@files = qw(/usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/modules/bios/mboot.c32 /usr/lib/syslinux/modules/bios/libcom32.c32 /usr/lib/syslinux/modules/bios/menu.c32 /usr/lib/syslinux/modules/bios/ldlinux.c32);
-    } else {
+    } elsif (-f '/usr/lib/syslinux/isolinux.bin') {
 	# Older ISOLINUX version
 	@files = qw(/usr/lib/syslinux/isolinux.bin /usr/lib/syslinux/mboot.c32 /usr/lib/syslinux/menu.c32);
+    } else {
+	# NixOS and maybe others
+	my $syslinux = `which syslinux` || die "Cannot find syslinux";
+	chomp $syslinux;
+	$syslinux =~ s,/bin/syslinux$,,;
+	@files = ("$syslinux/share/syslinux/isolinux.bin", "$syslinux/share/syslinux/mboot.c32", "$syslinux/share/syslinux/libcom32.c32", "$syslinux/share/syslinux/menu.c32", "$syslinux/share/syslinux/ldlinux.c32");
     }
-    system_verbose("cp @files isolinux");
+    system_verbose("cp @files isolinux && chmod +w isolinux/*");
     open(my $fh, ">isolinux/isolinux.cfg");
     if ($#scripts) {
 	print $fh "TIMEOUT 50\n";

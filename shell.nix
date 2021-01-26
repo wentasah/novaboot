@@ -7,4 +7,8 @@ mkShell {
       otherPerlPackages = [ perl.pkgs.PodParser ];
     }).novaboot
   ];
+  buildInputs = with pkgs; [
+    syslinux
+    cdrkit
+  ];
 }

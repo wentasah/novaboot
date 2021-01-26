@@ -137,6 +137,11 @@ console_cmd=console_cmd'
     WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello user"
 )
 
+if [ -n "$DEB_HOST_ARCH" ]; then
+    echo >&2 "Skipping server tests in Debian package build, because these cannot pass."
+    exit 0
+fi
+
 SHELLRC="$NBT_HOME/.novaboot-shell"
 TFTPROOT="$NBT_HOME/tftproot"
 AUTH="$NBT_HOME/.ssh/authorized_keys"

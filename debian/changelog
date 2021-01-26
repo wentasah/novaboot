@@ -1,3 +1,20 @@
+novaboot (20210126) unstable; urgency=medium
+
+  [ Michal Sojka ]
+  * server: Document automatic power off
+
+  [ Martin Vajnar ]
+  * Prioritize 'exiton' over 'expect_raw'
+
+  [ Michal Sojka ]
+  * server: Do not hardcode bash path
+  * server: Document how to use shell function for console_cmd
+  * server: Add support for default_cmd configuration variable
+  * server: Split documentation to separate files
+  * Add README.md
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Tue, 26 Jan 2021 15:17:26 +0100
+
 novaboot (20201217) unstable; urgency=medium
 
   [ Michal Sojka ]

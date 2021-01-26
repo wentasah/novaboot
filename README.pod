@@ -45,7 +45,7 @@ options. Understanding all these options is not always needed,
 depending on the used setup. The L<figure from the doc directory
 |https://github.com/wentasah/novaboot/blob/master/doc/typical-setups.svg>
 shows different setups that vary in how much effort is needed
-configure novaboot for them. The setups are:
+to configure novaboot for them. The setups are:
 
 =over 3
 

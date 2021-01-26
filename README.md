@@ -10,7 +10,7 @@ was developed to boot [NOVA Microhypervisor](http://hypervisor.org/)
 
 The simplest way to install novaboot is to install `perl` and its
 packages `IO-Stty` and `Expect` and copy the
-[novaboot](server/novaboot-shell.pod) script somewhere to your $PATH.
+[novaboot](novaboot) script somewhere to your $PATH.
 
 You can also install everything (including man pages) by:
 

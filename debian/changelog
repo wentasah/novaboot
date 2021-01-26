@@ -1,3 +1,9 @@
+novaboot (20210126a) unstable; urgency=medium
+
+  * Strip trailing spaces in novaboot script load/copy lines
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Tue, 26 Jan 2021 19:42:42 +0100
+
 novaboot (20210126) unstable; urgency=medium
 
   [ Michal Sojka ]

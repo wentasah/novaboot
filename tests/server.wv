@@ -112,6 +112,17 @@ WVSTART "Config variables can depend on user name"
     username=qwer WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello qwer"
 )
 
+WVSTART "Missing console_cmd results in failure"
+NOVABOOT_SHELL_CONFIG="/dev/null" WVFAIL run_server console
+
+WVSTART "console_cmd may contain a shell function name"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd () { echo Hello user; }
+console_cmd=console_cmd'
+    WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello user"
+)
+
 SHELLRC="$NBT_HOME/.novaboot-shell"
 TFTPROOT="$NBT_HOME/tftproot"
 AUTH="$NBT_HOME/.ssh/authorized_keys"

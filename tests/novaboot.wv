@@ -123,7 +123,7 @@ WVPASSSH 'NOVABOOT_TARGET=t2 novaboot --target t3 /dev/null'
 WVPASS test "$(cat t)" = Target3
 
 WVSTART --iprelay-cmd
-WVPASS novaboot --iprelay-cmd="echo -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
+WVPASS novaboot --iprelay-cmd="$(which echo) -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
 
 WVSTART Killing of --remote-cmd when it ignores SIGHUP
 WVPASS tee script <<'EOF'

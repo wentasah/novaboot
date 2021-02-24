@@ -1138,10 +1138,19 @@ if (defined $dhcp_tftp)
     open(my $fh, '>', 'dhcpd.conf');
     my $mac = `cat /sys/class/net/$netif/address`;
     chomp $mac;
-    print $fh "subnet 10.23.23.0 netmask 255.255.255.0 {
-		      range 10.23.23.10 10.23.23.100;
-		      filename \"bin/boot/grub/pxegrub.pxe\";
-		      next-server 10.23.23.1;
+    print $fh "
+subnet 10.23.23.0 netmask 255.255.255.0 {
+	range 10.23.23.10 10.23.23.100;
+	next-server 10.23.23.1;
+}
+class \"pxe-clients\" {
+     match option vendor-class-identifier;
+}
+subclass \"pxe-clients\"  \"PXEClient:Arch:00000:UNDI:002001\" {
+     option bootfile-name \"boot/grub/i386-pc/core.0\";
+}
+subclass \"pxe-clients\"  \"PXEClient:Arch:00007:UNDI:003016\" {
+     option bootfile-name \"boot/grub/x86_64-efi/core.efi\";
 }
 host server {
 	hardware ethernet $mac;

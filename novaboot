@@ -1136,10 +1136,10 @@ class \"pxe-clients\" {
      match option vendor-class-identifier;
 }
 subclass \"pxe-clients\"  \"PXEClient:Arch:00000:UNDI:002001\" {
-     option bootfile-name \"bios/pxelinux.0\";
+     option bootfile-name \"boot/grub/i386-pc/core.0\";
 }
 subclass \"pxe-clients\"  \"PXEClient:Arch:00007:UNDI:003016\" {
-     option bootfile-name \"efi.x86/syslinux.efi\";
+     option bootfile-name \"boot/grub/x86_64-efi/core.efi\";
 }
 host server {
 	hardware ethernet $mac;

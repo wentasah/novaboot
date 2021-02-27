@@ -1159,9 +1159,15 @@ host server {
 
 if (defined $dhcp_tftp || defined $tftp) {
     $tftp_port ||= 69;
+    # Generate TFTP mapfile
+    open(my $fh, '>', "$builddir/tftpboot/mapfile");
+    print $fh "# Some PXE clients (mainly UEFI) have bug. They add zero byte to the end of the
+# path name. This rule removes it
+r     \\.efi.*   \\.efi";
+    close($fh);
     # Unfortunately, tftpd requires root privileges even with
     # non-privileged (>1023) port due to initgroups().
-    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid  --address :$tftp_port $builddir/tftpboot");
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $builddir/tftpboot");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);

@@ -1169,6 +1169,10 @@ r     \\.efi.*   \\.efi";
     # non-privileged (>1023) port due to initgroups().
     system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $builddir/tftpboot");
 
+    # Prepare a GRUB netboot directory
+    system_verbose("grub-mknetdir --net-directory=$builddir/tftpboot --directory=/usr/lib/grub/x86_64-efi");
+    system_verbose("grub-mknetdir --net-directory=$builddir/tftpboot --directory=/usr/lib/grub/i386-pc");
+
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
 			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };

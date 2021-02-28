@@ -1161,6 +1161,10 @@ host server {
 
 if (defined $dhcp_tftp || defined $tftp) {
     $tftp_port ||= 69;
+
+    # Prepare a GRUB netboot directory
+    system_verbose("grub-mknetdir --net-directory=$builddir") if (defined $grub2_config);
+
     # Generate TFTP mapfile
     open(my $fh, '>', "$builddir/mapfile");
     print $fh "# Some PXE clients (mainly UEFI) have bug. They add zero byte to the end of the

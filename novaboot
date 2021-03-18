@@ -1170,8 +1170,7 @@ r     \\.efi.*   \\.efi";
     system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $builddir");
 
     # Prepare a GRUB netboot directory
-    system_verbose("grub-mknetdir --net-directory=$builddir --directory=/usr/lib/grub/x86_64-efi");
-    system_verbose("grub-mknetdir --net-directory=$builddir --directory=/usr/lib/grub/i386-pc");
+    system_verbose("grub-mknetdir --net-directory=$builddir");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);

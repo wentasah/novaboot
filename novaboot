@@ -579,7 +579,11 @@ sub generate_grub2_config($$$$;$$)
 	    $first = 0;
 	    my ($kbin, $kcmd) = split(' ', $_, 2);
 	    $kcmd = '' if !defined $kcmd;
-	    print $fg "  multiboot ${base}$kbin $kcmd\n";
+	    my $boot_method = "multiboot";
+	    if (exists $variables->{BOOT_METHOD}) {
+	    $boot_method = $variables->{BOOT_METHOD};
+	    }
+	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;
 	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
@@ -2291,6 +2295,11 @@ Example (Zynq system update via U-Boot):
 The following variables are interpreted in the novaboot script:
 
 =over 8
+
+=item BOOT_METHOD
+
+Specifies the way C<$grub2> boots the kernel. For kernels with multiboot
+support set it to C<$multiboot> method. For Linux kernel set it C<$linux> method.
 
 =item BUILDDIR
 

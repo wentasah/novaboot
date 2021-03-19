@@ -931,6 +931,11 @@ The following variables are interpreted in the novaboot script:
 
 =over 8
 
+=item BOOT_METHOD
+
+Specifies the way GRUB2 boots the kernel. For kernels with multiboot
+support use C<multiboot> method (the default). For Linux kernel use C<linux> method.
+
 =item BUILDDIR
 
 Novaboot chdir()s to this directory before file generation phase. The

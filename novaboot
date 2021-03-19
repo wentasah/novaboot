@@ -575,18 +575,23 @@ sub generate_grub2_config($$$$;$$)
     print $fg "menuentry $title {\n";
     print $fg "$prolog\n" if $prolog;
     my $first = 1;
+    my $boot_method = $variables->{BOOT_METHOD} // "multiboot";
+    my $module_load_method = "module";
+    if ($boot_method eq "linux") {
+	$module_load_method = "initrd";
+    }
     foreach (@$modules_ref) {
 	if ($first) {
 	    $first = 0;
 	    my ($kbin, $kcmd) = split(' ', $_, 2);
 	    $kcmd = '' if !defined $kcmd;
-	    print $fg "  multiboot ${base}$kbin $kcmd\n";
+	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;
 	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
 	    $_ = join(' ', ($args[0], @args));
 	    s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
-	    print $fg "  module $base$_\n";
+	    print $fg "  $module_load_method $base$_\n";
 	}
     }
     print $fg "}\n";
@@ -1729,6 +1734,10 @@ specified F<grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
 
+GRUB2 can boot multiboot-compliant kernels and a few kernels with specific
+support. L</BOOT_METHOD> could be used to specify the command used by GRUB2 to
+load the kernel. See L<GNU GRUB Manual|https://www.gnu.org/software/grub/manual/grub/grub.html#Booting>.
+
 To use the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to
 F</etc/grub.d/40_custom> file and regenerate your grub configuration,
@@ -2284,6 +2293,11 @@ Example (Zynq system update via U-Boot):
 The following variables are interpreted in the novaboot script:
 
 =over 8
+
+=item BOOT_METHOD
+
+Specifies the way GRUB2 boots the kernel. For kernels with multiboot
+support use C<multiboot> method (the default). For Linux kernel use C<linux> method.
 
 =item BUILDDIR
 

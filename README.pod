@@ -371,9 +371,13 @@ Alias for B<--prefix>.
 =item --grub2[=I<filename>]
 
 Generate GRUB2 menu entry in I<filename>. If I<filename> is not
-specified F<grub.cfg> is used. The content of the menu entry can be
+specified F<./boot/grub/grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
+
+GRUB2 can boot multiboot-compliant kernels and a few kernels with specific
+support. L</BOOT_METHOD> could be used to specify the command used by GRUB2 to
+load the kernel. See L<GNU GRUB Manual|https://www.gnu.org/software/grub/manual/grub/grub.html#Booting>.
 
 To use the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to

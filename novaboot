@@ -22,6 +22,7 @@ use Getopt::Long qw(GetOptionsFromString GetOptionsFromArray);
 use Pod::Usage;
 use File::Basename;
 use File::Spec;
+use File::Path qw(make_path);
 use IO::Handle;
 use Time::HiRes("usleep");
 use Socket;
@@ -346,7 +347,7 @@ if (defined $serial) {
     $ENV{NB_SERIAL} = $serial;
 }
 if (defined $grub_config) { $grub_config ||= "menu.lst"; }
-if (defined $grub2_config) { $grub2_config ||= "grub.cfg"; }
+if (defined $grub2_config) { $grub2_config ||= "./boot/grub/grub.cfg"; }
 
 ## Parse the novaboot script(s)
 my @scripts;
@@ -568,6 +569,10 @@ sub generate_grub2_config($$$$;$$)
 {
     my ($filename, $title, $base, $modules_ref, $preamble, $prolog) = @_;
     if ($base && substr($base,-1,1) ne '/') { $base = "$base/"; };
+    my $dir = dirname($filename);
+    make_path($dir, {
+                chmod => 0755,
+    });
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "$preamble\n" if $preamble;
     $title ||= 'novaboot';
@@ -1740,7 +1745,7 @@ Alias for B<--prefix>.
 =item --grub2[=I<filename>]
 
 Generate GRUB2 menu entry in I<filename>. If I<filename> is not
-specified F<grub.cfg> is used. The content of the menu entry can be
+specified F<./boot/grub/grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
 

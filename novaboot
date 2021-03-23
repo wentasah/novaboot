@@ -55,9 +55,9 @@ $CFG::default_target = '';
 $CFG::netif = 'eth0';
 %CFG::targets = (
     'qemu' => '--qemu',
-    "tud" => '--server=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
+    "tud" => '--copy=erwin.inf.tu-dresden.de:~sojka/boot/novaboot --rsync-flags="--chmod=Dg+s,ug+w,o-w,+rX --rsync-path=\"umask 002 && rsync\"" --grub --grub-prefix=(nd)/tftpboot/sojka/novaboot --grub-preamble="timeout 0" --concat --iprelay=141.76.48.80:2324 --scriptmod=s/\\\\bhostserial\\\\b/hostserialpci/g',
     "novabox" => '--ssh=novabox@rtime.felk.cvut.cz',
-    "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --server=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
+    "localhost" => '--scriptmod=s/console=tty[A-Z0-9,]+// --copy=/boot/novaboot/$NAME --grub2 --grub-prefix=/boot/novaboot/$NAME --grub2-prolog="  set root=\'(hd0,msdos1)\'"',
     "ryu" =>  '--uboot --uboot-init="mw f0000b00 \${psc_cfg}; sleep 1" --uboot-addr kernel=800000 --uboot-addr ramdisk=b00000 --uboot-addr fdt=7f0000',
     "ryuglab" => '--target ryu --ssh=ryu@pc-sojkam.felk.cvut.cz',
     "ryulocal" => '--target ryu --dhcp-tftp --serial --reset-cmd="if which dtrrts; then dtrrts $NB_SERIAL 0 1; sleep 0.1; dtrrts $NB_SERIAL 1 1; fi"',
@@ -233,6 +233,7 @@ my %opt_spec = (
     "sendcont=s"     => \&handle_send,
     "serial|s:s"     => \$serial,
     "server:s" 	     => \$server,
+    "copy:s" 	     => \$server,
     "ssh:s"	     => \&handle_novaboot_server,
     "strip-rom"	     => sub { $rom_prefix = ''; },
     "stty=s"	     => \$stty,
@@ -1401,13 +1402,13 @@ to configure novaboot for them. The setups are:
 This requires to configure everything on the laptop side, including a
 serial line connection (L</--serial>, L</--remote-cmd>, ...), power
 on/off/reset commands (L</--reset-cmd>, ...), TFTP server
-(L</--server>, L</--prefix>...), device IP addresses, etc.
+(L</--copy>, L</--prefix>...), device IP addresses, etc.
 
 =item B: Laptop, target device and external TFTP server
 
 Like the previous setup, but the TFTP (and maybe DHCP) configuration
 is handled by a server. Novaboot users need to understand where to
-copy their files to the TFTP server (L</--server>) and which IP
+copy their files to the TFTP server (L</--copy>) and which IP
 addresses their target will get, but do not need to configure the
 servers themselves.
 
@@ -1451,7 +1452,7 @@ with all other files needed for booting to a remote TFTP server. Then
 use a TCP/IP-controlled relay/serial-to-TCP converter to reset the
 target and receive its serial output.
 
- ./mylinux --grub2 --server=192.168.1.1:/tftp --iprelay=192.168.1.2
+ ./mylinux --grub2 --copy=192.168.1.1:/tftp --iprelay=192.168.1.2
 
 Alternatively, you can put these switches to the configuration file
 and run:
@@ -1603,7 +1604,7 @@ Configures novaboot to control the target via C<novaboot-shell>
 running remotely via SSH.
 
 Using this option is the same as specifying B<--remote-cmd>,
-B<--remote-expect>, B<--server> B<--rsync-flags>, B<--prefix> and
+B<--remote-expect>, B<--copy> B<--rsync-flags>, B<--prefix> and
 B<--reset-cmd> manually in a way compatible with C<novaboot-shell>.
 The server can be configured to provide other, safe bootloader-related
 options, to the client. When this happens, novaboot prints them to
@@ -1911,6 +1912,10 @@ of the novaboot script (see also B<--name>).
 
 =item --server[=[[user@]server:]path]
 
+Alias of B<--copy> (kept for backward compatibility).
+
+=item --copy[=[[user@]server:]path]
+
 Copy all files needed for booting to another location. The files will
 be copied (by B<rsync> tool) to the directory I<path>. If the I<path>
 contains string $NAME, it will be replaced with the name of the
@@ -1919,13 +1924,13 @@ novaboot script (see also B<--name>).
 =item --rsync-flags=I<flags>
 
 Specifies I<flags> to append to F<rsync> command line when
-copying files as a result of I<--server> option.
+copying files as a result of I<--copy> option.
 
 =item --concat
 
-If B<--server> is used and its value ends with $NAME, then after
+If B<--copy> is used and its value ends with $NAME, then after
 copying the files, a new bootloader configuration file (e.g. menu.lst)
-is created at I<path-wo-name>, i.e. the path specified by B<--server>
+is created at I<path-wo-name>, i.e. the path specified by B<--copy>
 with $NAME part removed. The content of the file is created by
 concatenating all files of the same name from all subdirectories of
 I<path-wo-name> found on the "server".
@@ -2379,11 +2384,11 @@ Hash of target definitions to be used with the B<--target> option. The
 key is the identifier of the target, the value is the string with
 command line options. For instance, if the configuration file contains:
 
- $targets{'mybox'} = '--server=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
+ $targets{'mybox'} = '--copy=boot:/tftproot --serial=/dev/ttyUSB0 --grub',
 
 then the following two commands are equivalent:
 
- ./myos --server=boot:/tftproot --serial=/dev/ttyUSB0 --grub
+ ./myos --copy=boot:/tftproot --serial=/dev/ttyUSB0 --grub
  ./myos -t mybox
 
 =back

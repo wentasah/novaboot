@@ -585,10 +585,7 @@ sub generate_grub2_config($$$$;$$)
 	    $first = 0;
 	    my ($kbin, $kcmd) = split(' ', $_, 2);
 	    $kcmd = '' if !defined $kcmd;
-	    my $boot_method = "multiboot";
-	    if (exists $variables->{BOOT_METHOD}) {
-	    $boot_method = $variables->{BOOT_METHOD};
-	    }
+	    my $boot_method = $variables->{BOOT_METHOD} // "multiboot";
 	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;

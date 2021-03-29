@@ -2314,9 +2314,8 @@ The following variables are interpreted in the novaboot script:
 
 =item BOOT_METHOD
 
-Specifies the way C<$grub2> boots the kernel. For kernels with multiboot
-support use C<$multiboot> method. For Linux kernel use C<$linux> method. By
-default, C<$multiboot> is used.
+Specifies the way GRUB2 boots the kernel. For kernels with multiboot
+support use C<multiboot> method (the default). For Linux kernel use C<linux> method.
 
 =item BUILDDIR
 

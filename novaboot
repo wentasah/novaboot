@@ -1950,7 +1950,7 @@ of the novaboot script (see also B<--name>).
 
 =item --server[=[[user@]server:]path]
 
-Deprecated. Use B<--copy> instead.
+Alias of B<--copy> (kept for backward compatibility).
 
 =item --copy[=[[user@]server:]path]
 

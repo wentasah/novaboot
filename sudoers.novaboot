@@ -5,5 +5,5 @@
 # your_login ALL=NOPASSWD: NOVABOOT_DHCP
 
 # Uncomment the following lines to enable --dhcp-tftp and --tftp options
-# Cmnd_Alias NOVABOOT_TFTP = /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
+# Cmnd_Alias NOVABOOT_TFTP = /usr/sbin/in.tftpd --listen --secure -v -v -v --pidfile */tftpd.pid *, /usr/bin/pkill --pidfile=tftpd.pid
 # your_login ALL=NOPASSWD: NOVABOOT_TFTP

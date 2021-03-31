@@ -1185,14 +1185,14 @@ r     \\.efi.*   \\.efi";
     close($fh);
     # Unfortunately, tftpd requires root privileges even with
     # non-privileged (>1023) port due to initgroups().
-    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile $builddir/tftpd.pid -m mapfile --address :$tftp_port $tftp_root");
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $tftp_root");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
-			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
+			  system_verbose("sudo pkill --pidfile=$tftp_root/tftpd.pid"); };
 
     # We have to kill tftpd explicitely, because it is not in our process group
-    $SIG{INT} = sub { system_verbose('sudo pkill --pidfile=tftpd.pid'); exit(0); };
+    $SIG{INT} = sub { system_verbose("sudo pkill --pidfile=$tftp_root/tftpd.pid"); exit(0); };
 }
 
 ### AMT IDE-R

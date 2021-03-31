@@ -580,19 +580,19 @@ sub generate_grub2_config($$$$;$$)
     print $fg "menuentry $title {\n";
     print $fg "$prolog\n" if $prolog;
     my $first = 1;
+    my $boot_method = $variables->{BOOT_METHOD} // "multiboot";
+    my $module_load_method = "module";
+    if ($boot_method == "linux") {
+    $module_load_method = "initrd";
+    }
     foreach (@$modules_ref) {
 	if ($first) {
 	    $first = 0;
 	    my ($kbin, $kcmd) = split(' ', $_, 2);
 	    $kcmd = '' if !defined $kcmd;
-	    my $boot_method = $variables->{BOOT_METHOD} // "multiboot";
 	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;
-	    my $module_load_method = "module";
-	    if (exists $variables->{MODULE_LOAD_METHOD}) {
-	    $module_load_method = $variables->{MODULE_LOAD_METHOD};
-	    }
 	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
 	    $_ = join(' ', ($args[0], @args));
 	    s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
@@ -2346,13 +2346,6 @@ configuration file with the C<$hypervisor> variable. The value should
 contain the name of the kernel image as well as its command line
 parameters. If this variable is defined and non-empty, the variable
 HYPERVISOR_PARAMS is not used.
-
-=item MODULE_LOAD_METHOD
-
-Specifies the way C<$grub2> load modules for a kernel. This variable accompanies
-L</BOOT_METHOD>. For kernels with multiboot support use C<$module> method. For
-Linux kernel use C<$initrd> method to load initial ram disk image. By default,
-C<$module> is used.
 
 =item NO_BOOT
 

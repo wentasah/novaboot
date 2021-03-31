@@ -1172,9 +1172,7 @@ host server {
 if (defined $dhcp_tftp || defined $tftp) {
     $tftp_port ||= 69;
     my $tftp_root = "$builddir";
-    if (defined $server) {
-        $tftp_root = $tftp_root . "/$server";
-    }
+    $tftp_root = "$server" if(defined $server);
 
     # Prepare a GRUB netboot directory
     system_verbose("grub-mknetdir --net-directory=$tftp_root");

@@ -1757,6 +1757,10 @@ specified F<./boot/grub/grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
 
+GRUB2 can boot multiboot-compliant kernels and a few kernels with specific
+support. L</BOOT_METHOD> could be used to specify the command used by GRUB2 to
+load the kernel. See L<GNU GRUB Manual|https://www.gnu.org/software/grub/manual/grub/grub.html#Booting>.
+
 To use the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to
 F</etc/grub.d/40_custom> file and regenerate your grub configuration,

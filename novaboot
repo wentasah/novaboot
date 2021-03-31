@@ -545,7 +545,7 @@ sub generate_syslinux_config($$$$)
 
     if (system("file $kbin|grep 'Linux kernel'") == 0) {
 	my $initrd = @$modules_ref[1];
-	die('To many "load" lines for Linux kernel') if (scalar @$modules_ref > 2);
+	die('Too many "load" lines for Linux kernel') if (scalar @$modules_ref > 2);
 	print $fg "LINUX $base$kbin\n";
 	print $fg "APPEND $kcmd\n";
 	print $fg "INITRD $base$initrd\n";

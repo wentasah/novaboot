@@ -1002,7 +1002,7 @@ foreach my $script (@scripts) {
 	my $istty = -t STDOUT && ($ENV{'TERM'} || 'dumb') ne 'dumb';
 	my $progress = $istty ? "--progress" : "";
 	if ($files) {
-	    system_verbose("rsync $progress -RLp $rsync_flags $files $real_server");
+	    system_verbose("rsync $progress -RL --chmod=ugo=rwX $rsync_flags $files $real_server");
 	    if ($server =~ m|/\$NAME$| && $concat) {
 		my $cmd = join("; ", map { "( cd $path/.. && cat */$_ > $_ )" } @bootloader_configs);
 		system_verbose($hostname ? "ssh $hostname '$cmd'" : $cmd);

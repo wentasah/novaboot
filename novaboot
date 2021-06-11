@@ -1161,19 +1161,21 @@ host server {
 
 if (defined $dhcp_tftp || defined $tftp) {
     $tftp_port ||= 69;
+    my $tftp_root = "$builddir";
+    $tftp_root = "$server" if(defined $server);
 
     # Prepare a GRUB netboot directory
-    system_verbose("grub-mknetdir --net-directory=$builddir") if (defined $grub2_config);
+    system_verbose("grub-mknetdir --net-directory=$tftp_root") if (defined $grub2_config);
 
     # Generate TFTP mapfile
-    open(my $fh, '>', "$builddir/mapfile");
+    open(my $fh, '>', "$tftp_root/mapfile");
     print $fh "# Some PXE clients (mainly UEFI) have bug. They add zero byte to the end of the
 # path name. This rule removes it
 r     \\.efi.*   \\.efi";
     close($fh);
     # Unfortunately, tftpd requires root privileges even with
     # non-privileged (>1023) port due to initgroups().
-    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $builddir");
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile $builddir/tftpd.pid -m mapfile --address :$tftp_port $tftp_root");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);

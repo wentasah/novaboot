@@ -584,6 +584,7 @@ sub generate_grub2_config($$$$;$$)
     my $module_load_method = "module";
     if ($boot_method eq "linux") {
 	$module_load_method = "initrd";
+	die('Too many "load" lines for Linux kernel') if (scalar(@$modules_ref) > 2);
     }
     foreach (@$modules_ref) {
 	if ($first) {

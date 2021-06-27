@@ -594,9 +594,11 @@ sub generate_grub2_config($$$$;$$)
 	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;
-	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
-	    $_ = join(' ', ($args[0], @args));
-	    s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
+	    if ($boot_method eq "multiboot") {
+		# GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
+		$_ = join(' ', ($args[0], @args));
+		s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
+	    }
 	    print $fg "  $module_load_method $base$_\n";
 	}
     }

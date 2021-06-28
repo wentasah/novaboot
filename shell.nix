@@ -10,5 +10,7 @@ mkShell {
   buildInputs = with pkgs; [
     syslinux
     cdrkit
+    grub2
+    dhcp
   ];
 }

@@ -22,6 +22,7 @@ use Getopt::Long qw(GetOptionsFromString GetOptionsFromArray);
 use Pod::Usage;
 use File::Basename;
 use File::Spec;
+use File::Path qw(make_path);
 use IO::Handle;
 use Time::HiRes("usleep");
 use Socket;
@@ -347,7 +348,7 @@ if (defined $serial) {
     $ENV{NB_SERIAL} = $serial;
 }
 if (defined $grub_config) { $grub_config ||= "menu.lst"; }
-if (defined $grub2_config) { $grub2_config ||= "grub.cfg"; }
+if (defined $grub2_config) { $grub2_config ||= "./boot/grub/grub.cfg"; }
 
 ## Parse the novaboot script(s)
 my @scripts;
@@ -569,24 +570,36 @@ sub generate_grub2_config($$$$;$$)
 {
     my ($filename, $title, $base, $modules_ref, $preamble, $prolog) = @_;
     if ($base && substr($base,-1,1) ne '/') { $base = "$base/"; };
+    my $dir = dirname($filename);
+    make_path($dir, {
+                chmod => 0755,
+    });
     open(my $fg, '>', $filename) or die "$filename: $!";
     print $fg "$preamble\n" if $preamble;
     $title ||= 'novaboot';
     print $fg "menuentry $title {\n";
     print $fg "$prolog\n" if $prolog;
     my $first = 1;
+    my $boot_method = $variables->{BOOT_METHOD} // "multiboot";
+    my $module_load_method = "module";
+    if ($boot_method eq "linux") {
+	$module_load_method = "initrd";
+	die('Too many "load" lines for Linux kernel') if (scalar(@$modules_ref) > 2);
+    }
     foreach (@$modules_ref) {
 	if ($first) {
 	    $first = 0;
 	    my ($kbin, $kcmd) = split(' ', $_, 2);
 	    $kcmd = '' if !defined $kcmd;
-	    print $fg "  multiboot ${base}$kbin $kcmd\n";
+	    print $fg "  $boot_method ${base}$kbin $kcmd\n";
 	} else {
 	    my @args = split;
-	    # GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
-	    $_ = join(' ', ($args[0], @args));
-	    s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
-	    print $fg "  module $base$_\n";
+	    if ($boot_method eq "multiboot") {
+		# GRUB2 doesn't pass filename in multiboot info so we have to duplicate it here
+		$_ = join(' ', ($args[0], @args));
+		s|\brom://|$rom_prefix|g; # We do not need to translate path for GRUB2
+	    }
+	    print $fg "  $module_load_method $base$_\n";
 	}
     }
     print $fg "}\n";
@@ -1128,10 +1141,19 @@ if (defined $dhcp_tftp)
     open(my $fh, '>', 'dhcpd.conf');
     my $mac = `cat /sys/class/net/$netif/address`;
     chomp $mac;
-    print $fh "subnet 10.23.23.0 netmask 255.255.255.0 {
-		      range 10.23.23.10 10.23.23.100;
-		      filename \"bin/boot/grub/pxegrub.pxe\";
-		      next-server 10.23.23.1;
+    print $fh "
+subnet 10.23.23.0 netmask 255.255.255.0 {
+	range 10.23.23.10 10.23.23.100;
+	next-server 10.23.23.1;
+}
+class \"pxe-clients\" {
+     match option vendor-class-identifier;
+}
+subclass \"pxe-clients\"  \"PXEClient:Arch:00000:UNDI:002001\" {
+     option bootfile-name \"boot/grub/i386-pc/core.0\";
+}
+subclass \"pxe-clients\"  \"PXEClient:Arch:00007:UNDI:003016\" {
+     option bootfile-name \"boot/grub/x86_64-efi/core.efi\";
 }
 host server {
 	hardware ethernet $mac;
@@ -1151,16 +1173,28 @@ host server {
 
 if (defined $dhcp_tftp || defined $tftp) {
     $tftp_port ||= 69;
+    my $tftp_root = "$builddir";
+    $tftp_root = "$server" if(defined $server);
+
+    # Prepare a GRUB netboot directory
+    system_verbose("grub-mknetdir --net-directory=$tftp_root") if (defined $grub2_config);
+
+    # Generate TFTP mapfile
+    open(my $fh, '>', "$tftp_root/mapfile");
+    print $fh "# Some PXE clients (mainly UEFI) have bug. They add zero byte to the end of the
+# path name. This rule removes it
+r     \\.efi.*   \\.efi";
+    close($fh);
     # Unfortunately, tftpd requires root privileges even with
     # non-privileged (>1023) port due to initgroups().
-    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid  --address :$tftp_port $builddir");
+    system_verbose("sudo in.tftpd --listen --secure -v -v -v --pidfile tftpd.pid -m mapfile --address :$tftp_port $tftp_root");
 
     # Kill server when we die
     $SIG{__DIE__} = sub { system_verbose('sudo pkill --pidfile=dhcpd.pid') if (defined $dhcp_tftp);
-			  system_verbose('sudo pkill --pidfile=tftpd.pid'); };
+			  system_verbose("sudo pkill --pidfile=$tftp_root/tftpd.pid"); };
 
     # We have to kill tftpd explicitely, because it is not in our process group
-    $SIG{INT} = sub { system_verbose('sudo pkill --pidfile=tftpd.pid'); exit(0); };
+    $SIG{INT} = sub { system_verbose("sudo pkill --pidfile=$tftp_root/tftpd.pid"); exit(0); };
 }
 
 ### AMT IDE-R
@@ -1719,9 +1753,13 @@ Alias for B<--prefix>.
 =item --grub2[=I<filename>]
 
 Generate GRUB2 menu entry in I<filename>. If I<filename> is not
-specified F<grub.cfg> is used. The content of the menu entry can be
+specified F<./boot/grub/grub.cfg> is used. The content of the menu entry can be
 customized with B<--grub-preamble>, B<--grub2-prolog> or
 B<--grub_prefix> options.
+
+GRUB2 can boot multiboot-compliant kernels and a few kernels with specific
+support. L</BOOT_METHOD> could be used to specify the command used by GRUB2 to
+load the kernel. See L<GNU GRUB Manual|https://www.gnu.org/software/grub/manual/grub/grub.html#Booting>.
 
 To use the generated menu entry on your development
 machine that uses GRUB2, append the following snippet to
@@ -2278,6 +2316,11 @@ Example (Zynq system update via U-Boot):
 The following variables are interpreted in the novaboot script:
 
 =over 8
+
+=item BOOT_METHOD
+
+Specifies the way GRUB2 boots the kernel. For kernels with multiboot
+support use C<multiboot> method (the default). For Linux kernel use C<linux> method.
 
 =item BUILDDIR
 

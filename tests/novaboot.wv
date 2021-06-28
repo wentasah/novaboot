@@ -26,16 +26,30 @@ EOF
 WVPASS ./script --gen-only --pulsar
 WVPASS grep "chld grub" config-novaboot
 
-WVSTART GRUB2
+WVSTART GRUB2 with default BOOT_METHOD=multiboot
 create_script <<EOF
 load kernel
 load ramdisk
 EOF
 WVPASS ./script --gen-only --grub2
-WVPASS git diff --no-index --color - grub.cfg <<EOF
+WVPASS git diff --no-index --color - boot/grub/grub.cfg <<EOF
 menuentry script {
   multiboot kernel 
   module ramdisk ramdisk
+}
+EOF
+
+WVSTART GRUB2 with BOOT_METHOD=linux
+create_script <<EOF
+BOOT_METHOD=linux
+load kernel
+load ramdisk
+EOF
+WVPASS ./script --gen-only --grub2
+WVPASS git diff --no-index --color - boot/grub/grub.cfg <<EOF
+menuentry script {
+  linux kernel 
+  initrd ramdisk
 }
 EOF
 

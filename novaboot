@@ -17,7 +17,9 @@
 
 use strict;
 use warnings;
-use warnings (exists $ENV{NOVABOOT_TEST} ? (FATAL => 'all') : ());
+use warnings (exists $ENV{NOVABOOT_TEST} ?
+              (FATAL => 'all') :
+              (FATAL => qw(inplace))); # Open warnings in <<>> are fatal
 use Getopt::Long qw(GetOptionsFromString GetOptionsFromArray);
 use Pod::Usage;
 use File::Basename;

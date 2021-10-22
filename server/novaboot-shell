@@ -122,7 +122,7 @@ run_subcommand() {
 	"console")
 	    run_console "${console_cmd:?}";;
 	"reset")
-	    eval exec "${reset_cmd:?}";;
+	    eval "${reset_cmd:?}";;
 	"rsync --server "*" . .")
 	    if ! [ $# -eq 5 -o \( $# -eq 6 -a "$4" = '--log-format=X' \) ]; then
 		die "Unexpected rsync invocation: $*"

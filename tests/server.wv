@@ -137,6 +137,14 @@ console_cmd=console_cmd'
     WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello user"
 )
 
+WVSTART "reset_cmd may contain a shell function name"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd () { echo Hello user; }
+reset_cmd=reset_cmd'
+    WVPASS run_server reset | tee /dev/stderr | WVPASS grep -F "Hello user"
+)
+
 if [ -n "$DEB_HOST_ARCH" ]; then
     echo >&2 "Skipping server tests in Debian package build, because these cannot pass."
     exit 0

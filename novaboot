@@ -357,7 +357,7 @@ my $EOF;
 my $last_fn = '';
 my ($modules, $variables, $generated, $copy, $chainload, $continuation) = ([], {}, [], []);
 my $skip_reading = defined($on_opt) || defined($off_opt);
-while (!$skip_reading && ($_ = <>)) {
+while (!$skip_reading && ($_ = <<>>)) {
     if ($ARGV ne $last_fn) { # New script
 	die "Missing EOF in $last_fn" if $file;
 	die "Unfinished line in $last_fn" if $continuation;

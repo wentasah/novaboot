@@ -1,3 +1,18 @@
+novaboot (20211022) unstable; urgency=medium
+
+  [ alberand ]
+  * Add --copy= as alias to --server=
+  * tftpd: Run with mapfile and other changes to support PXE booting with GRUB2
+  * Add BOOT_METHOD variable to control how to generate GRUB2 config
+
+  [ Michal Sojka ]
+  * Die in case of multiple initrds for the Linux kernel
+  * server: Allow reset_cmd to contain a shell function name
+  * server: Add run_novaboot to be used as default_cmd
+  * Make <<>> fail if it cannot open a file
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Fri, 22 Oct 2021 15:01:32 +0200
+
 novaboot (20210126a) unstable; urgency=medium
 
   * Strip trailing spaces in novaboot script load/copy lines

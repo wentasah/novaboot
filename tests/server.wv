@@ -59,6 +59,29 @@ EOF
     WVPASS run_server console | WVPASS grep -F 'Hello console'
 )
 
+WVSTART "default_cmd can be set to run_novaboot"
+(
+    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+    cat <<EOF > default_nb_script
+run echo "Hello default_nb_script"
+EOF
+    cat <<'EOF' > $NOVABOOT_SHELL_CONFIG
+default_cmd='run_novaboot default_nb_script --scriptmod=s/default_nb_script/default_nb_script_mod/'
+console_cmd='while sleep 0.01; do echo "Hello console"; done'
+reset_cmd='echo "Hello reset"'
+target_config="\
+--name=some name with spaces and hash #
+--exiton=Hello console
+"
+EOF
+    WVPASS run_server | (
+        stdout=$(cat)
+        WVPASS grep -F 'Hello default_nb_script' <<<"$stdout"
+        WVPASS grep -F 'Hello default_nb_script_mod' <<<"$stdout"
+        WVPASS grep -F 'Hello console' <<<"$stdout"
+    )
+)
+
 WVSTART 'Second connection to console prints queue'
 coproc console1 { exec_server console; }
 WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}

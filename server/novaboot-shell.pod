@@ -159,12 +159,36 @@ command line. If not set, C<console_cmd> is executed instead.
 As F<novaboot> (client) always uses the C<console> command to connect
 to the console, C<default_cmd> can be used to boot the target with
 some default configuration for users who do not use F<novaboot> client
-to boot their own configuration. For example, C<default_cmd> can be
-set to execute a novaboot script.
+to boot their own configuration.
 
-In other words, C<ssh board@host> boots the board in the default
-configuration, whereas C<novaboot --ssh=board@host ...> boots the
+In other words, C<ssh board@host> will boot the board in some default
+configuration, whereas C<novaboot --ssh=board@host ...> will boot the
 board as configured in C<...>.
+
+Often, it is desired to run F<novaboot> on the server to boot the
+default configuration. To make this easier to configure, the
+C<default_cmd> can be set to:
+
+  run_novaboot <nbscript> [<extra args>...]
+
+This command will execute C<novaboot> with the F<\<nbscript>> script
+as an argument and passes it a few switches with values from the
+F<$HOME/.novaboot-shell> configuration file. Specifically, it will
+pass all switches from the C<target_config> variable, C<--reset-cmd>
+and C<--remote-cmd> switches with the values of C<reset_cmd> and
+C<console_cmd> variables respectively (see above) and C<--server>
+switch.
+
+Therefore, to boot the default configuration as specified in the
+F<default_boot> script, it is sufficient to set C<default_cmd> to:
+
+  run_novaboot ./default_boot --interactive
+
+To have different default configuration for different users, one can
+use the C<$NB_USER> variable as outlined above. The simplest example
+is perhaps this command:
+
+  run_novaboot ./default_boot-"$NB_USER" --interactive
 
 =back
 

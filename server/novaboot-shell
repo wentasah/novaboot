@@ -113,6 +113,20 @@ run_console() {
     eval "$1"
 }
 
+# Run novaboot with the same configuration as specified in
+# ~/.novaboot-shell, but allow the caller to extend of override them
+# via parameters of this function.
+run_novaboot() {
+    nbscript=$1
+    shift
+    OLD_IFS=$IFS
+    # Split $target_config below by newlines, not by words
+    IFS="
+"
+    novaboot "$nbscript" $target_config --server="$HOME/tftproot" --reset-cmd="${reset_cmd:?}" --remote-cmd="${console_cmd:?}" "$@"
+    IFS=$OLD_IFS
+}
+
 # run_subcommand should be called only after permission checks and/or locking
 run_subcommand() {
     read_config

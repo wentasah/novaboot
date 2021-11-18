@@ -7,3 +7,4 @@ RemainAfterExit=true
 ExecStart=/usr/bin/novaboot-shell on
 ExecStop=/usr/bin/novaboot-shell off
 User=%i
+WorkingDirectory=~

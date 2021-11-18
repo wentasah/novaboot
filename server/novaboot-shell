@@ -99,6 +99,7 @@ power() {
 
     if [ "$PPID" -ne 1 ] && systemctl --user is-enabled --quiet novaboot-delayed-power-off.service; then
 	sudo novaboot-power "$1"
+        if [ "$1" = "on" ]; then systemctl --user start novaboot-delayed-power-off.service; fi
     else
 	eval "$cmd"
     fi

@@ -28,3 +28,7 @@ release:
 	: gbp buildpackage --git-tag -b
 	: debrelease rtime
 	: git push --follow-tags
+
+snapshot:
+	: gbp dch --snapshot --ignore-branch
+	: DEB_BUILD_OPTIONS=nocheck gbp buildpackage -b --git-ignore-new --git-ignore-branch

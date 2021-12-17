@@ -20,27 +20,8 @@ and symlinks that for integration with TFTP server.
 =head2 Automatic power-off
 
 When your system uses L<systemd(1)>, you can configure a systemd
-service to automatically power-off the target after timeout. To enable
-this run:
-
-    systemctl --user enable novaboot-delayed-power-off
-
-as the created user (e.g. via shell subcommand). To enable delayed
-power-off for all novaboot-shell account, run the follwing as root:
-
-    systemctl --global enable novaboot-delayed-power-off
-
-Individual accounts may disable this global configuration by running:
-
-    systemctl --user mask novaboot-delayed-power-off
-
-The power-off timeout is hardcoded in the B<novaboot-power-off@.timer>
-unit. To override the timeout, run C<systemctl edit
-novaboot-power-off@TARGET.timer> for your B<TARGET> and insert the
-following to the spawned editor:
-
-    [Timer]
-    OnActiveSec=30min
+service to automatically power-off the target after a timeout. See
+C<novaboot-delayed-power-off> in L<novaboot-shell(1)>.
 
 =head1 OPTIONS
 

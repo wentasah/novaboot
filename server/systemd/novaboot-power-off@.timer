@@ -1,3 +1,10 @@
+[Unit]
+# Don't allow starting the timer if the target is already powered off
+Requisite=novaboot-power@%i.service
+After=novaboot-power@%i.service
+# If somebody powers off the target explicitly stop the timer (if running) too
+PartOf=novaboot-power@%i.service
+
 [Timer]
 OnActiveSec=10min
 Unit=novaboot-power-off@%i.service

@@ -1,0 +1,6 @@
+# This unit serves only as a placeholde that allows enabling and
+# disabling novaboot-delayed-power-off.service. We don't use this
+# targer for anything.
+[Unit]
+Description=Novaboot power on target
+Documentation=man:novaboot-shell(1)

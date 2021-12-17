@@ -132,7 +132,11 @@ Command to C<exec> that powers the target on.
 
 =item off_cmd
 
-Command to C<exec> that powers the target off.
+Command to C<exec> that powers the target off. This command is
+executed either explicitly, when novaboot-shell C<off> command is
+invoked or automatically, after the last novaboot-shell session
+finishes and the C<novaboot-delayed-power-off> systemd user service is
+enabled (see below).
 
 =item target_config
 
@@ -191,6 +195,36 @@ is perhaps this command:
   run_novaboot ./default_boot-"$NB_USER" --interactive
 
 =back
+
+=head1 AUTOMATIC POWER OFF
+
+The target can be automatically powered off when the last session
+finishes. This can be enabled by running:
+
+    systemctl --user enable novaboot-delayed-power-off
+
+perhaps via the C<shell> subcommand. To enable delayed power-off for
+all novaboot-shell accounts, run the follwing as root:
+
+    systemctl --global enable novaboot-delayed-power-off
+
+Individual accounts may disable this global configuration by running:
+
+    systemctl --user mask novaboot-delayed-power-off
+
+When C<novaboot-delayed-power-off> is enabled, the I<on> and I<off>
+commands are executed via systemd rather than by C<novaboot-shell>
+directly. The delay between the end of the session and power off is
+hardcoded in the B<novaboot-power-off@.timer> unit. To override the
+timeout for individual targets, run:
+
+    systemctl edit novaboot-power-off@TARGET.timer
+
+for your B<TARGET> (the user running C<novaboot-shell>) and insert the
+following to the spawned editor:
+
+    [Timer]
+    OnActiveSec=30min
 
 =head1 AUTHORS
 

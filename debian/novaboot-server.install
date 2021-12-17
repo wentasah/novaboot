@@ -5,6 +5,7 @@
 /usr/sbin/novaboot-power
 /usr/bin/novaboot-shell
 /usr/lib/systemd/user/novaboot-delayed-power-off.service
+/usr/lib/systemd/user/novaboot-delayed-power-off.target
 /usr/lib/sysusers.d/novaboot-server.conf
 /usr/sbin/adduser-novaboot
 /usr/share/man/man1/novaboot-shell.1

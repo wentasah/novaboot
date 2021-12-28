@@ -94,6 +94,37 @@ read_config() {
     . "${NOVABOOT_SHELL_CONFIG:-$HOME/.novaboot-shell}"
 }
 
+print_config_with_nfsroot() {
+    read_config
+    echo -n "${target_config}"
+
+    if is_nfs_enabled; then
+	print_nfs_config
+    fi
+}
+
+print_nfs_config() {
+    # If $HOME/.novaboot-nfs does not exist, this will fail.
+    systemctl --user start novaboot-unfsd@"${NB_USER:?}".service
+
+    # Read the ports used by unfsd from the port file it creates.
+    local unfsd_port_file="$HOME/.cache/unfsd/$NB_USER.ports"
+    while read -r line; do
+	case $line in
+	    "NFS_TCP="*) local nfs_tcp=${line#NFS_TCP=};;
+	    "NFS_UDP="*) local nfs_udp=${line#NFS_UDP=};;
+	    "MOUNT_TCP="*) local mount_tcp=${line#MOUNT_TCP=};;
+	    "MOUNT_UDP="*) local mount_udp=${line#MOUNT_UDP=};;
+	*) die "Unexpected line in $unfsd_port_file: $line";;
+	esac
+    done < "$unfsd_port_file"
+
+    # Read the nfsroot config file.
+    . ~/.novaboot-nfs
+
+    echo "--nfsroot=$server_addr:$HOME/nfsroot/$NB_USER/root,v3,tcp,port=${nfs_tcp:?},mountport=${mount_tcp:?}"
+}
+
 power() {
     local cmd
     case "$1" in
@@ -205,7 +236,7 @@ main() {
 	# Commands allowed at any time
 	"") locked $0 default;;
 	"console") locked $0 console;;
-	"get-config") read_config && echo -n "${target_config}"; exit;;
+	"get-config") print_config_with_nfsroot; exit;;
 	"add-key") shift; add_key "$@"; exit;;
 	"shell") exec_shell; exit;;
 	"help") print_help;;

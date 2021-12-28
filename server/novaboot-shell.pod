@@ -103,7 +103,9 @@ Example: C<ssh -t target@server shell>
 
 =back
 
-=head1 CONFIGURATION FILE
+=head1 CONFIGURATION FILES
+
+=head2 F<.novaboot-shell>
 
 B<novaboot-shell> reads the configuration file from
 F<$HOME/.novaboot-shell>. It can define values for the following
@@ -192,6 +194,40 @@ C<$NB_USER> variable as outlined above. Perhaps the simplest example
 is this command:
 
   run_novaboot ./default_boot-"$NB_USER" --interactive
+
+=back
+
+=head2 F<.novaboot-nfs>
+
+Presence of this optional file enables userspace NFS server support
+implemented via the I<unfs3> project. The file should define values of
+the below specified variables. It is sourced by a shell script and
+used in C<EnvionmentFile=> systemd directive. Therefore, it should
+contain new-line-separated variable assignments. Empty lines or lines
+starting with # will be ignored, which may be used for commenting.
+
+=over 8
+
+=item server_addr
+
+Specifies an IP address or host name of the NFS server that will be
+provided to the novaboot client in the response to the C<get-config>
+command. Note that the host name should be resolvable on the target.
+
+=item allowed_clients
+
+Specifies an IP addresses or host name that will be allowed to connect
+to the NFS server. For best security, this should match just the IP
+address of the target board.
+
+Supported formats of the values:
+
+  192.168.0.0/24
+  192.168.0.0/255.255.255.0
+  192.168.0.1
+  ::/0
+  ::1
+  example.com
 
 =back
 

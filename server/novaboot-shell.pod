@@ -16,11 +16,11 @@ B<ssh target@server> [command [arguments...]]
 
 B<novaboot-shell> provides L<novaboot(1)> with a unified SSH-based
 interface for controlling the target hardware. This simplifies
-client-side configuration, because clients typically need only the
-I<--ssh=...> option. B<novaboot-shell> is typically configured as a
+client-side configuration, since clients typically only need the
+I<--ssh=...> option. B<novaboot-shell> is usually configured as the
 login shell of special user accounts associated with the target
 hardware (as set by L<adduser-novaboot(8)>). It ensures that users can
-perform only a limited set of actions (see L</COMMANDS> below) with
+only perform a limited number of actions (see L</COMMANDS> below) with
 the target and have no shell access on the server.
 
 =head1 COMMANDS
@@ -29,18 +29,17 @@ the target and have no shell access on the server.
 
 =item console
 
-Connect to target console (usually serial line). When somebody is
+Connect to the target console (usually a serial line). When someone is
 connected to the console, other users are blocked from controlling the
-target. Blocked users see a message indicating who blocks them.
+target. Blocked users see a message indicating who is blocking them.
 
-The user connected to the console is able to invoke other commands
-such as L</reset>, but only when the command is invoked via the same
-SSH connection. This can be accomplished by using SSH connection
-sharing, which is what L<novaboot(1)> uses (see I<-M> and I<-S> in
-L<ssh(1)>).
+The user connected to the console can invoke other commands such as
+L</reset>, but only if the command is invoked via the same SSH
+connection. This can be accomplished by using SSH connection sharing,
+which is what L<novaboot(1)> uses (see I<-M> and I<-S> in L<ssh(1)>).
 
-This is the default command when no command is specified on the
-command line and C<default_cmd> is not set in the configuration file.
+This is the default command if no command is specified on the command
+line and C<default_cmd> is not set in the configuration file.
 
 =item reset
 
@@ -56,22 +55,22 @@ Power off the target hardware.
 
 =item rsync [...]
 
-This command is not meant to be invoked directly by the user. It
-allows using L<rsync(1)> to copy files to the target, perhaps for TFTP
-server. The rsync command must be invoked as: C<rsync ...
+This command is not intended to be invoked directly by the user. It
+allows using L<rsync(1)> to copy files to the target, perhaps for a
+TFTP server. The rsync command must be invoked as: C<rsync ...
 target@server:>, i.e. without specifying destination path. The files
 will be stored into I<$HOME/tftproot>.
 
 =item user <uernamename> [admin]
 
-User command is meant to be used with C<command=> option in SSH's
-L<authorized_keys(5)> file. It allows the shell to display
-human-readable names when printing information about who blocks the
-target. Then, the real command is taken from SSH_ORIGINAL_COMMAND
-environment variable.
+User command is intended for use with the C<command=> option in the
+SSH L<authorized_keys(5)> file. It allows the shell to display
+human-readable names when printing information about who is blocking
+the target. Then, the actual command is taken from
+SSH_ORIGINAL_COMMAND environment variable.
 
-When "admin" is specified after the user name, this user is considered
-an administrator and is allowed to run L</add-key> and L</shell>
+If "admin" is specified after the user name, that user is considered
+an administrator and is allowed to run the L</add-key> and L</shell>
 commands.
 
 =item get-config
@@ -83,22 +82,22 @@ option per line.
 
 =head2 Administration commands
 
-Only administrators (see L</user>) are allowed to execute these
+Only administrators (see L</user>) are authorized to execute these
 commands.
 
 =over 8
 
 =item add-key <username>
 
-Reads the SSH public key from standard input and adds it into in
+Reads the SSH public key from standard input and adds it to
 F<~/.ssh/authorized_keys>.
 
 Example: C<ssh target@server add-key johndoe < john_rsa.pub>
 
 =item shell
 
-Runs shell on the server. Useful for editing configuration file. It is
-better used with allocated pseudo-terminal.
+Runs the shell on the server. Useful for editing the configuration
+file. It is better used with an allocated pseudo-terminal.
 
 Example: C<ssh -t target@server shell>
 
@@ -106,21 +105,21 @@ Example: C<ssh -t target@server shell>
 
 =head1 CONFIGURATION FILE
 
-B<novaboot-shell> reads configuration file from
+B<novaboot-shell> reads the configuration file from
 F<$HOME/.novaboot-shell>. It can define values for the following
-variables in the shell syntax.
+variables in shell syntax.
 
 =over 8
 
 =item console_cmd
 
-Command to C<exec> that connects to target's console.
+Command to C<exec> that connects to the target's console.
 
-Note that if you need more complex behaviour of the console command,
-e.g., different behaviour for different users (distinguished by the
-value of C<$NB_USER> variable), you can set this variable to a name of
-a shell function, which you define in the configuration file and
-implement the complex behaviour there.
+Note that if you need more complex behavior of the console command,
+e.g., different behavior for different users (distinguished by the
+value of the C<$NB_USER> variable), you can set this variable to the
+name of a shell function, that you define in the configuration file
+and implement the complex behavior there.
 
 =item reset_cmd
 
@@ -141,9 +140,9 @@ enabled (see below).
 =item target_config
 
 Novaboot command line options that specify which boot loader is used
-by the target (L<novaboot(1)> rejects other, possibly dangerous, options).
-Each option is on its own line and no quoting, escaping or stripping
-is performed on the values.
+by the target (L<novaboot(1)> rejects other, possibly dangerous,
+options). Each option is on a separate line and the values are not
+quoted, escaped or stripped.
 
 Example:
 
@@ -157,30 +156,30 @@ Example:
 
 =item default_cmd
 
-If set, this command is executed when no command is specified on the
-command line. If not set, C<console_cmd> is executed instead.
+If set, this command will be executed if no command is specified on
+the command line. If not set, C<console_cmd> will be executed instead.
 
-As F<novaboot> (client) always uses the C<console> command to connect
-to the console, C<default_cmd> can be used to boot the target with
-some default configuration for users who do not use F<novaboot> client
-to boot their own configuration.
+F<novaboot> (client) always uses the C<console> command to connect to
+the console, therefore C<default_cmd> can be used to boot the target
+with a default configuration for users who do not use F<novaboot>
+client to boot their own configuration.
 
-In other words, C<ssh board@host> will boot the board in some default
+In other words, C<ssh board@host> will boot the board with a default
 configuration, whereas C<novaboot --ssh=board@host ...> will boot the
 board as configured in C<...>.
 
-Often, it is desired to run F<novaboot> on the server to boot the
-default configuration. To make this easier to configure, the
+It is often desirable to run F<novaboot> on the server to boot the
+default configuration. To configure this more easily, the
 C<default_cmd> can be set to:
 
   run_novaboot <nbscript> [<extra args>...]
 
-This command will execute C<novaboot> with the F<\<nbscript>> script
-as an argument and passes it a few switches with values from the
-F<$HOME/.novaboot-shell> configuration file. Specifically, it will
-pass all switches from the C<target_config> variable, C<--reset-cmd>
-and C<--remote-cmd> switches with the values of C<reset_cmd> and
-C<console_cmd> variables respectively (see above) and C<--server>
+This command will execute C<novaboot> with the F<\<nbscript> script as
+argument and passes it a few switches with values from the
+F<$HOME/.novaboot-shell> configuration file. In particular, it will
+pass all switches from the C<target_config> variable, the switches
+C<--reset-cmd> and C<--remote-cmd> with values of C<reset_cmd> and
+C<console_cmd> variables respectively (see above) and the C<--server>
 switch.
 
 Therefore, to boot the default configuration as specified in the
@@ -188,9 +187,9 @@ F<default_boot> script, it is sufficient to set C<default_cmd> to:
 
   run_novaboot ./default_boot --interactive
 
-To have different default configuration for different users, one can
-use the C<$NB_USER> variable as outlined above. The simplest example
-is perhaps this command:
+To have different configurations for different users, you can use the
+C<$NB_USER> variable as outlined above. Perhaps the simplest example
+is this command:
 
   run_novaboot ./default_boot-"$NB_USER" --interactive
 
@@ -198,30 +197,30 @@ is perhaps this command:
 
 =head1 AUTOMATIC POWER OFF
 
-The target can be automatically powered off when the last session
-finishes. This can be enabled by running:
+The target can be powered off automatically when the last session is
+finished. This can be enabled by running:
 
     systemctl --user enable novaboot-delayed-power-off
 
-perhaps via the C<shell> subcommand. To enable delayed power-off for
+Perhaps via the C<shell> subcommand. To enable delayed power-off for
 all novaboot-shell accounts, run the follwing as root:
 
     systemctl --global enable novaboot-delayed-power-off
 
-Individual accounts may disable this global configuration by running:
+Individual accounts can disable this global configuration by running:
 
     systemctl --user mask novaboot-delayed-power-off
 
 When C<novaboot-delayed-power-off> is enabled, the I<on> and I<off>
-commands are executed via systemd rather than by C<novaboot-shell>
+commands are executed through systemd rather than by C<novaboot-shell>
 directly. The delay between the end of the session and power off is
-hardcoded in the B<novaboot-power-off@.timer> unit. To override the
+hard-coded in the B<novaboot-power-off@.timer> unit. To override the
 timeout for individual targets, run:
 
     systemctl edit novaboot-power-off@TARGET.timer
 
 for your B<TARGET> (the user running C<novaboot-shell>) and insert the
-following to the spawned editor:
+following into the spawned editor:
 
     [Timer]
     OnActiveSec=30min

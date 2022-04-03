@@ -1,16 +1,3 @@
-{ pkgs ? import <nixpkgs> {} }:
-with pkgs;
-mkShell {
-  inputsFrom = [
-    (import ./default.nix {
-      inherit pkgs;
-      otherPerlPackages = [ perl.pkgs.PodParser ];
-    }).novaboot
-  ];
-  buildInputs = with pkgs; [
-    syslinux
-    cdrkit
-    grub2
-    dhcp
-  ];
-}
+(import (fetchTarball https://github.com/edolstra/flake-compat/archive/master.tar.gz) {
+  src = builtins.fetchGit ./.;
+}).shellNix

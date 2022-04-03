@@ -1295,7 +1295,7 @@ if (defined $uboot) {
 	    die "No '--uboot-addr kernel' given" unless $uboot_addr{kernel};
 	    $exp->send("tftpboot $uboot_addr{kernel} $prefix$kbin\n");
 	    $exp->expect(15,
-			 [qr/##/, sub { exp_continue; }],
+			 [qr/#/, sub { exp_continue; }],
 			 $uboot_prompt) || die "Kernel load: " . ($! || "timeout");
 	}
 	if (defined $dtb) {

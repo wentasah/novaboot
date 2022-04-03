@@ -5,7 +5,7 @@
 }:
 with pkgs;
 let
-  IO-Stty = buildPerlPackage {
+  IO-Stty = perlPackages.buildPerlPackage {
     pname = "IO-Stty";
     version = "0.04";
     src = fetchurl {

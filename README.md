@@ -41,3 +41,7 @@ possible.
 
 - [novaboot-shell](server/novaboot-shell.pod)
 - [adduser-novaboot](server/adduser-novaboot.pod)
+
+### Hardware guides
+
+- [Raspberry Pi](./doc/README.rpi.md) (work-in-progress)

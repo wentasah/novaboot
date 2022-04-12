@@ -178,6 +178,11 @@ TFTPROOT="$NBT_HOME/tftproot"
 AUTH="$NBT_HOME/.ssh/authorized_keys"
 sudo_() { sudo -u novaboot-test "$@"; }
 
+WVSTART "Initialize novaboot-test account"
+# Disable NFS (if it remains enabled from later tests). Ideally, we
+# should make all tests independent, but we're note there yet.
+WVPASS sudo_ rm -f "$NBT_HOME/.novaboot-nfs"
+
 WVSTART "Create and check ssh keys needed for following tests"
 # Start our custom ssh-agent to not mess up with the user's agent
 eval "$(ssh-agent)"
@@ -277,6 +282,10 @@ WVSTART "Suggest using ssh -t for shell"
 WVPASS ssh novaboot-test@localhost shell < /dev/null | WVPASS grep -e 'ssh -t'
 echo exit|WVPASS ssh -tt novaboot-test@localhost shell | WVFAIL grep -e 'ssh -t'
 
-
+WVSTART "Upload to nfsroot"
+WVPASS sudo_ touch "$NBT_HOME/.novaboot-nfs" # enable NFS-related commands
+WVPASS date --rfc-3339=ns > file
+WVPASS rsync --rsync-path="rsync-nfsroot" file novaboot-test@localhost:
+WVPASS sudo_ cat "$NBT_HOME"/nfsroot/test/file
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

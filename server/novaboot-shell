@@ -15,6 +15,7 @@ Target commands:
 - on
 - off
 - rsync ...
+- rsync-nfsroot ...
 - get-config
 
 Management commands:
@@ -85,6 +86,10 @@ unlocked() {
     exec "$@"
 }
 
+is_nfs_enabled() {
+    [ -e ~/.novaboot-nfs ]
+}
+
 read_config() {
     . "${NOVABOOT_SHELL_CONFIG:-$HOME/.novaboot-shell}"
 }
@@ -147,6 +152,16 @@ run_subcommand() {
 	    mkdir -p "$HOME/tftproot"
 	    cd "$HOME/tftproot"
 	    exec "$@";;
+	"rsync-nfsroot --server "*" . .")
+	    if ! is_nfs_enabled; then
+		die "NFS is not enabled"
+	    elif ! [ $# -eq 5 -o \( $# -eq 6 -a "$4" = '--log-format=X' \) ]; then
+ 		die "Unexpected rsync for nfsroot invocation: $*"
+	    fi
+	    mkdir -p "$HOME/nfsroot/${NB_USER:?}"
+	    cd "$HOME/nfsroot/${NB_USER:?}"
+	    shift
+	    exec rsync "$@";;
 	"on")
 	    power on
 	    exit;;
@@ -199,7 +214,7 @@ main() {
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
 	# using SSH connection sharing on client side.
-	reset | rsync | on | off)
+	reset | rsync | rsync-nfsroot | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
 	    $run $0 "$@";;

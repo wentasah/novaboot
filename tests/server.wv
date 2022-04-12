@@ -193,7 +193,8 @@ WVSTART "Setup SSH server's admin key"
 WVPASS sudo_ mkdir -p $(dirname "$AUTH")
 WVPASS sudo_ chmod 700 $(dirname "$AUTH")
 WVPASS sudo_ tee "$AUTH" <<<"command=\"user test admin\" $(cat "$ID_RSA".pub)"
-exit
+# Check that we can really log in
+WVPASS ssh novaboot-test@localhost help
 
 WVSTART "Novaboot --ssh option (connect, rsync, reset)"
 WVPASS sudo_ rm -rf "$TFTPROOT"

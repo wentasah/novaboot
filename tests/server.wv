@@ -228,7 +228,7 @@ WVPASS novaboot --ssh novaboot-test@localhost <<EOF
 load file
 EOF
 WVPASS diff -u file <(sudo_ cat "$TFTPROOT/file")
-WVPASS sudo_ grep /prefix/file "$TFTPROOT/grub.cfg"
+WVPASS sudo_ grep /prefix/file "$TFTPROOT/boot/grub/grub.cfg"
 
 WVSTART "Novaboot --ssh remote config fails on non-safe options"
 WVPASS sudo_ tee "$SHELLRC" <<EOF

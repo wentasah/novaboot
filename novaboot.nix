@@ -1,8 +1,7 @@
-{
-  self,
-  nixpkgs ? <nixpkgs>,
-  pkgs ? import nixpkgs {},
-  otherPerlPackages ? []
+{ self
+, nixpkgs ? <nixpkgs>
+, pkgs ? import nixpkgs { }
+, otherPerlPackages ? [ ]
 }:
 with pkgs;
 let
@@ -21,17 +20,13 @@ in
     name = "novaboot";
     src = self;
     buildInputs = [ perlEnv rsync ];
-    installPhase = ''
-    make install DESTDIR=$out PREFIX=
-  '';
+    installFlags = "DESTDIR=${placeholder "out"} PREFIX=";
   };
   novaboot-server = stdenv.mkDerivation {
     name = "novaboot-server";
     src = self;
     nativeBuildInputs = [ perl ];
     buildInputs = [ rsync ];
-    installPhase = ''
-    make -C server install DESTDIR=$out PREFIX=
-  '';
+    installFlags = "-C server DESTDIR=${placeholder "out"} PREFIX=";
   };
 }

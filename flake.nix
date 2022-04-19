@@ -2,7 +2,6 @@
   description = "novaboot";
 
   inputs = {
-    # The nixpkgs entry in the flake registry.
     nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -17,7 +16,7 @@
         defaultPackage = novaboot.novaboot;
 
         packages.novaboot = novaboot.novaboot;
-        packages.novaboot-server = novaboot.novaboot_server;
+        packages.novaboot-server = novaboot.novaboot-server;
 
         devShell = pkgs.mkShell {
           inputsFrom = [

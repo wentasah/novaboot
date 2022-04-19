@@ -11,6 +11,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         novaboot = (import ./novaboot.nix { inherit self pkgs; });
+        unfs3 = (import ./nix/unfs3.nix { inherit pkgs; });
       in {
         # Utilized by `nix build .`
         defaultPackage = novaboot.novaboot;
@@ -30,6 +31,7 @@
             cdrkit
             grub2
             dhcp
+            unfs3
           ];
         };
 

@@ -225,6 +225,41 @@ following into the spawned editor:
     [Timer]
     OnActiveSec=30min
 
+=head2 Implementation/Debugging
+
+Implementation of delayed power off is a bit tricky because it uses
+C<sudo> in combination with several systemd services and timers. Here
+is a summary of the call chains in various situations. This might be
+useful for debugging.
+
+Powering on (via I<on> or I<console> subcommands):
+
+  novaboot-shell -c on
+    systemctl --user start novaboot-delayed-power-off.service
+      sudo novaboot-power on
+        systemctl stop  "novaboot-power-off@${SUDO_USER}.timer"
+        systemctl start "novaboot-power@${SUDO_USER}.service"
+          novaboot-shell -c on (with $PPID = 1)
+            eval "$on_cmd"
+
+Powering off via explicit I<off> subcommand:
+
+  novaboot-shell -c off
+    sudo novaboot-power off
+      systemctl stop "novaboot-power@${SUDO_USER}.service"
+        novaboot-shell -c off (with $PPID = 1)
+          eval $off_cmd
+
+Delayed off (executed automatically as a stop job of
+novaboot-delayed-power-off.service at session end):
+
+  sudo novaboot-power delayed-off
+    systemctl start "novaboot-power-off@${SUDO_USER}.timer"
+  ...
+  novaboot-power-off@${SUDO_USER}.service conflicts novaboot-power@${SUDO_USER}.service
+    novaboot-shell -c off (with $PPID = 1)
+      eval $off_cmd
+
 =head1 AUTHORS
 
 Michal Sojka <sojkam1@fel.cvut.cz>

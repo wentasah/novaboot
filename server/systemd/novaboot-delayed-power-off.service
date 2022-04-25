@@ -5,6 +5,7 @@ ConditionFileNotEmpty=%h/.novaboot-shell
 
 [Service]
 Type=oneshot
+ExecStart=/usr/bin/sudo novaboot-power on
 ExecStop=/usr/bin/sudo novaboot-power delayed-off
 RemainAfterExit=true
 

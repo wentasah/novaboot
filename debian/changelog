@@ -1,3 +1,15 @@
+novaboot (20220425) unstable; urgency=medium
+
+  * server: Make systemd invoke novaboot-shell in the $HOME directory
+  * server: Fix delayed power off
+  * server: Fix enabling of delayed power off
+  * server: Doc grammar fixes
+  * server: Refactor delayed power-off logic
+  * Reset u-boot download timeout with every '#'
+  * doc: Add preliminary Raspberry Pi guide
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Mon, 25 Apr 2022 22:35:56 +0200
+
 novaboot (20211022) unstable; urgency=medium
 
   [ alberand ]

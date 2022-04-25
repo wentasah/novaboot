@@ -1,3 +1,9 @@
+novaboot (20220425a) unstable; urgency=medium
+
+  * Fix u-boot prompt handling
+
+ -- Michal Sojka <michal.sojka@cvut.cz>  Mon, 25 Apr 2022 23:51:38 +0200
+
 novaboot (20220425) unstable; urgency=medium
 
   * server: Make systemd invoke novaboot-shell in the $HOME directory

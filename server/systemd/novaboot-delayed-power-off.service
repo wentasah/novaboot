@@ -8,6 +8,3 @@ Type=oneshot
 ExecStart=/usr/bin/sudo novaboot-power on
 ExecStop=/usr/bin/sudo novaboot-power delayed-off
 RemainAfterExit=true
-
-[Install]
-WantedBy=novaboot-delayed-power-off.target

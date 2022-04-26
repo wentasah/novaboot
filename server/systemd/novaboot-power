@@ -15,7 +15,6 @@ case "$1" in
 	;;
     delayed-off)
 	systemctl start "novaboot-power-off@${SUDO_USER}.timer"
-	# || systemd-run --on-active="$2" --unit="novaboot-power-off@${SUDO_USER}.target"
 	;;
     *)
 	echo >&2 "Invalid argument"

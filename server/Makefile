@@ -18,6 +18,5 @@ install: all
 	install -D -m 644 -t $(DESTDIR)$(PREFIX)/lib/systemd/system systemd/novaboot-power-off@.timer
 	install -D -m 644 -t $(DESTDIR)$(PREFIX)/lib/systemd/system systemd/novaboot-power@.service
 	install -D -m 644 -t $(DESTDIR)$(PREFIX)/lib/systemd/user systemd/novaboot-delayed-power-off.service
-	install -D -m 644 -t $(DESTDIR)$(PREFIX)/lib/systemd/user systemd/novaboot-delayed-power-off.target
 	install -D -m 440 systemd/sudoers.novaboot-server $(DESTDIR)/etc/sudoers.d/novaboot-server
 	install -D -m 755 -t $(DESTDIR)$(PREFIX)/sbin systemd/novaboot-power

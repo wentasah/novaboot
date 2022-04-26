@@ -288,4 +288,20 @@ WVPASS date --rfc-3339=ns > file
 WVPASS rsync --rsync-path="rsync-nfsroot" file novaboot-test@localhost:
 WVPASS sudo_ cat "$NBT_HOME"/nfsroot/test/file
 
+WVSTART "get-config returns nfsroot configuration"
+WVPASS sudo_ tee "$SHELLRC" <<EOF
+console_cmd=cat
+reset_cmd=true
+target_config="\
+--prefix=/prefix
+"
+EOF
+WVPASS sudo_ tee "$NBT_HOME/.novaboot-nfs" <<EOF
+server_addr=127.0.0.1
+allowed_clients=127.0.0.1
+EOF
+WVPASS ssh novaboot-test@localhost get-config | \
+    tee >(WVPASS grep -e '^--nfsroot=127.0.0.1:.*') \
+        >(WVPASS grep -e '^--nfsopts=.*')
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

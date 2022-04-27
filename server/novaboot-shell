@@ -194,6 +194,21 @@ run_subcommand() {
 	    cd "$HOME/nfsroot/${NB_USER:?}"
 	    shift
 	    exec rsync "$@";;
+	"untar "*)
+	    if ! is_nfs_enabled; then
+		die "NFS is not enabled"
+	    fi
+	    # untar command is used to extract root filesystem tarball.
+	    mkdir -p "$HOME/nfsroot/${NB_USER:?}"
+	    cd "$HOME/nfsroot/${NB_USER:?}"
+	    if ! [ $# -eq 2 -a "$2" -ef $(basename "$2") ]; then
+		die "Unexpected untar invocation: $*"
+	    fi
+	    # remove the old contents
+	    rm -rf root
+        mkdir root
+
+	    exec tar -xvf "$2" -C root;;
 	"on")
 	    power on
 	    exit;;
@@ -246,7 +261,7 @@ main() {
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
 	# using SSH connection sharing on client side.
-	reset | rsync | rsync-nfsroot | on | off)
+	reset | rsync | rsync-nfsroot | untar | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
 	    $run $0 "$@";;

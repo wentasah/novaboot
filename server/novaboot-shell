@@ -122,7 +122,8 @@ print_nfs_config() {
     # Read the nfsroot config file.
     . ~/.novaboot-nfs
 
-    echo "--nfsroot=$server_addr:$HOME/nfsroot/$NB_USER/root,v3,tcp,port=${nfs_tcp:?},mountport=${mount_tcp:?}"
+    echo "--nfsroot=$server_addr:$HOME/nfsroot/$NB_USER/root"
+    echo "--nfsopts=v3,tcp,port=${nfs_tcp:?},mountport=${mount_tcp:?}"
 }
 
 power() {

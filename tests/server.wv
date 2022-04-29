@@ -304,4 +304,17 @@ WVPASS ssh novaboot-test@localhost get-config | \
     tee >(WVPASS grep -e '^--nfsroot=127.0.0.1:.*') \
         >(WVPASS grep -e '^--nfsopts=.*')
 
+WVSTART 'novaboot replaces $NB_NFSROOT and $NB_NFSOPTS in scripts'
+WVPASS novaboot --ssh novaboot-test@localhost --dump <<'EOF' | \
+    tee >(WVPASS grep -E 'linux nfsroot=127.0.0.1:.*/nfsroot/test/root,v3,tcp,port=[0-9]+,mountport=[0-9]+$')
+load linux nfsroot=$NB_NFSROOT,$NB_NFSOPTS
+EOF
+
+WVSTART 'novaboot does not replace $NB_NFSROOT and $NB_NFSOPTS if nfs is disabled'
+WVPASS sudo_ rm -f "$NBT_HOME/.novaboot-nfs"
+WVPASS novaboot --ssh novaboot-test@localhost --dump <<'EOF' | \
+    tee >(WVPASS grep -F 'linux nfsroot=$NB_NFSROOT,$NB_NFSOPTS')
+load linux nfsroot=$NB_NFSROOT,$NB_NFSOPTS
+EOF
+
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

@@ -304,6 +304,21 @@ options in this section.
 Replace the first word on the first C<load> line in the novaboot
 script with F<file>.
 
+=item --nfsroot=F<host:path>
+
+Replace string B<$NB_NFSROOT> in the script with F<host:path>. This
+option is usually set by L<novaboot-shell(1)>. Together with
+B<--nfsopts>, this can be used to tell the Linux kernel where is the
+NFS server managed by L<novaboot-shell(1)> that serves the root file
+system. Typical usage in the novaboot script is:
+
+    load linux nfsroot=$NB_NFSROOT,$NB_NFSOPTS
+
+=item --nfsopts=F<options>
+
+Replace string B<$NB_NFSROOT> in the script with F<options>. See
+B<--nfsoroot> for more information.
+
 =item --scriptmod=I<Perl expression>
 
 When novaboot reads the script, I<Perl expression> is executed for every

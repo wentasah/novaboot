@@ -133,7 +133,7 @@ my $explicit_target = $ENV{'NOVABOOT_TARGET'};
 GetOptions ("target|t=s" => \$explicit_target);
 
 # Variables for command line options
-my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iprelay_cmd, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, @remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, @reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init, $uboot_stop_key);
+my ($amt, @append, $bender, @chainloaders, $concat, $config_name_opt, $dhcp_tftp, $dump_opt, $dump_config, @exiton, $exiton_timeout, @expect_raw, $final_eol, $gen_only, $grub_config, $grub_prefix, $grub_preamble, $grub2_prolog, $grub2_config, $help, $ider, $interaction, $iprelay, $iprelay_cmd, $iso_image, $interactive, $kernel_opt, $make, $man, $netif, $nfsroot, $nfsopts, $no_file_gen, $off_opt, $on_opt, $pulsar, $pulsar_root, $qemu, $qemu_append, $qemu_flags_cmd, @remote_cmd, $remote_expect, $remote_expect_silent, $remote_expect_timeout, $reset, @reset_cmd, $reset_send, $rom_prefix, $rsync_flags, @scriptmod, $scons, $serial, $server, $stty, $tftp, $tftp_port, $uboot, %uboot_addr, $uboot_cmd, @uboot_init, $uboot_stop_key);
 
 my ($target_reset, $target_power_on, $target_power_off);
 
@@ -177,6 +177,8 @@ my %opt_spec_safe = (
     "grub-preamble=s"=> \$grub_preamble,
     "grub2-prolog=s" => \$grub2_prolog,
     "grub2:s" 	     => \$grub2_config,
+    "nfsroot=s"      => \$nfsroot,
+    "nfsopts=s"      => \$nfsopts,
     "prefix|grub-prefix=s" => \$grub_prefix,
     "pulsar-root=s"  => \$pulsar_root,
     "pulsar|p:s"     => \$pulsar,
@@ -477,6 +479,11 @@ foreach my $script (@scripts) {
     @$modules = ($kernel, @$modules) if $kernel;
     @$modules = (@chainloaders, @$modules);
     @$modules = ("bin/boot/bender", @$modules) if ($bender || defined $ENV{'NOVABOOT_BENDER'});
+
+    foreach (@$modules) {
+        s/\$NB_NFSROOT/$nfsroot/g if $nfsroot;
+        s/\$NB_NFSOPTS/$nfsopts/g if $nfsopts;
+    }
 }
 
 if ($dump_opt) {
@@ -1688,6 +1695,21 @@ options in this section.
 
 Replace the first word on the first C<load> line in the novaboot
 script with F<file>.
+
+=item --nfsroot=F<host:path>
+
+Replace string B<$NB_NFSROOT> in the script with F<host:path>. This
+option is usually set by L<novaboot-shell(1)>. Together with
+B<--nfsopts>, this can be used to tell the Linux kernel where is the
+NFS server managed by L<novaboot-shell(1)> that serves the root file
+system. Typical usage in the novaboot script is:
+
+    load linux nfsroot=$NB_NFSROOT,$NB_NFSOPTS
+
+=item --nfsopts=F<options>
+
+Replace string B<$NB_NFSROOT> in the script with F<options>. See
+B<--nfsoroot> for more information.
 
 =item --scriptmod=I<Perl expression>
 

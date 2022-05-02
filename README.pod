@@ -316,8 +316,8 @@ system. Typical usage in the novaboot script is:
 
 =item --nfsopts=F<options>
 
-Replace string B<$NB_NFSROOT> in the script with F<options>. See
-B<--nfsoroot> for more information.
+Replace string B<$NB_NFSOPTS> in the script with F<options>. See
+B<--nfsroot> for more information.
 
 =item --scriptmod=I<Perl expression>
 

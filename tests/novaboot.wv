@@ -1,159 +1,183 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bats
 
-cd $(dirname $0)
-. wvtest.sh
+bats_require_minimum_version 1.5.0
+load wvtest.sh
 
-WVSTART Invoke with no script
-WVPASS novaboot -t '' < /dev/null
+setup() {
+    # Don't pollute current dir
+    cd "$BATS_TEST_TMPDIR"
+}
 
-WVSTART Invoke as script
-create_dummy
-WVPASS ./script --gen-only
+@test "Invoke with no script" {
+    run -0 novaboot -t '' < /dev/null
+}
 
-WVSTART Invoke as script with absolute path
-create_dummy
-WVPASS $PWD/script --gen-only
+@test "Invoke as script" {
+    create_dummy
+    run -0 ./script --gen-only
+}
 
-WVSTART Pulsar root
-create_dummy
-WVPASS ./script --gen-only --pulsar --pulsar-root=ASDF
-WVPASS grep "root ASDF" config-novaboot
+@test "Invoke as script with absolute path" {
+    create_dummy
+    $PWD/script --gen-only
+}
 
-WVSTART Pulsar supports chld
-create_script <<EOF
+@test "Pulsar root" {
+    create_dummy
+    run -0 ./script --gen-only --pulsar --pulsar-root=ASDF
+    grep "root ASDF" config-novaboot
+}
+
+@test "Pulsar supports chld" {
+    create_script <<EOF
 chld grub
 EOF
-WVPASS ./script --gen-only --pulsar
-WVPASS grep "chld grub" config-novaboot
+    run -0 ./script --gen-only --pulsar
+    grep "chld grub" config-novaboot
+}
 
-WVSTART GRUB2 with default BOOT_METHOD=multiboot
-create_script <<EOF
+@test "GRUB2 with default BOOT_METHOD=multiboot" {
+    create_script <<EOF
 load kernel
 load ramdisk
 EOF
-WVPASS ./script --gen-only --grub2
-WVPASS git diff --no-index --color - boot/grub/grub.cfg <<EOF
+    run -0 ./script --gen-only --grub2
+    git diff --no-index --color - boot/grub/grub.cfg <<EOF
 menuentry script {
   multiboot kernel 
   module ramdisk ramdisk
 }
 EOF
+}
 
-WVSTART GRUB2 with BOOT_METHOD=linux
-create_script <<EOF
+@test "GRUB2 with BOOT_METHOD=linux" {
+    create_script <<EOF
 BOOT_METHOD=linux
 load kernel
 load ramdisk
 EOF
-WVPASS ./script --gen-only --grub2
-WVPASS git diff --no-index --color - boot/grub/grub.cfg <<EOF
+    run -0 ./script --gen-only --grub2
+    git diff --no-index --color - boot/grub/grub.cfg <<EOF
 menuentry script {
   linux kernel 
   initrd ramdisk
 }
 EOF
+}
 
-WVSTART Configuration files
-create_dummy
-echo '1;' > .novaboot
-WVPASS sh -c "./script --gen-only 2> log"
-WVPASS grep "novaboot: Read $PWD/.novaboot" log
+@test "Configuration files" {
+    create_dummy
+    echo '1;' > .novaboot
+    run -0 --separate-stderr ./script --gen-only
+    grep "novaboot: Read $PWD/.novaboot" <<<$stderr
+}
 
-WVSTART Configuration files in symlinked directories
-mkdir config
-echo '1;' > config/.novaboot
-mkdir script
-( cd script; create_dummy )
-ln -s ../script config
-WVPASS sh -c "./config/script/script --gen-only 2> log"
-WVPASS grep "novaboot: Read $PWD/config/.novaboot" log
+@test "Configuration files in symlinked directories" {
+    mkdir config
+    echo '1;' > config/.novaboot
+    mkdir script
+    ( cd script; create_dummy )
+    ln -s ../script config
+    run -0 --separate-stderr ./config/script/script --gen-only
+    grep "novaboot: Read $PWD/config/.novaboot" <<<$stderr
+}
 
-WVSTART Builddir configuration variable
-WVPASS mkdir -p build
-cat > .novaboot <<'EOF'
+@test "Builddir configuration variable" {
+    mkdir -p build
+    cat > .novaboot <<'EOF'
 $builddir="build";
 1;
 EOF
-create_script <<'EOF'
+    create_script <<'EOF'
 load file < echo Hello
 EOF
-WVPASS ./script --gen-only
-WVPASS test -f build/file
+    run -0 ./script --gen-only
+    test -f build/file
+}
 
-WVSTART Configuration directory
-mkdir -p dir
-echo '$test_a = 1;' > dir/a
-echo '$test_c = 2;' > dir/c
-echo '$test_c = 1;' > dir/b	# Overriden by the 'c' file
-echo '$test_ign=1;' > dir/b.txt	# Ignored
-WVPASS sh -c 'NOVABOOT_CONFIG_DIR=./dir novaboot --dump-config > config'
-WVPASS sh -c 'grep \$test config > test'
-WVPASS diff -u - test <<'EOF'
+@test "Configuration directory" {
+    mkdir -p dir
+    echo '$test_a = 1;' > dir/a
+    echo '$test_c = 2;' > dir/c
+    echo '$test_c = 1;' > dir/b	# Overriden by the 'c' file
+    echo '$test_ign=1;' > dir/b.txt	# Ignored
+    NOVABOOT_CONFIG_DIR=./dir novaboot --dump-config > config
+    grep '\$test' config > test
+    diff -u - test <<'EOF'
 $test_a = 1;
 $test_c = 2;
 EOF
+}
 
-WVSTART Fail with unknown target
-create_dummy
-WVFAIL sh -c "./script --gen-only -t non-existing-target"
+@test "Fail with unknown target" {
+    create_dummy
+    run ! ./script --gen-only -t non-existing-target
+}
 
-WVSTART BUILDDIR variable
-WVPASS mkdir -p build
-create_script <<'EOF'
+@test "BUILDDIR variable" {
+    mkdir -p build
+    create_script <<'EOF'
 BUILDDIR=build
 load file < echo Hello
 EOF
-WVPASS ./script --gen-only
-WVPASS test -f build/file
+    run -0 ./script --gen-only
+    test -f build/file
+}
 
-WVSTART Hypervisor configuration variable
-create_dummy
-echo '$hypervisor="HYP";' > .novaboot
-WVPASS ./script --gen-only --pulsar
-WVPASS grep "exec HYP" config-novaboot
+@test "Hypervisor configuration variable" {
+    create_dummy
+    echo '$hypervisor="HYP";' > .novaboot
+    run -0 ./script --gen-only --pulsar
+    grep "exec HYP" config-novaboot
+}
 
-WVSTART ISO image generation
-create_dummy
-WVPASS ./script --iso --gen-only
+@test "ISO image generation" {
+    create_dummy
+    run -0 ./script --iso --gen-only
+}
 
-WVSTART Recursive target definition
-create_dummy
-cat > .novaboot <<EOF
+@test "Recursive target definition" {
+    create_dummy
+    cat > .novaboot <<EOF
 %targets = (
     't1' => '--reset-cmd="echo MyResetCmd"',
     't2' => '--target t1',
 );
 EOF
-WVPASS sh -c "./script --target=t2|tee output"
-WVPASS grep -q ^MyResetCmd output
+    run -0 ./script --target=t2
+    [[ $output =~ MyResetCmd ]]
+}
 
-WVSTART Wrong target definition
-create_dummy
-cat > .novaboot <<EOF
+@test "Wrong target definition" {
+    create_dummy
+    cat > .novaboot <<EOF
 %targets = ('t1' => '--nonsense');
 EOF
-WVPASS sh -c "./script --target=t1 2>&1 |tee output"
-WVPASS grep -q "Error in target definition" output
+    run ! ./script --target=t1
+    [[ $output =~ "Error in target definition" ]]
+}
 
-WVSTART Different ways of specifying target
-cat > .novaboot <<'EOF'
+@test "Different ways of specifying target" {
+    cat > .novaboot <<'EOF'
 %targets = ('t1' => '--remote-cmd="echo Target1 > t"',
             't2' => '--remote-cmd="echo Target2 > t"',
             't3' => '--remote-cmd="echo Target3 > t"');
 $default_target = 't1';
 EOF
-WVPASSSH 'novaboot /dev/null'
-WVPASS test "$(cat t)" = Target1
-WVPASSSH 'NOVABOOT_TARGET=t2 novaboot /dev/null'
-WVPASS test "$(cat t)" = Target2
-WVPASSSH 'NOVABOOT_TARGET=t2 novaboot --target t3 /dev/null'
-WVPASS test "$(cat t)" = Target3
+    run -0 novaboot /dev/null
+    test "$(cat t)" = Target1
+    NOVABOOT_TARGET=t2 novaboot /dev/null
+    test "$(cat t)" = Target2
+    NOVABOOT_TARGET=t2 novaboot --target t3 /dev/null
+    test "$(cat t)" = Target3
+}
 
-WVSTART --iprelay-cmd
-WVPASS novaboot --iprelay-cmd="$(which echo) -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
+@test "--iprelay-cmd" {
+    run -0 novaboot --iprelay-cmd="$(which echo) -e '<iprelayd: connected>\xFF\xFA\x2C\x97\xDF\xFF\xF0 \xFF\xFA\x2C\x97\xFF\xFF\xF0'" --on
+}
 
-WVSTART Killing of --remote-cmd when it ignores SIGHUP
-WVPASS tee script <<'EOF'
+@test "Killing of --remote-cmd when it ignores SIGHUP" {
+    tee script <<'EOF'
 $SIG{HUP}='IGNORE';
 open(FH, ">", "pid") or die;
 print FH "$$";
@@ -162,36 +186,41 @@ print "ready pid=$$\n";
 print "exit\n";
 sleep;
 EOF
-WVPASS novaboot --remote-cmd='perl script' --remote-expect=ready --exiton=exit /dev/null
-WVFAIL test -d /proc/$(cat pid)
-coproc novaboot --remote-cmd='perl script' --remote-expect=ready /dev/null
-WVPASS sed -e '/ready/q0' <&${COPROC[0]}
-WVPASS kill $COPROC_PID
-WVFAIL wait $COPROC_PID # Signal termination is considered a failure
-WVFAIL test -d /proc/$(cat pid)
+    run -0 novaboot --remote-cmd='perl script' --remote-expect=ready --exiton=exit /dev/null
+    ! test -d /proc/$(cat pid)
+    coproc novaboot --remote-cmd='perl script' --remote-expect=ready /dev/null
+    sed -e '/ready/q0' <&${COPROC[0]}
+    kill $COPROC_PID
+    ! wait $COPROC_PID # Signal termination is considered a failure
+    ! test -d /proc/$(cat pid)
+}
 
-WVSTART Correct invocation path
-WVPASS mkdir dir
-WVPASS tee dir/.novaboot <<<'print "Config OK\n";'
-(
-    WVPASS cd dir
-    WVPASS novaboot /dev/null | WVPASS grep "Config OK"
-)
-WVPASS tee dir/Makefile <<EOF
+@test "Correct invocation path" {
+    mkdir dir
+    tee dir/.novaboot <<<'print "Config OK\n";'
+    (
+        cd dir
+        run -0 novaboot /dev/null
+        [[ $output =~ "Config OK" ]]
+    )
+    tee dir/Makefile <<EOF
 all:
 	novaboot /dev/null
 EOF
-WVPASS make -C dir | WVPASS grep "Config OK"
+    run -0 make -C dir
+    [[ $output =~ "Config OK" ]]
+}
 
-WVSTART "INTERACTION variable"
-WVPASS novaboot --remote-cmd=cat <<<INTERACTION=0
+@test ""INTERACTION variable"" {
+    run -0 novaboot --remote-cmd=cat <<<INTERACTION=0
+}
 
-WVSTART "Do not accept directories"
-WVPASS mkdir -p tftproot
-WVFAIL novaboot --server=tftproot <<<"load $PWD"
+@test "Do not accept directories" {
+    mkdir -p tftproot
+    run ! novaboot --server=tftproot <<<"load $PWD"
+}
 
-WVSTART "Accept /dev/null file"
-WVPASS mkdir -p tftproot
-WVPASS novaboot --server=tftproot <<<"load /dev/null"
-
-# Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))
+@test "Accept /dev/null file" {
+    mkdir -p tftproot
+    run -0 novaboot --server=tftproot <<<"load /dev/null"
+}

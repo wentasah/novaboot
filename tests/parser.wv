@@ -1,91 +1,106 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bats
 
-cd $(dirname $0)
-. wvtest.sh
+load wvtest.sh
 
-WVSTART Simple script
-WVPASS create_dummy
-WVPASS bash -c "./script --dump > dump"
-WVPASS diff -u - dump <<EOF
+setup() {
+    # Don't pollute current dir
+    cd "$BATS_TEST_TMPDIR"
+}
+
+@test "Simple script" {
+    create_dummy
+    ./script --dump > dump
+    diff -u - dump <<EOF
 kernel
 file
 EOF
+}
 
-WVSTART --append
-WVPASS create_dummy
-WVPASS bash -c "./script --dump --append 1 --append 2 > dump"
-WVPASS diff -u - dump <<EOF
+@test "--append" {
+    create_dummy
+    ./script --dump --append 1 --append 2 > dump
+    diff -u - dump <<EOF
 kernel 1 2
 file
 EOF
+}
 
-WVSTART Line continuation
-WVPASS bash -c '(echo "load line1 \\"; echo " line2")|novaboot --dump > dump'
-WVPASS diff -u - dump <<EOF
+@test "Line continuation" {
+    (echo "load line1 \\"; echo " line2")|novaboot --dump > dump
+    diff -u - dump <<EOF
 line1 line2
 EOF
+}
 
-WVSTART --scriptmod
-create_dummy
-WVPASS bash -c './script --scriptmod="s/e/3/g" --dump > dump'
-WVPASS diff -u - dump <<EOF
+@test "--scriptmod" {
+    create_dummy
+    ./script --scriptmod="s/e/3/g" --dump > dump
+    diff -u - dump <<EOF
 k3rn3l
 fil3
 EOF
+}
 
-WVSTART --kernel
-create_script <<EOF
+@test "--kernel" {
+    create_script <<EOF
 load kernel arg1 arg2
 load file farg11
 EOF
-WVPASS bash -c './script -k new --dump > dump'
-WVPASS diff -u - dump <<EOF
+    ./script -k new --dump > dump
+    diff -u - dump <<EOF
 new arg1 arg2
 file farg11
 EOF
+}
 
-WVSTART --bender
-create_dummy
-WVPASS bash -c "./script --gen-only --bender --dump > dump"
-WVPASS diff -u - dump <<EOF
+@test "--bender" {
+    create_dummy
+    ./script --gen-only --bender --dump > dump
+    diff -u - dump <<EOF
 bin/boot/bender
 kernel
 file
 EOF
+}
 
-WVSTART --chainloader
-create_dummy
-WVPASS bash -c "./script --chainloader=chain1 -chainloader='chain2 arg' --dump > dump"
-WVPASS diff -u - dump <<EOF
+@test "--chainloader" {
+    create_dummy
+    ./script --chainloader=chain1 -chainloader='chain2 arg' --dump > dump
+    diff -u - dump <<EOF
 chain1
 chain2 arg
 kernel
 file
 EOF
+}
 
-WVSTART Heredoc
-create_script <<EOF
+@test "Heredoc" {
+    create_script <<EOF
 load file <<XXX
 load inside heredoc
 XXX
 EOF
-WVPASS bash -c "./script --dump > dump"
-WVPASS diff -u - dump <<EOF
+    ./script --dump > dump
+    diff -u - dump <<EOF
 file
 EOF
+}
 
-WVSTART Load without file
-WVFAIL novaboot <<EOF
+@test "Load without file" {
+    ! novaboot <<EOF
 load
 EOF
+}
 
-WVSTART Heredoc without file
-WVFAIL novaboot <<EOF
+@test "Heredoc without file" {
+    ! novaboot <<EOF
 load <<XXX
 inside heredoc
 XXX
 EOF
+}
 
-WVSTART Run keyword
-WVPASS bash -c "echo run echo ahoj|novaboot -t '' > output"
-WVPASS grep "^ahoj$" output
+@test "Run keyword" {
+    echo run echo ahoj|novaboot -t '' > output
+    grep "^ahoj$" output
+}

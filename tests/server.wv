@@ -1,17 +1,18 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bats
 
-cd $(dirname $0)
-. wvtest.sh
+bats_require_minimum_version 1.5.0
+load wvtest.sh
 
-NBT_HOME=$(getent passwd novaboot-test|cut -d: -f6)
-export WV_BASE_DIR
-export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
-cat <<EOF > $NOVABOOT_SHELL_CONFIG
+setup() {
+    export WV_BASE_DIR
+    export NOVABOOT_SHELL_CONFIG="$WV_BASE_DIR/.novaboot-shell"
+    cat <<EOF > $NOVABOOT_SHELL_CONFIG
 console_cmd="echo 'Hello console'; while :; do sleep 0.1; date; done"
 reset_cmd="touch reset_done"
 target_config='--prefix=asdf'
 EOF
-
+    cd "$BATS_TEST_TMPDIR"
+}
 # Run server synchronously
 function run_server() {
     SSH_ORIGINAL_COMMAND="$*" SSH_CONNECTION="127.0.0.1 1234 127.0.0.1 22" $exec $WV_BASE_DIR/../server/novaboot-shell -c "${account:-user} ${username:-test} ${admin:+admin}"
@@ -24,48 +25,53 @@ function exec_server() {
     run_server "$@"
 }
 
-WVSTART Help subcommand
-WVPASS run_server help | WVPASS tee log
-WVPASS grep 'Target commands:' log
-WVFAIL grep 'add-key' log
+@test "Help subcommand" {
+    run -0 run_server help
+    grep 'Target commands:' <<< $output
+    ! grep 'add-key' <<< $output
+}
 
-WVSTART Get-config command works
-run_server get-config > log
-WVPASS grep -e '^--prefix=asdf$' log
+@test "Get-config command works" {
+    run -0 run_server get-config
+    grep -e '^--prefix=asdf$' <<< $output
+}
 
-WVSTART "Multi-word commands work when user not specified"
-WVPASS $WV_BASE_DIR/../server/novaboot-shell -c "help xxx" | WVPASS tee log
-WVPASS grep 'Target commands:' log
+@test "Multi-word commands work when user not specified" {
+    run -0 $WV_BASE_DIR/../server/novaboot-shell -c "help xxx"
+    grep 'Target commands:' <<< $output
+}
 
-WVSTART "Console prints a 'connected' message"
-coproc exec_server console
-WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
-kill $COPROC_PID; wait
+@test "Console prints a 'connected' message" {
+    coproc exec_server console
+    sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${COPROC[0]}
+    kill $COPROC_PID; wait
+}
 
-WVSTART "Without any argument console_cmd is executed if no default_cmd is configured"
-coproc exec_server
-WVPASS sed -e '/Hello console/q0' -e '3q1' <&${COPROC[0]}
-kill $COPROC_PID; wait
+@test "Without any argument console_cmd is executed if no default_cmd is configured" {
+    coproc exec_server
+    sed -e '/Hello console/q0' -e '3q1' <&${COPROC[0]}
+    kill $COPROC_PID; wait
+}
 
-WVSTART "Without any argument default_cmd is executed if configured"
-(
-    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
-    cat <<EOF > $NOVABOOT_SHELL_CONFIG
+@test "Without any argument default_cmd is executed if configured" {
+    (
+        export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+        cat <<EOF > $NOVABOOT_SHELL_CONFIG
 default_cmd='echo "Hello default"'
 console_cmd='echo "Hello console"'
 EOF
-    WVPASS run_server | WVPASS grep -F 'Hello default'
+        run_server | grep -F 'Hello default'
+        run_server console | grep -F 'Hello console'
+    )
+}
 
-    WVPASS run_server console | WVPASS grep -F 'Hello console'
-)
-
-WVSTART "default_cmd can be set to run_novaboot"
-(
-    export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
-    cat <<EOF > default_nb_script
+@test "default_cmd can be set to run_novaboot" {
+    (
+        export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
+        cat <<EOF > default_nb_script
 run echo "Hello default_nb_script"
 EOF
-    cat <<'EOF' > $NOVABOOT_SHELL_CONFIG
+        cat <<'EOF' > $NOVABOOT_SHELL_CONFIG
 default_cmd='run_novaboot default_nb_script --scriptmod=s/default_nb_script/default_nb_script_mod/'
 console_cmd='while sleep 0.01; do echo "Hello console"; done'
 reset_cmd='echo "Hello reset"'
@@ -74,209 +80,101 @@ target_config="\
 --exiton=Hello console
 "
 EOF
-    WVPASS run_server | (
-        stdout=$(cat)
-        WVPASS grep -F 'Hello default_nb_script' <<<"$stdout"
-        WVPASS grep -F 'Hello default_nb_script_mod' <<<"$stdout"
-        WVPASS grep -F 'Hello console' <<<"$stdout"
+        run_server | (
+            stdout=$(cat)
+            grep -F 'Hello default_nb_script' <<<"$stdout"
+            grep -F 'Hello default_nb_script_mod' <<<"$stdout"
+            grep -F 'Hello console' <<<"$stdout"
+        )
     )
-)
+}
 
-WVSTART 'Second connection to console prints queue'
-coproc console1 { exec_server console; }
-WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
-coproc console2 { exec_server console; }
-WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
-kill $console1_PID $console2_PID; wait
+@test "Second connection to console prints queue" {
+    coproc console1 { exec_server console; }
+    sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
+    coproc console2 { exec_server console; }
+    sed -e '/Target is occupied by:/q0' <&${console2[0]}
+    kill $console1_PID $console2_PID; wait
+}
 
-WVSTART 'Printed queue contains correct username'
-coproc console1 { username=my_cool_username exec_server console; }
-WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
-coproc console2 { username=another_username exec_server console; }
-WVPASS sed -e '/my_cool_username/q0' -e '3q1' <&${console2[0]}
-kill $console1_PID $console2_PID; wait
+@test "Printed queue contains correct username" {
+    coproc console1 { username=my_cool_username exec_server console; }
+    sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
+    coproc console2 { username=another_username exec_server console; }
+    sed -e '/my_cool_username/q0' -e '3q1' <&${console2[0]}
+    kill $console1_PID $console2_PID; wait
+}
 
-WVSTART Admin sees help for admin subcommands
-admin=1 run_server help > log
-WVPASS grep 'add-key' log
+@test "Admin sees help for admin subcommands" {
+    admin=1 run run_server help
+    grep 'add-key' <<< "$output"
+}
 
-WVSTART Only admin can run shell
-WVFAIL run_server shell
-admin=1 WVPASS run_server shell < /dev/null
+@test "Only admin can run shell" {
+    ! run_server shell
+    admin=1 run_server shell < /dev/null
+}
 
-WVSTART 'Cannot reset when somebody else is connected to console'
-coproc console1 { exec_server console; }
-WVPASS sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
-coproc console2 { run_server reset; }
-WVPASS sed -e '/Target is occupied by:/q0' <&${console2[0]}
-WVPASS test ! -e reset_done
-WVPASS kill $console1_PID $console2_PID; wait
+@test "Cannot reset when somebody else is connected to console" {
+    coproc console1 { exec_server console; }
+    sed -e '/novaboot-shell: Connected/q0' -e '3q1' <&${console1[0]}
+    coproc console2 { run_server reset; }
+    sed -e '/Target is occupied by:/q0' <&${console2[0]}
+    test ! -e reset_done
+    kill $console1_PID $console2_PID; wait
+}
 
-WVSTART "Can reset when I'm connected to console"
-coproc exec_server console
-WVPASS sed -e '/novaboot-shell: Connected/q0' <&${COPROC[0]}
-WVPASS run_server reset
-WVPASS test -e reset_done
-WVPASS kill $COPROC_PID
+@test "Can reset when I'm connected to console" {
+    coproc exec_server console
+    sed -e '/novaboot-shell: Connected/q0' <&${COPROC[0]}
+    run_server reset
+    test -e reset_done
+    kill $COPROC_PID
+}
 
-WVSTART "Quoting of config variables"
-(
+@test "Quoting of config variables" {
     export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
 
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch file1 file2"'
-    WVPASS run_server reset
-    WVPASS test -e file1 -a -e file2
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch file1 file2"'
+    run_server reset
+    test -e file1 -a -e file2
 
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1 file2\""'
-    WVPASS run_server reset
-    WVPASS test -e "file1 file2"
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1 file2\""'
+    run_server reset
+    test -e "file1 file2"
 
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1   file2\""'
-    WVPASS run_server reset
-    WVPASS test -e "file1   file2"
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"file1   file2\""'
+    run_server reset
+    test -e "file1   file2"
 
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"\\\"file1 file2\\\"\""'
-    WVPASS run_server reset
-    WVPASS test -e '"file1 file2"'
-)
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd="touch \"\\\"file1 file2\\\"\""'
+    run_server reset
+    test -e '"file1 file2"'
+}
 
-WVSTART "Config variables can depend on user name"
-(
+@test "Config variables can depend on user name" {
     export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
 
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd="echo Hello $NB_USER"'
-    username=asdf WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello asdf"
-    username=qwer WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello qwer"
-)
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd="echo Hello $NB_USER"'
+    username=asdf run_server console | tee /dev/stderr | grep -F "Hello asdf"
+    username=qwer run_server console | tee /dev/stderr | grep -F "Hello qwer"
+}
 
-WVSTART "Missing console_cmd results in failure"
-NOVABOOT_SHELL_CONFIG="/dev/null" WVFAIL run_server console
-
-WVSTART "console_cmd may contain a shell function name"
-(
+@test "Missing console_cmd results in failure" {
+      ! NOVABOOT_SHELL_CONFIG="/dev/null" run_server console
+}
+@test "console_cmd may contain a shell function name" {
     export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd () { echo Hello user; }
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'console_cmd () { echo Hello user; }
 console_cmd=console_cmd'
-    WVPASS run_server console | tee /dev/stderr | WVPASS grep -F "Hello user"
-)
+    run_server console | tee /dev/stderr | grep -F "Hello user"
+}
 
-WVSTART "reset_cmd may contain a shell function name"
-(
+@test "reset_cmd may contain a shell function name" {
     export NOVABOOT_SHELL_CONFIG="./.novaboot-shell"
-    WVPASS tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd () { echo Hello user; }
+    tee "$NOVABOOT_SHELL_CONFIG" <<<'reset_cmd () { echo Hello user; }
 reset_cmd=reset_cmd'
-    WVPASS run_server reset | tee /dev/stderr | WVPASS grep -F "Hello user"
-)
-
-if [ -n "$DEB_HOST_ARCH" ]; then
-    echo >&2 "Skipping server tests in Debian package build, because these cannot pass."
-    exit 0
-fi
-
-SHELLRC="$NBT_HOME/.novaboot-shell"
-TFTPROOT="$NBT_HOME/tftproot"
-AUTH="$NBT_HOME/.ssh/authorized_keys"
-sudo_() { sudo -u novaboot-test "$@"; }
-
-WVSTART "Create and check ssh keys needed for following tests"
-# Start our custom ssh-agent to not mess up with the user's agent
-eval "$(ssh-agent)"
-trap 'ssh-agent -k' EXIT
-WVPASS test -n "$SSH_AUTH_SOCK" || exit 1
-if [ ! -f id_rsa ]; then
-    ssh-keygen -t rsa -C "generated by $0" -N '' -f ./id_rsa
-fi
-ID_RSA=$(realpath ./id_rsa)
-WVPASS ssh-add ./id_rsa
-
-WVSTART "Setup SSH server's admin key"
-WVPASS sudo_ mkdir -p $(dirname "$AUTH")
-WVPASS sudo_ chmod 700 $(dirname "$AUTH")
-WVPASS sudo_ tee "$AUTH" <<<"command=\"user test admin\" $(cat "$ID_RSA".pub)"
-# Check that we can really log in
-WVPASS ssh novaboot-test@localhost help
-
-WVSTART "Novaboot --ssh option (connect, rsync, reset)"
-WVPASS sudo_ rm -rf "$TFTPROOT"
-TS=$(date --rfc-3339=ns)
-WVPASS sudo_ tee "$SHELLRC" <<EOF
-console_cmd=cat
-reset_cmd="echo $TS > reset.stamp"
-target_config=""
-EOF
-date > file
-WVPASS novaboot --ssh novaboot-test@localhost <<EOF
-copy file
-EOF
-# Check that file was copied to tftproot
-WVPASS diff -u file <(sudo_ cat $TFTPROOT/file)
-# Check that reset command was executed
-WVPASS test "$TS" = "$(sudo_ cat "$NBT_HOME/reset.stamp")"
-
-WVSTART "Novaboot --ssh remote config"
-WVPASS sudo_ rm -rf "$TFTPROOT"
-WVPASS sudo_ tee "$SHELLRC" <<EOF
-console_cmd=cat
-reset_cmd=true
-target_config="\
---prefix=/prefix
---grub2
-"
-EOF
-date > file
-WVPASS novaboot --ssh novaboot-test@localhost <<EOF
-load file
-EOF
-WVPASS diff -u file <(sudo_ cat "$TFTPROOT/file")
-WVPASS sudo_ grep /prefix/file "$TFTPROOT/boot/grub/grub.cfg"
-
-WVSTART "Novaboot --ssh remote config fails on non-safe options"
-WVPASS sudo_ tee "$SHELLRC" <<EOF
-console_cmd=cat
-reset_cmd=true
-target_config="\
---prefix=/prefix
---make
-"
-EOF
-WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
-stderr=$(novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null)
-echo "$stderr" | WVPASS grep -q -F 'Unknown option: make'
-echo "$stderr" | WVPASS grep -q -F 'Error processing configuration from the server'
-
-WVSTART "Novaboot --ssh remote config fails on unknown arguments"
-WVPASS sudo_ tee "$SHELLRC" <<EOF
-console_cmd=cat
-reset_cmd=true
-target_config="\
---prefix=/prefix
-blablabla
-"
-EOF
-WVFAIL novaboot --ssh novaboot-test@localhost <<<"load file < date"
-novaboot --ssh novaboot-test@localhost <<<"load file < date" 2>&1 >/dev/null |\
-    WVPASS grep -F "Unsuported configuration received from the server: blablabla"
-
-WVSTART "add-key subcommand"
-WVPASS ssh-keygen -t ed25519 -N '' -f key
-WVFAIL sudo_ grep new_user "$AUTH"
-WVPASS ssh novaboot-test@localhost add-key new_user < key.pub
-WVPASS sudo_ grep -F "user new_user" "$AUTH"
-
-WVSTART "add-key user must not contain spaces"
-WVPASS sudo_ cat "$AUTH" > auth
-WVFAIL ssh novaboot-test@localhost add-key "new user" < /dev/null
-WVPASS diff -u <(sudo_ cat "$AUTH") auth
-
-WVSTART "add-key requires username"
-WVPASS sudo_ cat "$AUTH" > auth
-WVFAIL ssh novaboot-test@localhost add-key < /dev/null
-WVPASS diff -u <(sudo_ cat "$AUTH") auth
-
-WVSTART "Suggest using ssh -t for shell"
-WVPASS ssh novaboot-test@localhost shell < /dev/null | WVPASS grep -e 'ssh -t'
-echo exit|WVPASS ssh -tt novaboot-test@localhost shell | WVFAIL grep -e 'ssh -t'
-
-
+    run_server reset | tee /dev/stderr | grep -F "Hello user"
+}
 
 # Hi-lock: (("^.*\\(?:WVSTART\\).*$" (0 (quote hi-black-b) t)))

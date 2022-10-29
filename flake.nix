@@ -31,6 +31,7 @@
             cdrkit
             grub2
             dhcp
+            bats
           ];
         };
 

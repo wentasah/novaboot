@@ -1,31 +1,34 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bats
 
-cd $(dirname $0)
-. wvtest.sh
+load wvtest.sh
 
-WVSTART Exiton
-WVPASS create_dummy
-WVPASS ./script -t '' --exiton=Hello --remote-cmd="echo Hello; cat"
+setup_file() {
+    create_dummy
+}
 
-WVSTART Expect send
-WVPASS create_dummy
-WVPASS ./script -t '' --expect=question --send="answer\n" \
-    --remote-cmd='echo question; read x; echo $x > output'
-WVPASS grep answer output
+@test "Exiton" {
+    ./script -t '' --exiton=Hello --remote-cmd="echo Hello; cat"
+}
 
-WVSTART Expect regexp send
-WVPASS create_dummy
-WVPASS ./script -t '' --expect-re=q..st..n --send="answer\n" \
-    --remote-cmd='echo question; read x; echo $x > output'
-WVPASS grep answer output
+@test "Expect send" {
+    ./script -t '' --expect=question --send="answer\n" \
+           --remote-cmd='echo question; read x; echo $x > output'
+    grep answer output
+}
 
-WVSTART Expect sendcont
-WVPASS create_dummy
-WVPASS ./script -t '' --expect=More --sendcont="\n" \
-    --remote-cmd='seq 100|more --exit-on-eof'
+@test "Expect regexp send" {
+    ./script -t '' --expect-re=q..st..n --send="answer\n" \
+           --remote-cmd='echo question; read x; echo $x > output'
+    grep answer output
+}
 
-WVSTART Expect vs exiton priority
-WVPASS create_dummy
-WVPASS ./script -t '' --expect="#" --sendcont="exit\n#" --exiton="exit" \
-       --remote-cmd='echo -n "#"; cat' | tee output
-WVPASS test "$(grep exit output | wc -l )" -eq 1
+@test "Expect sendcont" {
+    ./script -t '' --expect=More --sendcont="\n" \
+           --remote-cmd='seq 100|more --exit-on-eof'
+}
+
+@test "Expect vs exiton priority" {
+    ./script -t '' --expect="#" --sendcont="exit\n#" --exiton="exit" \
+           --remote-cmd='echo -n "#"; cat' | tee output
+    test "$(grep exit output | wc -l )" -eq 1
+}

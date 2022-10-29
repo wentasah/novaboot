@@ -1,6 +1,6 @@
-TESTS := novaboot.wv parser.wv expect.wv server.wv
+TESTS := novaboot.wv parser.wv expect.wv server.wv server-ssh.bats
 OTHER_TESTS := $(filter-out $(TESTS),$(wildcard *.wv))
 TESTS += $(OTHER_TESTS)
 
 all:
-	./wvtool runall $(TESTS:%=./%)
+	bats $(TESTS:%=./%)

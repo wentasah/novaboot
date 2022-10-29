@@ -25,10 +25,10 @@ WVPASS ./script -t '' --expect-re=q..st..n --send="answer\n" \
     --remote-cmd='echo question; read x; echo $x > output'
 WVPASS grep answer output
 
-WVSTART Expect sendcond
+WVSTART Expect sendcont
 WVPASS create_dummy
 WVPASS ./script -t '' --expect=More --sendcont="\n" \
-    --remote-cmd='seq 100|more'
+    --remote-cmd='seq 100|more --exit-on-eof'
 
 WVSTART Expect vs exiton priority
 WVPASS create_dummy

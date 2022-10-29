@@ -13,12 +13,6 @@ WVPASS ./script -t '' --expect=question --send="answer\n" \
     --remote-cmd='echo question; read x; echo $x > output'
 WVPASS grep answer output
 
-WVSTART Expect send
-WVPASS create_dummy
-WVPASS ./script -t '' --expect=question --send="answer\n" \
-    --remote-cmd='echo question; read x; echo $x > output'
-WVPASS grep answer output
-
 WVSTART Expect regexp send
 WVPASS create_dummy
 WVPASS ./script -t '' --expect-re=q..st..n --send="answer\n" \

@@ -3,4 +3,4 @@ OTHER_TESTS := $(filter-out $(TESTS),$(wildcard *.wv))
 TESTS += $(OTHER_TESTS)
 
 all:
-	bats $(TESTS:%=./%)
+	bats $(BATS_OPTS) $(TESTS)

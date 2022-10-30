@@ -21,7 +21,9 @@ setup_file() {
 }
 
 teardown_file() {
-    ssh-agent -k
+    if [[ $SSH_AGENT_PID ]]; then
+        ssh-agent -k
+    fi
 }
 
 setup() {

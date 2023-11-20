@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# vim: set noexpandtab tabstop=8 shiftwidth=4:
+
 set -e
 
 die() {
@@ -147,6 +149,22 @@ run_subcommand() {
 	    mkdir -p "$HOME/tftproot"
 	    cd "$HOME/tftproot"
 	    exec "$@";;
+	"rsync-nfsroot "*" --server "*" . .")
+	    shift 1
+	    mkdir -p "$HOME/nfsroot"
+	    cd "$HOME/nfsroot"
+	    exec rsync "$@";;
+	"unfsd" *)
+	    rootdir="$2"
+	    shift 2
+
+	    [ -n "$board_ip" ] || die 'Missing configuration option $board_ip'
+	    echo "$HOME/nfsroot/$rootdir $board_ip(rw,no_root_squash)" > "$HOME/export"
+
+	    # start or restart unfs3 to reread updated `exports` file
+	    [ -n "$nfs_port" ] || die 'Missing configuration option $nfs_port'
+	    systemctl --user restart "unfsd@$nfs_port.service"
+	    ;;
 	"on")
 	    power on
 	    exit;;
@@ -199,7 +217,7 @@ main() {
 	# to the console. "The same user" means that we were executed by
 	# the same sshd process that has the lock. This is ensured by
 	# using SSH connection sharing on client side.
-	reset | rsync | on | off)
+	reset | rsync | rsync-nfsroot | unfsd | on | off)
 	    ALLOWED_PPID=$(cat $RUN_DIR/ppid 2>/dev/null || :)
 	    if [ "$PPID" -eq "${ALLOWED_PPID:-0}" ]; then run=unlocked; else run=locked; fi
 	    $run $0 "$@";;

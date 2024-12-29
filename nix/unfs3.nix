@@ -7,9 +7,9 @@ stdenv.mkDerivation rec {
     owner = "wentasah";
     repo = "unfs3";
     # ref = "refs/heads/novaboot";
-    rev = "6637b9a371575fde613db9081b25610f30f4b564";
-    sha256 = "1sy7rlkpbqbilvbi8878vvbaql058iy0ib3sakcv15asmky4385a";
-    # date = "2024-12-29T11:44:08+01:00";
+    rev = "a7c674844a0844b1e3bbabae8c37e398d8a0b5c8";
+    sha256 = "0xmcp7kpf65x379xvna5fvqr91f8wny4dm2w0zlw1v7rmbln98ij";
+    # date = "2024-12-29T15:16:46+01:00";
   };
 
   nativeBuildInputs = [ autoconf automake bison flex pkg-config ];

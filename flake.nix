@@ -31,7 +31,7 @@
             syslinux
             cdrkit
             grub2
-            dhcp
+            # dhcp  # removed from nixpkgs
             unfs3
           ];
         };

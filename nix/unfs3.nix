@@ -2,13 +2,14 @@
 with pkgs;
 stdenv.mkDerivation rec {
   pname = "unfs3";
-  version = "0.9.22-novaboot";
+  version = "0.10.0-novaboot";
   src = fetchFromGitHub {
-    owner = "skoudmar";
+    owner = "wentasah";
     repo = "unfs3";
-    #rev = "unfs3-${version}";
-    rev = "eb5ccdfe723fa37fd80f37ef079d97cbc6b72d44";
-    sha256 = "sha256-n9pI1/6yoYfY9fo/EXMhqJhMn77oR5PvtZOdqD6/Erk=";
+    # ref = "refs/heads/novaboot";
+    rev = "6637b9a371575fde613db9081b25610f30f4b564";
+    sha256 = "1sy7rlkpbqbilvbi8878vvbaql058iy0ib3sakcv15asmky4385a";
+    # date = "2024-12-29T11:44:08+01:00";
   };
 
   nativeBuildInputs = [ autoconf automake bison flex pkg-config ];

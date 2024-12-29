@@ -36,25 +36,24 @@
           ];
         };
 
+        # Same idea as nixosModule but a list or attrset of them.
+        #nixosModules = { exampleModule = self.nixosModule; };
+      }) // {
         # Default overlay, for use in dependent flakes
-        overlays = (final: prev: {
-          inherit (novaboot) novaboot novaboot-server;
-          inherit unfs3;
-        });
+        overlays.default = final: prev: {
+          inherit (self.packages.${final.system}) novaboot novaboot-server unfs3;
+        };
 
         # Default module, for use in dependent flakes
         nixosModule = import ./nix/module.nix;
 
-        # Same idea as nixosModule but a list or attrset of them.
-        #nixosModules = { exampleModule = self.nixosModule; };
-      }) // {
         nixosConfigurations.container = nixpkgs.lib.nixosSystem {
           system = flake-utils.lib.system.x86_64-linux;
           modules = [
             (import ./nix/module.nix)
             ({ pkgs, ... }: {
 
-              nixpkgs.overlays = [ self.overlay.x86_64-linux ];
+              nixpkgs.overlays = [ self.overlays.default ];
 
               boot.isContainer = true;
 

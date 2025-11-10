@@ -48,6 +48,7 @@ in
     services.tftpd.enable = true;
     systemd.packages = with pkgs; [ novaboot-server unfs3 ];
 
+    users.groups.novaboot = {};
     users.users = mapAttrs (name: value: {
       group = "novaboot";
       autoSubUidGidRange = true;

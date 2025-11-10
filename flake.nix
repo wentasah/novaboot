@@ -41,7 +41,7 @@
       }) // {
         # Default overlay, for use in dependent flakes
         overlays.default = final: prev: {
-          inherit (self.packages.${final.system}) novaboot novaboot-server unfs3;
+          inherit (self.packages.${final.stdenv.hostPlatform.system}) novaboot novaboot-server unfs3;
         };
 
         # Default module, for use in dependent flakes
